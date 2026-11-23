@@ -1,0 +1,25 @@
+{
+  "expo": {
+    "name": "Ninja Ship Khách",
+    "slug": "ninja-ship-khach",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "newArchEnabled": true,
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.ninjaship.khach"
+    },
+    "android": {
+      "package": "com.ninjaship.khach",
+      "adaptiveIcon": {
+        "backgroundColor": "#DC2626"
+      }
+    },
+    "extra": {
+      "eas": {
+        "projectId": ""
+      }
+    }
+  }
+}
