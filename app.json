@@ -1,0 +1,40 @@
+{
+  "expo": {
+    "name": "Ninja Ship Khách",
+    "slug": "ninja-ship-khach",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "newArchEnabled": true,
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.ninjaship.khach",
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "Ninja Ship cần truy cập vị trí để xác định điểm giao hàng và tính cước Km."
+      }
+    },
+    "android": {
+      "package": "com.ninjaship.khach",
+      "permissions": [
+        "ACCESS_COARSE_LOCATION",
+        "ACCESS_FINE_LOCATION"
+      ],
+      "adaptiveIcon": {
+        "backgroundColor": "#DC2626"
+      }
+    },
+    "plugins": [
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Cho phép Ninja Ship Khách sử dụng vị trí để đặt đơn giao hàng."
+        }
+      ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": ""
+      }
+    }
+  }
+}
