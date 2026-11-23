@@ -1,0 +1,7 @@
+name = "ninja-ship-api"
+main = "worker.js"
+compatibility_date = "2026-11-01"
+
+[[kv_namespaces]]
+binding = "NINJA_KV"
+id = "REPLACE_WITH_YOUR_NINJA_KV_ID"
