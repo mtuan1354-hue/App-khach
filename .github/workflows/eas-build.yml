@@ -1,4 +1,4 @@
-name: Auto Build Ninja Ship Khach (APK & IPA)
+name: Auto Build Ninja Ship Khach (APK)
 
 on:
   push:
@@ -7,8 +7,8 @@ on:
   workflow_dispatch:
 
 jobs:
-  build_android_and_ios:
-    name: Build Android APK & iOS IPA via Expo EAS
+  build_android:
+    name: Build Android APK via Expo EAS
     runs-on: ubuntu-latest
     env:
       EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
@@ -19,7 +19,7 @@ jobs:
       - name: Cai dat Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
 
       - name: Cai dat thu vien du an
         run: npm install
@@ -29,6 +29,3 @@ jobs:
 
       - name: Build Android APK
         run: eas build --platform android --profile preview --non-interactive --no-wait
-
-      - name: Build iOS IPA
-        run: eas build --platform ios --profile preview --non-interactive --no-wait
