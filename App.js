@@ -2079,40 +2079,63 @@ export default function App() {
                 )}
 
                 {currentServiceConfig.showAdvance && (
-                  <>
+                  <View style={{ marginBottom: 10 }}>
                     <View style={styles.labelRowBetween}>
-                      <Text style={styles.inputLabel}>{currentServiceConfig.advanceLabel}</Text>
+                      <Text style={styles.inputLabel}>Số tiền ứng trước</Text>
                       <Text style={styles.autoBadge}>Gõ 1 = 10.000đ</Text>
                     </View>
-                    <View style={styles.advanceUnitInputWrap}>
+                    <View
+                      style={[
+                        styles.bankAmountBox,
+                        missingFieldKey === 'advance' && styles.inputMissingHighlight,
+                      ]}
+                    >
                       <TextInput
                         ref={advanceInputRef}
-                        style={[
-                          styles.modalInput,
-                          { flex: 1, marginBottom: 0 },
-                          missingFieldKey === 'advance' && styles.inputMissingHighlight,
-                        ]}
+                        style={styles.bankAmountInput}
                         keyboardType="numeric"
-                        placeholder="Gõ 1 → 10.000đ, 5 → 50.000đ, 12 → 120.000đ..."
-                        value={advanceMoney}
+                        placeholder="0"
+                        placeholderTextColor="#9CA3AF"
+                        value={advanceMoney ? parsedAdvance.toLocaleString('vi-VN') : ''}
                         onChangeText={handleAdvanceMoneyChange}
                       />
-                      {parsedAdvance > 0 && (
-                        <View style={styles.advanceSuffixPill}>
-                          <Text style={styles.advanceSuffixText}>
-                            = {parsedAdvance.toLocaleString('vi-VN')}đ
-                          </Text>
-                        </View>
+                      {!!advanceMoney && (
+                        <TouchableOpacity
+                          style={styles.bankClearBtn}
+                          onPress={() => setAdvanceMoney('')}
+                        >
+                          <Text style={styles.bankClearText}>✕</Text>
+                        </TouchableOpacity>
                       )}
+                      <Text style={styles.bankCurrencyLabel}>VND</Text>
                     </View>
-                    {parsedAdvance > 0 && (
-                      <View style={styles.liveAmountPreviewBox}>
-                        <Text style={styles.liveAmountPreviewText}>
-                          💰 Tiền ứng trước: {parsedAdvance.toLocaleString('vi-VN')}đ (Gõ {advanceMoney} → {parsedAdvance.toLocaleString('vi-VN')}đ)
-                        </Text>
-                      </View>
-                    )}
-                  </>
+                    <Text style={styles.bankAmountWords}>
+                      {parsedAdvance > 0
+                        ? `${parsedAdvance.toLocaleString('vi-VN')} đồng (nhập số ${advanceMoney} × 10k)`
+                        : 'Nhập số: VD gõ 1 = 10.000đ, gõ 5 = 50.000đ'}
+                    </Text>
+                    <ScrollView
+                      horizontal
+                      showsHorizontalScrollIndicator={false}
+                      style={{ marginTop: 6 }}
+                    >
+                      {[
+                        { d: '1', label: '10,000' },
+                        { d: '2', label: '20,000' },
+                        { d: '5', label: '50,000' },
+                        { d: '10', label: '100,000' },
+                        { d: '20', label: '200,000' },
+                      ].map((chip) => (
+                        <TouchableOpacity
+                          key={chip.d}
+                          style={styles.bankQuickChip}
+                          onPress={() => handleAdvanceMoneyChange(chip.d)}
+                        >
+                          <Text style={styles.bankQuickChipText}>{chip.label}</Text>
+                        </TouchableOpacity>
+                      ))}
+                    </ScrollView>
+                  </View>
                 )}
 
                 {/* Tùy chọn phụ phí chung */}
@@ -3184,5 +3207,61 @@ const styles = StyleSheet.create({
     color: '#FACC15',
     fontSize: 15,
     fontWeight: '900',
+  },
+  bankAmountBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 14,
+    borderWidth: 1.5,
+    borderColor: '#0284C7',
+    paddingHorizontal: 14,
+    height: 52,
+  },
+  bankAmountInput: {
+    flex: 1,
+    fontSize: 20,
+    fontWeight: '800',
+    color: '#111827',
+  },
+  bankClearBtn: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    backgroundColor: '#9CA3AF',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 10,
+  },
+  bankClearText: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: '800',
+    lineHeight: 14,
+  },
+  bankCurrencyLabel: {
+    fontSize: 15,
+    fontWeight: '800',
+    color: '#1D4ED8',
+  },
+  bankAmountWords: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#374151',
+    marginTop: 5,
+  },
+  bankQuickChip: {
+    backgroundColor: '#F3F4F6',
+    borderRadius: 16,
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    marginRight: 8,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+  },
+  bankQuickChipText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#1F2937',
   },
 });
