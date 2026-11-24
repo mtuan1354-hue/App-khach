@@ -77,19 +77,303 @@ const FALLBACK_COMMUNES = [
   { name: 'Xã Quảng Trạch (Cảnh Dương)', lat: 17.8540, lng: 106.4620 },
 ];
 
+// =========================================================================
+// HỆ THỐNG BẢNG GIÁ & PHỤ PHÍ TẬP TRUNG (SINGLE SOURCE OF TRUTH - NINJA SHIP)
+// =========================================================================
+const PRICING_TABLE = Object.freeze({
+  // 1. ĐẶT ĐỒ ĂN (theo km)
+  food: {
+    baseMaxKm: 2,
+    basePrice: 12000,
+    extraPerKm: 5000,
+  },
+  // 2. MUA HỘ (phí mua hộ theo giá trị đơn hàng + phí vận chuyển riêng)
+  buyForMe: {
+    tiers: [
+      { maxOrderValue: 100000, fee: 5000 },
+      { maxOrderValue: 300000, fee: 10000 },
+      { maxOrderValue: 500000, fee: 15000 },
+      { maxOrderValue: 1000000, fee: 20000 },
+    ],
+    overMaxRate: 0.03, // Trên 1.000.000đ: 3% giá trị đơn
+  },
+  // 3. NHẬN HỘ (theo km: 0-2km 15k, 3km 20k, ..., 10km 55k, mỗi km tiếp +5k)
+  receiveForMe: {
+    baseMaxKm: 2,
+    basePrice: 15000,
+    extraPerKm: 5000,
+  },
+  // 4. ĐI CHỢ HỘ (phí dịch vụ theo giá trị giỏ hàng + phí vận chuyển riêng)
+  grocery: {
+    tiers: [
+      { maxOrderValue: 200000, fee: 10000 },
+      { maxOrderValue: 500000, fee: 15000 },
+      { maxOrderValue: 1000000, fee: 20000 },
+      { maxOrderValue: 2000000, fee: 30000 },
+    ],
+    overMaxRate: 0.03, // Trên 2.000.000đ: 3% giá trị hàng
+  },
+  // 5. LÀM HỘ (theo thời gian thực hiện - phút)
+  taskForMe: {
+    tiers: [
+      { maxMinutes: 15, fee: 10000, label: 'Dưới 15 phút' },
+      { maxMinutes: 30, fee: 15000, label: '15–30 phút' },
+      { maxMinutes: 60, fee: 25000, label: '30–60 phút' },
+      { maxMinutes: 120, fee: 40000, label: '1–2 giờ' },
+    ],
+    extraPerHour: 20000, // Mỗi giờ tiếp theo +20.000đ
+  },
+  // 6. MUA THUỐC (phí mua hộ theo giá trị đơn thuốc + phí vận chuyển riêng)
+  medicine: {
+    tiers: [
+      { maxOrderValue: 100000, fee: 5000 },
+      { maxOrderValue: 300000, fee: 10000 },
+      { maxOrderValue: 500000, fee: 15000 },
+    ],
+    overMaxFee: 20000, // Trên 500.000đ: 20.000đ
+  },
+  // 7. GIAO ĐỒ (0-2km 15k, 3km 20k, ..., 10km 55k, 15km 80k, 20km 105k, mỗi km tiếp +5k)
+  delivery: {
+    baseMaxKm: 2,
+    basePrice: 15000,
+    extraPerKm: 5000,
+  },
+  // 8. PHỤ PHÍ CHUNG
+  surcharges: {
+    nightStartHour: 22, // 22h
+    nightEndHour: 6,    // đến 6h
+    nightFee: 10000,
+    freeWaitMinutes: 10,
+    waitStepMinutes: 5,
+    waitStepFee: 3000,
+    extraStopFee: 5000,
+    bulkyMinFee: 10000,
+    bulkyMaxFee: 20000,
+    cancelAfterAcceptFee: 10000,
+    badWeatherMinFee: 5000,
+    badWeatherMaxFee: 10000,
+  },
+});
+
+function calcTieredDistanceFee(distanceKm, baseMaxKm, basePrice, extraPerKm) {
+  if (!distanceKm || distanceKm <= 0) return 0;
+  const billedKm = Math.ceil(distanceKm);
+  if (billedKm <= baseMaxKm) return basePrice;
+  return basePrice + (billedKm - baseMaxKm) * extraPerKm;
+}
+
+function isNightTimeNow(dateObj = new Date()) {
+  const h = dateObj.getHours();
+  return h >= PRICING_TABLE.surcharges.nightStartHour || h < PRICING_TABLE.surcharges.nightEndHour;
+}
+
+function calculateNinjaOrderPricing({
+  serviceName,
+  distanceKm = 0,
+  goodsValue = 0,
+  taskMinutes = 15,
+  discountRate = 0,
+  surchargesInput = {},
+  now = new Date(),
+}) {
+  const hasDistance = distanceKm > 0;
+  const safeGoodsValue = Math.max(0, Math.round(Number(goodsValue) || 0));
+  const safeMinutes = Math.max(1, Math.round(Number(taskMinutes) || 15));
+
+  let shippingFee = 0;
+  let serviceFee = 0;
+  let serviceFeeLabel = '';
+  let shippingLabel = '';
+
+  const standardDeliveryShip = hasDistance
+    ? calcTieredDistanceFee(
+        distanceKm,
+        PRICING_TABLE.delivery.baseMaxKm,
+        PRICING_TABLE.delivery.basePrice,
+        PRICING_TABLE.delivery.extraPerKm
+      )
+    : 0;
+
+  switch (serviceName) {
+    case 'Đặt đồ ăn': {
+      shippingFee = hasDistance
+        ? calcTieredDistanceFee(
+            distanceKm,
+            PRICING_TABLE.food.baseMaxKm,
+            PRICING_TABLE.food.basePrice,
+            PRICING_TABLE.food.extraPerKm
+          )
+        : 0;
+      shippingLabel = `Phí giao đồ ăn (${distanceKm} km)`;
+      break;
+    }
+    case 'Mua hộ đồ': {
+      shippingFee = standardDeliveryShip;
+      shippingLabel = `Phí vận chuyển (${distanceKm} km)`;
+      if (safeGoodsValue < 100000) {
+        serviceFee = 5000;
+        serviceFeeLabel = 'Phí mua hộ (đơn dưới 100.000đ)';
+      } else if (safeGoodsValue <= 300000) {
+        serviceFee = 10000;
+        serviceFeeLabel = 'Phí mua hộ (100.000–300.000đ)';
+      } else if (safeGoodsValue <= 500000) {
+        serviceFee = 15000;
+        serviceFeeLabel = 'Phí mua hộ (300.000–500.000đ)';
+      } else if (safeGoodsValue <= 1000000) {
+        serviceFee = 20000;
+        serviceFeeLabel = 'Phí mua hộ (500.000–1.000.000đ)';
+      } else {
+        serviceFee = Math.round(safeGoodsValue * PRICING_TABLE.buyForMe.overMaxRate);
+        serviceFeeLabel = 'Phí mua hộ (3% giá trị đơn > 1tr)';
+      }
+      break;
+    }
+    case 'Nhận hộ': {
+      shippingFee = hasDistance
+        ? calcTieredDistanceFee(
+            distanceKm,
+            PRICING_TABLE.receiveForMe.baseMaxKm,
+            PRICING_TABLE.receiveForMe.basePrice,
+            PRICING_TABLE.receiveForMe.extraPerKm
+          )
+        : 0;
+      shippingLabel = `Phí nhận hộ (${distanceKm} km)`;
+      break;
+    }
+    case 'Đi chợ hộ': {
+      shippingFee = standardDeliveryShip;
+      shippingLabel = `Phí vận chuyển (${distanceKm} km)`;
+      if (safeGoodsValue < 200000) {
+        serviceFee = 10000;
+        serviceFeeLabel = 'Phí đi chợ hộ (giỏ dưới 200.000đ)';
+      } else if (safeGoodsValue <= 500000) {
+        serviceFee = 15000;
+        serviceFeeLabel = 'Phí đi chợ hộ (200.000–500.000đ)';
+      } else if (safeGoodsValue <= 1000000) {
+        serviceFee = 20000;
+        serviceFeeLabel = 'Phí đi chợ hộ (500.000–1.000.000đ)';
+      } else if (safeGoodsValue <= 2000000) {
+        serviceFee = 30000;
+        serviceFeeLabel = 'Phí đi chợ hộ (1.000.000–2.000.000đ)';
+      } else {
+        serviceFee = Math.round(safeGoodsValue * PRICING_TABLE.grocery.overMaxRate);
+        serviceFeeLabel = 'Phí đi chợ hộ (3% giá trị hàng > 2tr)';
+      }
+      break;
+    }
+    case 'Làm hộ': {
+      // Dịch vụ làm hộ tính theo thời gian thực hiện (không tính trùng phí vận chuyển)
+      shippingFee = 0;
+      if (safeMinutes < 15) {
+        serviceFee = 10000;
+        serviceFeeLabel = 'Phí làm hộ (dưới 15 phút)';
+      } else if (safeMinutes <= 30) {
+        serviceFee = 15000;
+        serviceFeeLabel = 'Phí làm hộ (15–30 phút)';
+      } else if (safeMinutes <= 60) {
+        serviceFee = 25000;
+        serviceFeeLabel = 'Phí làm hộ (30–60 phút)';
+      } else if (safeMinutes <= 120) {
+        serviceFee = 40000;
+        serviceFeeLabel = 'Phí làm hộ (1–2 giờ)';
+      } else {
+        const extraHours = Math.ceil((safeMinutes - 120) / 60);
+        serviceFee = 40000 + extraHours * PRICING_TABLE.taskForMe.extraPerHour;
+        serviceFeeLabel = `Phí làm hộ (2 giờ + ${extraHours} giờ tiếp)`;
+      }
+      break;
+    }
+    case 'Mua thuốc': {
+      shippingFee = standardDeliveryShip;
+      shippingLabel = `Phí vận chuyển (${distanceKm} km)`;
+      if (safeGoodsValue < 100000) {
+        serviceFee = 5000;
+        serviceFeeLabel = 'Phí mua thuốc (đơn dưới 100.000đ)';
+      } else if (safeGoodsValue <= 300000) {
+        serviceFee = 10000;
+        serviceFeeLabel = 'Phí mua thuốc (100.000–300.000đ)';
+      } else if (safeGoodsValue <= 500000) {
+        serviceFee = 15000;
+        serviceFeeLabel = 'Phí mua thuốc (300.000–500.000đ)';
+      } else {
+        serviceFee = PRICING_TABLE.medicine.overMaxFee;
+        serviceFeeLabel = 'Phí mua thuốc (đơn trên 500.000đ)';
+      }
+      break;
+    }
+    case 'Giao đồ Km':
+    case 'Siêu tốc Ninja':
+    default: {
+      shippingFee = standardDeliveryShip;
+      shippingLabel = `Phí giao đồ (${distanceKm} km)`;
+      break;
+    }
+  }
+
+  // Phụ phí chung (tự động ban đêm + các tùy chọn phụ phí)
+  const isNight =
+    typeof surchargesInput.isNight === 'boolean'
+      ? surchargesInput.isNight
+      : isNightTimeNow(now);
+  const nightFee = isNight ? PRICING_TABLE.surcharges.nightFee : 0;
+
+  const waitMinutes = Math.max(0, Math.round(Number(surchargesInput.waitMinutes) || 0));
+  const chargeableWait = Math.max(0, waitMinutes - PRICING_TABLE.surcharges.freeWaitMinutes);
+  const waitFee =
+    chargeableWait > 0
+      ? Math.ceil(chargeableWait / PRICING_TABLE.surcharges.waitStepMinutes) *
+        PRICING_TABLE.surcharges.waitStepFee
+      : 0;
+
+  const extraStops = Math.max(0, Math.round(Number(surchargesInput.extraStops) || 0));
+  const extraStopFee = extraStops * PRICING_TABLE.surcharges.extraStopFee;
+
+  const bulkyFee = Math.max(0, Math.round(Number(surchargesInput.bulkyFee) || 0)); // 0 | 10000 | 20000
+  const badWeatherFee = Math.max(0, Math.round(Number(surchargesInput.badWeatherFee) || 0)); // 0 | 5000 | 10000
+
+  const surchargeTotal = nightFee + waitFee + extraStopFee + bulkyFee + badWeatherFee;
+
+  // Giảm giá ưu đãi áp dụng trên phí ship (hoặc phí dịch vụ nếu là dịch vụ không có phí ship)
+  const discountBase = shippingFee > 0 ? shippingFee : serviceFee;
+  const discountAmount = Math.round(discountBase * Math.max(0, discountRate));
+
+  const subtotalDeliveryAndService = Math.max(
+    0,
+    shippingFee + serviceFee + surchargeTotal - discountAmount
+  );
+  const totalAmount = subtotalDeliveryAndService + safeGoodsValue;
+
+  return {
+    shippingFee,
+    shippingLabel,
+    serviceFee,
+    serviceFeeLabel,
+    goodsValue: safeGoodsValue,
+    nightFee,
+    waitFee,
+    extraStopFee,
+    bulkyFee,
+    badWeatherFee,
+    surchargeTotal,
+    discountAmount,
+    totalAmount,
+  };
+}
+
 const SERVICE_CONFIGS = {
   'Đặt đồ ăn': {
     type: 'order',
     icon: '🍜',
     promoKey: 'promo_food_25',
     discountRate: 0.25,
-    discountLabel: 'Giảm 25% phí ship (1 lần duy nhất/khách)',
+    discountLabel: '0–2km: 12.000đ • +5.000đ/km • Giảm 25% (1 lần)',
     mainLabel: 'Tên món ăn & số lượng *',
     mainPlaceholder: 'VD: 2 tô Bún bò + 1 Trà đào cam sả, ít cay',
     pickupLabel: 'Quán ăn / Nhà hàng lấy món',
     detailPlaceholder: 'VD: Quán Bún Bò O Hoa, gần chợ...',
     showAdvance: true,
     advanceLabel: 'Tiền món ăn tài xế ứng trả quán (đ)',
+    showDuration: false,
     extraLabel: 'Ghi chú cho quán / tài xế',
     extraPlaceholder: 'VD: Lấy thêm đũa muỗng, gọi khi tới cổng',
     submitText: 'Đặt đồ ăn ngay',
@@ -99,13 +383,14 @@ const SERVICE_CONFIGS = {
     icon: '🛍️',
     promoKey: 'promo_buy_20',
     discountRate: 0.20,
-    discountLabel: 'Giảm 20% phí ship (1 lần duy nhất/khách)',
+    discountLabel: 'Phí mua hộ từ 5.000đ + Phí ship theo Km',
     mainLabel: 'Danh sách đồ cần mua hộ *',
     mainPlaceholder: 'VD: 1 thùng sữa Vinamilk, 1 túi bột giặt OMO 3kg',
     pickupLabel: 'Cửa hàng / Siêu thị / Tạp hóa mua đồ',
     detailPlaceholder: 'VD: Siêu thị WinMart hoặc Tạp hóa Cô Lan...',
     showAdvance: true,
-    advanceLabel: 'Tiền hàng ước tính cần ứng trước (đ)',
+    advanceLabel: 'Giá trị đơn hàng / Tiền ứng trước (đ) *',
+    showDuration: false,
     extraLabel: 'Yêu cầu chọn đồ / chụp hóa đơn',
     extraPlaceholder: 'VD: Chụp ảnh bill gửi Zalo trước khi thanh toán',
     submitText: 'Nhờ mua hộ ngay',
@@ -115,13 +400,14 @@ const SERVICE_CONFIGS = {
     icon: '📦',
     promoKey: 'promo_receive_15',
     discountRate: 0.15,
-    discountLabel: 'Giảm 15% phí ship (1 lần duy nhất/khách)',
+    discountLabel: '0–2km: 15.000đ • +5.000đ/km • Giảm 15% (1 lần)',
     mainLabel: 'Thông tin bưu phẩm / Hàng cần nhận hộ *',
     mainPlaceholder: 'VD: Nhận thùng hàng xe khách / Bưu phẩm Shopee',
     pickupLabel: 'Điểm nhận hàng (Bến xe / Bưu cục / Người gửi)',
     detailPlaceholder: 'VD: Nhà xe Hưng Long hoặc Bưu cục Viettel Post...',
     showAdvance: true,
     advanceLabel: 'Tiền COD / Phí nhà xe cần trả hộ (đ)',
+    showDuration: false,
     extraLabel: 'Tên & SĐT người gửi / Mã vận đơn',
     extraPlaceholder: 'VD: Anh Nam - 0912xxx, đọc mã 8842',
     submitText: 'Đặt tài xế nhận hộ',
@@ -131,13 +417,14 @@ const SERVICE_CONFIGS = {
     icon: '⚡',
     promoKey: null,
     discountRate: 0,
-    discountLabel: 'Dịch vụ mới • Ưu tiên xử lý nhanh',
+    discountLabel: 'Tính theo thời gian: <15p 10k • 15–30p 15k • 30–60p 25k',
     mainLabel: 'Nội dung công việc cần làm hộ *',
     mainPlaceholder: 'VD: Xếp hàng nộp hồ sơ / Gửi giấy tờ / Trả đồ giúp',
     pickupLabel: 'Địa điểm thực hiện công việc',
     detailPlaceholder: 'VD: Bộ phận một cửa / Ngân hàng / Nhà người quen...',
     showAdvance: true,
     advanceLabel: 'Chi phí phát sinh cần ứng trước (đ)',
+    showDuration: true,
     extraLabel: 'Thời gian hẹn & hướng dẫn chi tiết',
     extraPlaceholder: 'VD: Có mặt trước 9h30 sáng, gặp chị Hương',
     submitText: 'Thuê Ninja làm hộ',
@@ -147,13 +434,14 @@ const SERVICE_CONFIGS = {
     icon: '🥬',
     promoKey: null,
     discountRate: 0,
-    discountLabel: 'Chọn đồ tươi ngon theo yêu cầu',
+    discountLabel: 'Phí đi chợ từ 10.000đ + Phí ship theo Km',
     mainLabel: 'Danh sách thực phẩm đi chợ *',
     mainPlaceholder: 'VD: 5 lạng thịt ba chỉ, 1 bó rau muống, 1 con cá thu',
     pickupLabel: 'Khu vực chợ / Cửa hàng thực phẩm sạch',
     detailPlaceholder: 'VD: Chợ Ba Đồn, hàng thịt cô Tâm cổng chính...',
     showAdvance: true,
-    advanceLabel: 'Tiền đi chợ dự kiến tài xế ứng (đ)',
+    advanceLabel: 'Giá trị giỏ hàng dự kiến (đ) *',
+    showDuration: false,
     extraLabel: 'Cách sơ chế / chọn đồ tươi',
     extraPlaceholder: 'VD: Nhờ người bán làm sạch cá, chọn thịt nhiều nạc',
     submitText: 'Đặt đi chợ hộ ngay',
@@ -163,13 +451,14 @@ const SERVICE_CONFIGS = {
     icon: '💊',
     promoKey: null,
     discountRate: 0,
-    discountLabel: 'Giao thuốc khẩn cấp 15 phút',
+    discountLabel: 'Phí mua thuốc từ 5.000đ + Phí ship theo Km',
     mainLabel: 'Tên thuốc / Triệu chứng cần dược sĩ tư vấn *',
     mainPlaceholder: 'VD: 1 vỉ Panadol Extra, 1 chai nước muối sinh lý',
     pickupLabel: 'Nhà thuốc / Quầy thuốc tây',
     detailPlaceholder: 'VD: Nhà thuốc Long Châu hoặc Quầy thuốc gần nhất...',
     showAdvance: true,
-    advanceLabel: 'Tiền thuốc ước tính cần ứng (đ)',
+    advanceLabel: 'Giá trị đơn thuốc ước tính (đ) *',
+    showDuration: false,
     extraLabel: 'Đối tượng sử dụng / Lưu ý dị ứng',
     extraPlaceholder: 'VD: Mua cho người lớn, không có tiền sử dị ứng',
     submitText: 'Đặt mua thuốc gấp',
@@ -179,13 +468,14 @@ const SERVICE_CONFIGS = {
     icon: '🛵',
     promoKey: null,
     discountRate: 0,
-    discountLabel: 'Tính cước chuẩn 5.000đ/km',
+    discountLabel: '0–2km: 15.000đ • 3km: 20.000đ • +5.000đ/km',
     mainLabel: 'Tên hàng hóa & kích thước gói hàng *',
     mainPlaceholder: 'VD: 1 túi quần áo + 1 hộp bánh sinh nhật (dễ vỡ)',
     pickupLabel: 'Điểm lấy hàng đi giao',
     detailPlaceholder: 'VD: Số 24 đường Hùng Vương, shop thời trang...',
     showAdvance: false,
     advanceLabel: '',
+    showDuration: false,
     extraLabel: 'SĐT người nhận / Lưu ý bảo quản',
     extraPlaceholder: 'VD: Hàng dễ vỡ, treo cẩn thận giúp mình',
     submitText: 'Gọi xe giao hàng ngay',
@@ -195,13 +485,14 @@ const SERVICE_CONFIGS = {
     icon: '🚀',
     promoKey: null,
     discountRate: 0,
-    discountLabel: 'Hỏa tốc 15 phút • Nhận đơn ngay lập tức',
+    discountLabel: '0–2km: 15.000đ • +5.000đ/km • Ưu tiên hỏa tốc',
     mainLabel: 'Hàng hóa / Giấy tờ cần giao hỏa tốc *',
     mainPlaceholder: 'VD: Hồ sơ thầu / Chìa khóa nhà / Đồ ăn nóng',
     pickupLabel: 'Điểm xuất phát lấy hàng hỏa tốc',
     detailPlaceholder: 'VD: Số 10 đường Quang Trung...',
     showAdvance: true,
     advanceLabel: 'Tiền ứng trước (nếu có) (đ)',
+    showDuration: false,
     extraLabel: 'Ghi chú ưu tiên khẩn cấp',
     extraPlaceholder: 'VD: Cần giao gấp trong 15 phút, gọi ngay khi tới',
     submitText: 'Đặt Siêu Tốc Ninja',
@@ -308,6 +599,10 @@ export default function App() {
   const [itemNote, setItemNote] = useState('');
   const [extraNote, setExtraNote] = useState('');
   const [advanceMoney, setAdvanceMoney] = useState('0');
+  const [taskDurationMinutes, setTaskDurationMinutes] = useState(15);
+  const [extraStopsCount, setExtraStopsCount] = useState(0);
+  const [bulkySurcharge, setBulkySurcharge] = useState(0); // 0 | 10000 | 20000
+  const [weatherSurcharge, setWeatherSurcharge] = useState(0); // 0 | 5000 | 10000
 
   const [detectedProvince, setDetectedProvince] = useState('Quảng Bình');
   const [communes, setCommunes] = useState(FALLBACK_COMMUNES);
@@ -676,7 +971,7 @@ export default function App() {
               <Text style={{ fontSize: 38 }}>🥷</Text>
             </View>
             <Text style={styles.authBrandTitle}>NINJA SHIP KHÁCH</Text>
-            <Text style={styles.authBrandSub}>Giao hàng • Đặt đồ ăn • Mua hộ 5.000đ/km</Text>
+            <Text style={styles.authBrandSub}>Giao hàng từ 15k • Đặt đồ ăn từ 12k • Mua hộ 24/7</Text>
           </View>
 
           <View style={styles.authCard}>
@@ -849,17 +1144,28 @@ export default function App() {
       )
     : 0;
 
-  const RATE_PER_KM = remoteConfig.ratePerKm || 5000;
-  const rawShippingFee = Math.round(autoDistanceKm * RATE_PER_KM);
-  // Chỉ áp dụng giảm giá nếu cả SĐT lẫn thiết bị CHƯA từng dùng ưu đãi này
   const effectiveDiscountRate =
     currentServiceConfig && !isPromoAlreadyUsed ? currentServiceConfig.discountRate : 0;
-  const discountAmount = Math.round(rawShippingFee * effectiveDiscountRate);
-  const finalShippingFee = Math.max(0, rawShippingFee - discountAmount);
   const parsedAdvance = currentServiceConfig?.showAdvance
     ? parseInt(advanceMoney.replace(/\D/g, ''), 10) || 0
     : 0;
-  const totalAmount = finalShippingFee + parsedAdvance;
+
+  // Tính giá tập trung qua PRICING_TABLE (không tự cho sửa giá tay)
+  const pricing = calculateNinjaOrderPricing({
+    serviceName: activeModal || 'Giao đồ Km',
+    distanceKm: autoDistanceKm,
+    goodsValue: parsedAdvance,
+    taskMinutes: taskDurationMinutes,
+    discountRate: effectiveDiscountRate,
+    surchargesInput: {
+      extraStops: extraStopsCount,
+      bulkyFee: bulkySurcharge,
+      badWeatherFee: weatherSurcharge,
+    },
+  });
+
+  const discountAmount = pricing.discountAmount;
+  const totalAmount = pricing.totalAmount;
 
   const handleCreateOrder = () => {
     if (!itemNote.trim()) {
@@ -871,8 +1177,22 @@ export default function App() {
       return;
     }
 
-    // Nếu đơn này có áp dụng ưu đãi 1 lần -> Khóa vĩnh viễn ưu đãi đó cho SĐT + Thiết bị + Địa chỉ giao
-    if (promoKey && discountAmount > 0) {
+    // Tính lại giá chính xác tại thời điểm tạo đơn để chống can thiệp dữ liệu
+    const verifiedPricing = calculateNinjaOrderPricing({
+      serviceName: activeModal || 'Giao đồ Km',
+      distanceKm: autoDistanceKm,
+      goodsValue: parsedAdvance,
+      taskMinutes: taskDurationMinutes,
+      discountRate: effectiveDiscountRate,
+      surchargesInput: {
+        extraStops: extraStopsCount,
+        bulkyFee: bulkySurcharge,
+        badWeatherFee: weatherSurcharge,
+      },
+    });
+
+    // Nếu đơn này có áp dụng ưu đãi 1 lần -> Khóa vĩnh viễn ưu đãi đó cho SĐT + Thiết bị
+    if (promoKey && verifiedPricing.discountAmount > 0) {
       const vault = readFraudVault();
       vault.devicePromos = { ...(vault.devicePromos || {}), [promoKey]: true };
       if (vault.accounts[currentUser.phone]) {
@@ -889,15 +1209,27 @@ export default function App() {
       ? `${pickupDetailAddress.trim()}, ${selectedPickupCommune.name}`
       : selectedPickupCommune.name;
 
+    const feeTags = [
+      verifiedPricing.shippingFee > 0 ? `Ship: ${verifiedPricing.shippingFee.toLocaleString('vi-VN')}đ` : null,
+      verifiedPricing.serviceFee > 0 ? `Phí DV: ${verifiedPricing.serviceFee.toLocaleString('vi-VN')}đ` : null,
+      verifiedPricing.goodsValue > 0 ? `Tiền hàng: ${verifiedPricing.goodsValue.toLocaleString('vi-VN')}đ` : null,
+      verifiedPricing.surchargeTotal > 0 ? `Phụ phí: ${verifiedPricing.surchargeTotal.toLocaleString('vi-VN')}đ` : null,
+      verifiedPricing.discountAmount > 0 ? `Giảm: -${verifiedPricing.discountAmount.toLocaleString('vi-VN')}đ` : null,
+    ].filter(Boolean).join(' • ');
+
     const noteSummary = extraNote.trim()
-      ? `${itemNote.trim()} • Ghi chú: ${extraNote.trim()} (Từ: ${fullPickup} • ${autoDistanceKm} km)`
-      : `${itemNote.trim()} (Từ: ${fullPickup} • ${autoDistanceKm} km)`;
+      ? `${itemNote.trim()} • Ghi chú: ${extraNote.trim()} (Từ: ${fullPickup} • ${autoDistanceKm} km | ${feeTags})`
+      : `${itemNote.trim()} (Từ: ${fullPickup} • ${autoDistanceKm} km | ${feeTags})`;
 
     const newOrder = {
       id: `NS-${Math.floor(1000 + Math.random() * 9000)}`,
       service: activeModal || 'Ninja Ship',
       note: noteSummary,
-      total: totalAmount,
+      total: verifiedPricing.totalAmount,
+      pricingBreakdown: verifiedPricing,
+      distanceKm: autoDistanceKm,
+      pickupCoords: { lat: selectedPickupCommune.lat, lng: selectedPickupCommune.lng },
+      dropoffCoords,
       status: 'Đang tìm tài xế Ninja',
       time: 'Vừa xong',
     };
@@ -907,9 +1239,16 @@ export default function App() {
       customerName: currentUser.name,
       customerPhone: currentUser.phone,
       dropoffAddress,
+      pricingVersion: 'v2-tiered-2026',
     }).then((r) => {
       if (r.ok) {
-        setAdminSyncNote(`Đã đẩy đơn ${newOrder.id} về máy chủ Admin.`);
+        // Nếu server trả về tổng tiền đã xác thực từ backend thì đồng bộ luôn
+        if (r.data && typeof r.data.verifiedTotal === 'number') {
+          setOrders((prev) =>
+            prev.map((o) => (o.id === newOrder.id ? { ...o, total: r.data.verifiedTotal } : o))
+          );
+        }
+        setAdminSyncNote(`Đã đẩy đơn ${newOrder.id} (${verifiedPricing.totalAmount.toLocaleString('vi-VN')}đ) về Admin & Tài xế.`);
       } else if (r.reason === 'missing_url') {
         setAdminSyncNote(`Đơn ${newOrder.id} mới lưu trên máy vì chưa điền BACKEND_API_URL.`);
       } else {
@@ -920,10 +1259,14 @@ export default function App() {
     setItemNote('');
     setExtraNote('');
     setAdvanceMoney('0');
+    setTaskDurationMinutes(15);
+    setExtraStopsCount(0);
+    setBulkySurcharge(0);
+    setWeatherSurcharge(0);
     setActiveTab('orders');
     Alert.alert(
       'Đặt đơn thành công',
-      `Mã đơn ${newOrder.id} (${autoDistanceKm} km) đã gửi tới tài xế gần nhất!`
+      `Mã đơn ${newOrder.id} • Tổng thanh toán: ${verifiedPricing.totalAmount.toLocaleString('vi-VN')}đ đã gửi tới tài xế gần nhất!`
     );
   };
 
@@ -936,7 +1279,16 @@ export default function App() {
           calcToCommune.lng
         )
       : 0;
-  const previewCost = Math.round(previewKm * RATE_PER_KM);
+  const previewFoodCost = calculateNinjaOrderPricing({
+    serviceName: 'Đặt đồ ăn',
+    distanceKm: previewKm,
+    surchargesInput: { isNight: false },
+  }).shippingFee;
+  const previewDeliveryCost = calculateNinjaOrderPricing({
+    serviceName: 'Giao đồ Km',
+    distanceKm: previewKm,
+    surchargesInput: { isNight: false },
+  }).shippingFee;
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -969,7 +1321,7 @@ export default function App() {
               onPress={() => openModalFor('Giá cước Km')}
             >
               <Text style={styles.rateGear}>⚙️</Text>
-              <Text style={styles.rateText}>{(remoteConfig.ratePerKm || 5000).toLocaleString('vi-VN')}đ/km</Text>
+              <Text style={styles.rateText}>Bảng giá</Text>
             </TouchableOpacity>
           </View>
 
@@ -1068,7 +1420,7 @@ export default function App() {
             <View style={styles.promoTag}>
               <Text style={styles.promoTagText}>SIÊU TỐC NINJA</Text>
             </View>
-            <Text style={styles.promoHeading}>Giao nhanh 15 phút • 5.000đ/km</Text>
+            <Text style={styles.promoHeading}>Giao nhanh 15 phút • Đồ ăn từ 12k, Giao đồ từ 15k</Text>
             <Text style={styles.promoSub}>
               Tài xế Ninja ứng trước tiền hàng & giao tận tay điểm mua nhất.
             </Text>
@@ -1284,6 +1636,39 @@ export default function App() {
                   />
                 </View>
 
+                {currentServiceConfig.showDuration && (
+                  <View style={{ marginBottom: 10 }}>
+                    <Text style={styles.inputLabel}>Thời gian thực hiện ước tính *</Text>
+                    <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.communeChipsRow}>
+                      {[
+                        { mins: 10, label: 'Dưới 15p (10k)' },
+                        { mins: 25, label: '15–30p (15k)' },
+                        { mins: 45, label: '30–60p (25k)' },
+                        { mins: 90, label: '1–2 giờ (40k)' },
+                        { mins: 180, label: '3 giờ (60k)' },
+                      ].map((opt) => (
+                        <TouchableOpacity
+                          key={opt.mins}
+                          style={[
+                            styles.communeChip,
+                            taskDurationMinutes === opt.mins && styles.communeChipActive,
+                          ]}
+                          onPress={() => setTaskDurationMinutes(opt.mins)}
+                        >
+                          <Text
+                            style={[
+                              styles.communeChipText,
+                              taskDurationMinutes === opt.mins && styles.communeChipTextActive,
+                            ]}
+                          >
+                            {opt.label}
+                          </Text>
+                        </TouchableOpacity>
+                      ))}
+                    </ScrollView>
+                  </View>
+                )}
+
                 {currentServiceConfig.showAdvance && (
                   <>
                     <Text style={styles.inputLabel}>{currentServiceConfig.advanceLabel}</Text>
@@ -1296,6 +1681,41 @@ export default function App() {
                   </>
                 )}
 
+                {/* Tùy chọn phụ phí chung */}
+                <Text style={styles.inputLabel}>Phụ phí phát sinh (nếu có)</Text>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.communeChipsRow}>
+                  <TouchableOpacity
+                    style={[styles.communeChip, extraStopsCount > 0 && styles.communeChipActive]}
+                    onPress={() => setExtraStopsCount((c) => (c >= 3 ? 0 : c + 1))}
+                  >
+                    <Text style={[styles.communeChipText, extraStopsCount > 0 && styles.communeChipTextActive]}>
+                      {extraStopsCount > 0 ? `+${extraStopsCount} điểm giao (+${(extraStopsCount * 5000).toLocaleString('vi-VN')}đ)` : '+ Điểm giao thêm (+5k)'}
+                    </Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={[styles.communeChip, bulkySurcharge > 0 && styles.communeChipActive]}
+                    onPress={() =>
+                      setBulkySurcharge((v) => (v === 0 ? 10000 : v === 10000 ? 20000 : 0))
+                    }
+                  >
+                    <Text style={[styles.communeChipText, bulkySurcharge > 0 && styles.communeChipTextActive]}>
+                      {bulkySurcharge > 0 ? `Hàng cồng kềnh (+${bulkySurcharge.toLocaleString('vi-VN')}đ)` : 'Hàng cồng kềnh (+10–20k)'}
+                    </Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={[styles.communeChip, weatherSurcharge > 0 && styles.communeChipActive]}
+                    onPress={() =>
+                      setWeatherSurcharge((v) => (v === 0 ? 5000 : v === 5000 ? 10000 : 0))
+                    }
+                  >
+                    <Text style={[styles.communeChipText, weatherSurcharge > 0 && styles.communeChipTextActive]}>
+                      {weatherSurcharge > 0 ? `Thời tiết xấu (+${weatherSurcharge.toLocaleString('vi-VN')}đ)` : 'Thời tiết xấu (+5–10k)'}
+                    </Text>
+                  </TouchableOpacity>
+                </ScrollView>
+
                 <Text style={styles.inputLabel}>{currentServiceConfig.extraLabel}</Text>
                 <TextInput
                   style={styles.modalInput}
@@ -1305,20 +1725,61 @@ export default function App() {
                 />
 
                 <View style={styles.priceSummary}>
-                  <Text style={styles.priceLine}>
-                    {selectedPickupCommune
-                      ? `Tự động tính: ${selectedPickupCommune.name} → Vị trí của bạn (${autoDistanceKm} km × 5.000đ = ${rawShippingFee.toLocaleString('vi-VN')}đ)`
-                      : 'Chọn xã/phường lấy hàng để tự động tính khoảng cách Km'}
-                  </Text>
-                  {discountAmount > 0 && selectedPickupCommune && (
-                    <Text style={styles.discountLine}>
-                      Ưu đãi 1 lần/người (-{Math.round(effectiveDiscountRate * 100)}%): -{discountAmount.toLocaleString('vi-VN')}đ
+                  {!selectedPickupCommune ? (
+                    <Text style={styles.priceLine}>
+                      Vui lòng chọn xã/phường điểm lấy hàng để hệ thống GPS tính chi tiết từng khoản phí.
                     </Text>
-                  )}
-                  {isPromoAlreadyUsed && promoKey && (
-                    <Text style={styles.usedPromoWarning}>
-                      * Tài khoản / thiết bị này đã sử dụng ưu đãi giảm giá trước đó (áp dụng giá chuẩn 5.000đ/km).
-                    </Text>
+                  ) : (
+                    <>
+                      <Text style={styles.priceLine}>
+                        • Tuyến GPS: {selectedPickupCommune.name} → Vị trí của bạn ({autoDistanceKm} km)
+                      </Text>
+                      {pricing.shippingFee > 0 && (
+                        <Text style={styles.priceLine}>
+                          • {pricing.shippingLabel}: {pricing.shippingFee.toLocaleString('vi-VN')}đ
+                        </Text>
+                      )}
+                      {pricing.serviceFee > 0 && (
+                        <Text style={styles.priceLine}>
+                          • {pricing.serviceFeeLabel}: {pricing.serviceFee.toLocaleString('vi-VN')}đ
+                        </Text>
+                      )}
+                      {pricing.goodsValue > 0 && (
+                        <Text style={styles.priceLine}>
+                          • Tiền hàng / ứng trước: {pricing.goodsValue.toLocaleString('vi-VN')}đ
+                        </Text>
+                      )}
+                      {pricing.nightFee > 0 && (
+                        <Text style={styles.priceLine}>
+                          • Phụ phí ban đêm (22h–6h): +{pricing.nightFee.toLocaleString('vi-VN')}đ
+                        </Text>
+                      )}
+                      {pricing.extraStopFee > 0 && (
+                        <Text style={styles.priceLine}>
+                          • Phụ phí {extraStopsCount} điểm giao thêm: +{pricing.extraStopFee.toLocaleString('vi-VN')}đ
+                        </Text>
+                      )}
+                      {pricing.bulkyFee > 0 && (
+                        <Text style={styles.priceLine}>
+                          • Phụ phí hàng cồng kềnh: +{pricing.bulkyFee.toLocaleString('vi-VN')}đ
+                        </Text>
+                      )}
+                      {pricing.badWeatherFee > 0 && (
+                        <Text style={styles.priceLine}>
+                          • Phụ phí thời tiết xấu: +{pricing.badWeatherFee.toLocaleString('vi-VN')}đ
+                        </Text>
+                      )}
+                      {discountAmount > 0 && (
+                        <Text style={styles.discountLine}>
+                          • Ưu đãi 1 lần/người (-{Math.round(effectiveDiscountRate * 100)}%): -{discountAmount.toLocaleString('vi-VN')}đ
+                        </Text>
+                      )}
+                      {isPromoAlreadyUsed && promoKey && (
+                        <Text style={styles.usedPromoWarning}>
+                          * Tài khoản / thiết bị này đã sử dụng ưu đãi trước đó (áp dụng giá chuẩn).
+                        </Text>
+                      )}
+                    </>
                   )}
                   <Text style={styles.priceTotal}>
                     Tổng thanh toán: {totalAmount.toLocaleString('vi-VN')}đ
@@ -1399,10 +1860,14 @@ export default function App() {
             {(activeModal === 'Mở bản đồ Km' || activeModal === 'Giá cước Km') && (
               <ScrollView showsVerticalScrollIndicator={false} style={{ maxHeight: 520 }}>
                 <View style={styles.rateHighlightBox}>
-                  <Text style={styles.rateHighlightTitle}>Bảng giá Ninja Ship ({detectedProvince})</Text>
+                  <Text style={styles.rateHighlightTitle}>Bảng giá chính thức Ninja Ship ({detectedProvince})</Text>
                   <Text style={styles.rateHighlightSub}>
-                    • Đồng giá chuẩn: 5.000đ / 1 km (tính tự động từ tâm xã đến tâm xã){"\n"}
-                    • Không phụ thu giờ cao điểm • Tài xế ứng trước tiền hàng miễn phí
+                    • Đặt đồ ăn: 0–2km 12.000đ • 3km 17.000đ • +5.000đ/km{"\n"}
+                    • Giao đồ & Nhận hộ: 0–2km 15.000đ • 3km 20.000đ • +5.000đ/km{"\n"}
+                    • Mua hộ & Mua thuốc: &lt;100k: 5k | 100–300k: 10k | 300–500k: 15k | &gt;500k: 20k (Mua hộ &gt;1tr: 3%) + ship{"\n"}
+                    • Đi chợ hộ: &lt;200k: 10k | 200–500k: 15k | 500k–1tr: 20k | 1–2tr: 30k | &gt;2tr: 3% + ship{"\n"}
+                    • Làm hộ: &lt;15p: 10k | 15–30p: 15k | 30–60p: 25k | 1–2h: 40k | +20k/giờ tiếp{"\n"}
+                    • Phụ phí: Đêm (22h–6h) +10k • Chờ &gt;10p: +3k/5p • Điểm thêm +5k • Cồng kềnh +10–20k • Thời tiết xấu +5–10k • Hủy sau nhận 10k
                   </Text>
                 </View>
 
@@ -1457,7 +1922,7 @@ export default function App() {
                     Tuyến: {calcFromCommune?.name} ↔ {calcToCommune?.name}
                   </Text>
                   <Text style={styles.priceTotal}>
-                    Quãng đường: {previewKm} km • Cước ước tính: {previewCost.toLocaleString('vi-VN')}đ
+                    Quãng đường: {previewKm} km • Đồ ăn: {previewFoodCost.toLocaleString('vi-VN')}đ • Giao đồ/Nhận hộ: {previewDeliveryCost.toLocaleString('vi-VN')}đ
                   </Text>
                 </View>
 
