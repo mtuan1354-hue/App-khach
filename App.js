@@ -56,46 +56,383 @@ const SERVICES_SMALL = [
 
 const FALLBACK_COMMUNES = [
   // Khu vực Đồng Hới (3 phường mới)
-  { name: 'Phường Đồng Hới', area: 'Đồng Hới', lat: 17.4689, lng: 106.6223, subUnits: 'Đức Ninh Đông, Đồng Hải, Đồng Phú, Phú Hải, Hải Thành, Nam Lý, Bảo Ninh, Đức Ninh' },
-  { name: 'Phường Đồng Thuận', area: 'Đồng Hới', lat: 17.5032, lng: 106.5985, subUnits: 'Bắc Lý, Lộc Ninh, Quang Phú' },
-  { name: 'Phường Đồng Sơn', area: 'Đồng Hới', lat: 17.4520, lng: 106.5780, subUnits: 'Bắc Nghĩa, Đồng Sơn, Nghĩa Ninh, Thuận Đức' },
+  {
+    name: 'Phường Đồng Hới',
+    area: 'Đồng Hới',
+    lat: 17.4689,
+    lng: 106.6223,
+    subUnits: 'Đức Ninh Đông, Đồng Hải, Đồng Phú, Phú Hải, Hải Thành, Nam Lý, Bảo Ninh, Đức Ninh',
+    hamlets: [
+      'TDP 1 Đồng Hải', 'TDP 2 Đồng Hải', 'TDP 1 Đồng Phú', 'TDP 2 Đồng Phú', 'TDP 3 Đồng Phú',
+      'TDP 1 Nam Lý', 'TDP 2 Nam Lý', 'TDP 3 Nam Lý', 'TDP 4 Nam Lý', 'TDP 5 Nam Lý',
+      'TDP 1 Hải Thành', 'TDP 2 Hải Thành', 'TDP 3 Hải Thành', 'TDP 1 Phú Hải', 'TDP 2 Phú Hải',
+      'TDP 1 Đức Ninh Đông', 'TDP 2 Đức Ninh Đông', 'Thôn Mỹ Cảnh (Bảo Ninh)', 'Thôn Hà Dương (Bảo Ninh)',
+      'Thôn Đồng Dương (Bảo Ninh)', 'Thôn Sa Động (Bảo Ninh)', 'Thôn Trung Bính (Bảo Ninh)',
+      'Thôn Đức Hoa (Đức Ninh)', 'Thôn Đức Thủy (Đức Ninh)', 'Thôn Đức Thịnh (Đức Ninh)'
+    ],
+  },
+  {
+    name: 'Phường Đồng Thuận',
+    area: 'Đồng Hới',
+    lat: 17.5032,
+    lng: 106.5985,
+    subUnits: 'Bắc Lý, Lộc Ninh, Quang Phú',
+    hamlets: [
+      'TDP 1 Bắc Lý', 'TDP 2 Bắc Lý', 'TDP 3 Bắc Lý', 'TDP 4 Bắc Lý', 'TDP 5 Bắc Lý',
+      'TDP 6 Bắc Lý', 'TDP 7 Bắc Lý', 'TDP 8 Bắc Lý', 'TDP 9 Bắc Lý', 'TDP 10 Bắc Lý',
+      'Thôn 1 Lộc Ninh', 'Thôn 2 Lộc Ninh', 'Thôn 3 Lộc Ninh', 'Thôn 4 Lộc Ninh', 'Thôn 5 Lộc Ninh',
+      'Thôn 6 Lộc Ninh', 'Thôn 7 Lộc Ninh', 'Thôn 8 Lộc Ninh', 'Thôn 9 Lộc Ninh',
+      'Thôn Nhân Trạch (Quang Phú)', 'Thôn Tân Phú (Quang Phú)', 'Thôn Đông Phú (Quang Phú)'
+    ],
+  },
+  {
+    name: 'Phường Đồng Sơn',
+    area: 'Đồng Hới',
+    lat: 17.4520,
+    lng: 106.5780,
+    subUnits: 'Bắc Nghĩa, Đồng Sơn, Nghĩa Ninh, Thuận Đức',
+    hamlets: [
+      'TDP 1 Đồng Sơn', 'TDP 2 Đồng Sơn', 'TDP 3 Đồng Sơn', 'TDP 4 Đồng Sơn', 'TDP 5 Đồng Sơn',
+      'TDP 1 Bắc Nghĩa', 'TDP 2 Bắc Nghĩa', 'TDP 3 Bắc Nghĩa', 'TDP 4 Bắc Nghĩa', 'TDP 5 Bắc Nghĩa',
+      'Thôn 1 Nghĩa Ninh', 'Thôn 2 Nghĩa Ninh', 'Thôn 3 Nghĩa Ninh', 'Thôn 4 Nghĩa Ninh',
+      'Thôn 1 Thuận Đức', 'Thôn 2 Thuận Đức', 'Thôn 3 Thuận Đức', 'Thôn 4 Thuận Đức', 'Thôn 5 Thuận Đức'
+    ],
+  },
 
   // Khu vực Bố Trạch (7 xã mới)
-  { name: 'Xã Nam Trạch', area: 'Bố Trạch', lat: 17.5350, lng: 106.5450, subUnits: 'TT NT Việt Trung, Nhân Trạch, Lý Nam' },
-  { name: 'Xã Hoàn Lão', area: 'Bố Trạch', lat: 17.5765, lng: 106.5280, subUnits: 'TT Hoàn Lão, Trung Trạch, Đại Trạch, Tây Trạch, Hòa Trạch' },
-  { name: 'Xã Đông Trạch', area: 'Bố Trạch', lat: 17.6120, lng: 106.5050, subUnits: 'Hải Phú, Sơn Lộc, Đức Trạch, Đồng Trạch' },
-  { name: 'Xã Bắc Trạch', area: 'Bố Trạch', lat: 17.6520, lng: 106.4720, subUnits: 'Thanh Trạch, Hạ Mỹ, Liên Trạch, Bắc Trạch' },
-  { name: 'Xã Bố Trạch', area: 'Bố Trạch', lat: 17.5850, lng: 106.4350, subUnits: 'Hưng Trạch, Cự Nẫm, Vạn Trạch, Phú Định' },
-  { name: 'Xã Phong Nha', area: 'Bố Trạch', lat: 17.5910, lng: 106.2880, subUnits: 'TT Phong Nha, Lâm Trạch, Xuân Trạch, Phúc Trạch' },
-  { name: 'Xã Thượng Trạch', area: 'Bố Trạch', lat: 17.4250, lng: 106.1950, subUnits: 'Tân Trạch, Thượng Trạch' },
+  {
+    name: 'Xã Nam Trạch',
+    area: 'Bố Trạch',
+    lat: 17.5350,
+    lng: 106.5450,
+    subUnits: 'TT NT Việt Trung, Nhân Trạch, Lý Nam',
+    hamlets: [
+      'TDP Quyết Tiến', 'TDP Hữu Nghị', 'TDP Thống Nhất', 'TDP Dũng Cảm', 'TDP Nam Sơn',
+      'Thôn Nhân Quang', 'Thôn Nhân Hải', 'Thôn Nhân Nam', 'Thôn Nhân Bình', 'Thôn Nhân Tiến',
+      'Thôn Lý Nhân', 'Thôn Lý Hòa', 'Thôn Nam Hồng', 'Thôn Bắc Sơn'
+    ],
+  },
+  {
+    name: 'Xã Hoàn Lão',
+    area: 'Bố Trạch',
+    lat: 17.5765,
+    lng: 106.5280,
+    subUnits: 'TT Hoàn Lão, Trung Trạch, Đại Trạch, Tây Trạch, Hòa Trạch',
+    hamlets: [
+      'TDP 1 Hoàn Lão', 'TDP 2 Hoàn Lão', 'TDP 3 Hoàn Lão', 'TDP 4 Hoàn Lão', 'TDP 5 Hoàn Lão',
+      'TDP 6 Hoàn Lão', 'TDP 7 Hoàn Lão', 'TDP 8 Hoàn Lão', 'TDP 9 Hoàn Lão', 'TDP 10 Hoàn Lão',
+      'Thôn 1 Trung Trạch', 'Thôn 2 Trung Trạch', 'Thôn 3 Trung Trạch', 'Thôn 4 Trung Trạch',
+      'Thôn Đại Nam', 'Thôn Đại Phúc', 'Thôn Đại Hòa', 'Thôn Tây Thành', 'Thôn Tây Minh',
+      'Thôn Hòa Bình', 'Thôn Hòa Sơn', 'Thôn Hòa Đồng'
+    ],
+  },
+  {
+    name: 'Xã Đông Trạch',
+    area: 'Bố Trạch',
+    lat: 17.6120,
+    lng: 106.5050,
+    subUnits: 'Hải Phú, Sơn Lộc, Đức Trạch, Đồng Trạch',
+    hamlets: [
+      'Thôn Nội Hải', 'Thôn Ngoại Hải', 'Thôn Thượng Hòa', 'Thôn Trung Hòa', 'Thôn Tân Lý',
+      'Thôn Sơn Lý', 'Thôn Sơn Lộc', 'Thôn Sơn Hạ', 'Thôn Đức Trung', 'Thôn Đức Nam',
+      'Thôn Đức Bắc', 'Thôn Đồng Bắc', 'Thôn Đồng Nam', 'Thôn Đồng Tâm'
+    ],
+  },
+  {
+    name: 'Xã Bắc Trạch',
+    area: 'Bố Trạch',
+    lat: 17.6520,
+    lng: 106.4720,
+    subUnits: 'Thanh Trạch, Hạ Mỹ, Liên Trạch, Bắc Trạch',
+    hamlets: [
+      'Thôn Tiền Phong', 'Thôn Thanh Gianh', 'Thôn Thanh Khê', 'Thôn Quyết Thắng', 'Thôn Đá Nhảy',
+      'Thôn Hạ Trạch', 'Thôn Mỹ Trạch', 'Thôn Liên Sơn', 'Thôn Liên Thủy', 'Thôn Bắc Sơn',
+      'Thôn Bắc Hòa', 'Thôn Bắc Minh'
+    ],
+  },
+  {
+    name: 'Xã Bố Trạch',
+    area: 'Bố Trạch',
+    lat: 17.5850,
+    lng: 106.4350,
+    subUnits: 'Hưng Trạch, Cự Nẫm, Vạn Trạch, Phú Định',
+    hamlets: [
+      'Thôn Khương Hà 1', 'Thôn Khương Hà 2', 'Thôn Khương Hà 3', 'Thôn Bồng Lai 1', 'Thôn Bồng Lai 2',
+      'Thôn Trung Nẫm', 'Thôn Đông Nẫm', 'Thôn Tây Nẫm', 'Thôn Nam Nẫm', 'Thôn Bắc Nẫm',
+      'Thôn Vạn Lộc', 'Thôn Vạn Xuân', 'Thôn Phú Hữu', 'Thôn Phú Kinh'
+    ],
+  },
+  {
+    name: 'Xã Phong Nha',
+    area: 'Bố Trạch',
+    lat: 17.5910,
+    lng: 106.2880,
+    subUnits: 'TT Phong Nha, Lâm Trạch, Xuân Trạch, Phúc Trạch',
+    hamlets: [
+      'TDP Phong Nha', 'TDP Cù Lạc 1', 'TDP Cù Lạc 2', 'TDP Hà Lời', 'TDP Trằm Mé',
+      'Thôn Phúc Đồng', 'Thôn Phúc Khê', 'Thôn Phúc Lộc', 'Thôn Chày Lập', 'Thôn Na',
+      'Thôn Xuân Sơn', 'Thôn Xuân Hòa', 'Thôn Lâm Lang', 'Thôn Liên Trạch'
+    ],
+  },
+  {
+    name: 'Xã Thượng Trạch',
+    area: 'Bố Trạch',
+    lat: 17.4250,
+    lng: 106.1950,
+    subUnits: 'Tân Trạch, Thượng Trạch',
+    hamlets: [
+      'Bản Đoòng', 'Bản Cà Roòng 1', 'Bản Cà Roòng 2', 'Bản Nồng Cũ', 'Bản Nồng Mới',
+      'Bản Cồn Roàng', 'Bản Chăm Pu', 'Bản A Ki', 'Bản Troi', 'Bản Tuộc', 'Bản 61'
+    ],
+  },
 
   // Khu vực Ba Đồn (2 phường, 2 xã mới)
-  { name: 'Phường Ba Đồn', area: 'Ba Đồn', lat: 17.7524, lng: 106.4182, subUnits: 'Quảng Phong, Quảng Long, Ba Đồn, Quảng Hải' },
-  { name: 'Phường Bắc Gianh', area: 'Ba Đồn', lat: 17.7431, lng: 106.4418, subUnits: 'Quảng Phúc, Quảng Thọ, Quảng Thuận' },
-  { name: 'Xã Nam Gianh', area: 'Ba Đồn', lat: 17.7245, lng: 106.3910, subUnits: 'Quảng Hòa, Quảng Lộc, Quảng Văn, Quảng Minh' },
-  { name: 'Xã Nam Ba Đồn', area: 'Ba Đồn', lat: 17.7050, lng: 106.3750, subUnits: 'Quảng Tân, Quảng Trung, Quảng Tiên, Quảng Sơn, Quảng Thủy' },
+  {
+    name: 'Phường Ba Đồn',
+    area: 'Ba Đồn',
+    lat: 17.7524,
+    lng: 106.4182,
+    subUnits: 'Quảng Phong, Quảng Long, Ba Đồn, Quảng Hải',
+    hamlets: [
+      'TDP 1 Ba Đồn', 'TDP 2 Ba Đồn', 'TDP 3 Ba Đồn', 'TDP 4 Ba Đồn', 'TDP 5 Ba Đồn', 'TDP 6 Ba Đồn',
+      'TDP Thủy Sơn', 'TDP Minh Lợi', 'TDP Cầu', 'TDP Tiền Phong', 'TDP Trường Sơn',
+      'TDP Thọ Đơn', 'TDP Chính Trực', 'TDP Đơn Sa', 'TDP Cồn',
+      'Thôn Vân Nam', 'Thôn Vân Bắc', 'Thôn Tân Thành', 'Thôn Đông Thành'
+    ],
+  },
+  {
+    name: 'Phường Bắc Gianh',
+    area: 'Ba Đồn',
+    lat: 17.7431,
+    lng: 106.4418,
+    subUnits: 'Quảng Phúc, Quảng Thọ, Quảng Thuận',
+    hamlets: [
+      'TDP Tân Mỹ', 'TDP Mỹ Hòa', 'TDP Xuân Lộc', 'TDP Hải Hòa', 'TDP Đơn Sa (Quảng Phúc)',
+      'TDP Thọ Linh', 'TDP Minh Phượng', 'TDP Cồn Sẻ', 'TDP Tân Định', 'TDP Trung Thôn',
+      'TDP Thuận Bài', 'TDP Dinh Chánh', 'TDP Thổ Ngọa', 'TDP Nhân Thọ'
+    ],
+  },
+  {
+    name: 'Xã Nam Gianh',
+    area: 'Ba Đồn',
+    lat: 17.7245,
+    lng: 106.3910,
+    subUnits: 'Quảng Hòa, Quảng Lộc, Quảng Văn, Quảng Minh',
+    hamlets: [
+      'Thôn Cao Cựu', 'Thôn Thanh Tân', 'Thôn Vĩnh Phú', 'Thôn Hợp Hòa',
+      'Thôn Cồn Sẻ', 'Thôn Vĩnh Lộc', 'Thôn Tân Lộc', 'Thôn Phù Ninh',
+      'Thôn La Hà Đông', 'Thôn La Hà Tây', 'Thôn Văn Phú',
+      'Thôn Minh Hà', 'Thôn Tân Định', 'Thôn Bắc Minh Lệ', 'Thôn Nam Minh Lệ'
+    ],
+  },
+  {
+    name: 'Xã Nam Ba Đồn',
+    area: 'Ba Đồn',
+    lat: 17.7050,
+    lng: 106.3750,
+    subUnits: 'Quảng Tân, Quảng Trung, Quảng Tiên, Quảng Sơn, Quảng Thủy',
+    hamlets: [
+      'Thôn Tân Đức', 'Thôn Tân Tiến', 'Thôn Tân Trường',
+      'Thôn Trung Thôn', 'Thôn Thượng Thôn', 'Thôn Hạ Thôn',
+      'Thôn Tiên Phong', 'Thôn Tiên Xuân', 'Thôn Tiên Phan',
+      'Thôn Thọ Hạ', 'Thôn Hà Sơn', 'Thôn Tân Sơn', 'Thôn Linh Cận Sơn',
+      'Thôn Thủy Sơn', 'Thôn Trung Thủy', 'Thôn Đông Thủy'
+    ],
+  },
 
   // Khu vực Quảng Trạch (5 xã mới)
-  { name: 'Xã Quảng Trạch', area: 'Quảng Trạch', lat: 17.7850, lng: 106.4120, subUnits: 'Quảng Phương, Quảng Xuân, Quảng Hưng' },
-  { name: 'Xã Hòa Trạch', area: 'Quảng Trạch', lat: 17.8540, lng: 106.4620, subUnits: 'Quảng Châu, Quảng Tùng, Cảnh Dương' },
-  { name: 'Xã Phú Trạch', area: 'Quảng Trạch', lat: 17.9120, lng: 106.4750, subUnits: 'Quảng Đông, Quảng Phú, Quảng Kim, Quảng Hợp' },
-  { name: 'Xã Trung Thuần', area: 'Quảng Trạch', lat: 17.8120, lng: 106.3650, subUnits: 'Quảng Lưu, Quảng Thạch, Quảng Tiến' },
-  { name: 'Xã Tân Gianh', area: 'Quảng Trạch', lat: 17.7720, lng: 106.3520, subUnits: 'Phù Cảnh, Liên Trường, Quảng Thanh' },
+  {
+    name: 'Xã Quảng Trạch',
+    area: 'Quảng Trạch',
+    lat: 17.7850,
+    lng: 106.4120,
+    subUnits: 'Quảng Phương, Quảng Xuân, Quảng Hưng',
+    hamlets: [
+      'Thôn Pháp Kệ', 'Thôn Đông Dương', 'Thôn Hướng Phương', 'Thôn Tô Xá', 'Thôn Xuân Kiều',
+      'Thôn Xuân Hòa', 'Thôn Thanh Lương', 'Thôn Di Luân', 'Thôn Tân Xuân',
+      'Thôn Hưng Lộc', 'Thôn Phù Lưu', 'Thôn Quốc Lộ', 'Thôn Minh Tiến'
+    ],
+  },
+  {
+    name: 'Xã Hòa Trạch',
+    area: 'Quảng Trạch',
+    lat: 17.8540,
+    lng: 106.4620,
+    subUnits: 'Quảng Châu, Quảng Tùng, Cảnh Dương',
+    hamlets: [
+      'Thôn Trung Vũ', 'Thôn Hòa Lạc', 'Thôn Tân An', 'Thôn Minh Sơn',
+      'Thôn Tùng Giang', 'Thôn Tân Tùng', 'Thôn Phúc Tùng', 'Thôn Di Lộc',
+      'Thôn Cảnh Thượng', 'Thôn Cảnh Trung', 'Thôn Cảnh Hạ', 'Thôn Tân Cảnh', 'Thôn Yên Hải'
+    ],
+  },
+  {
+    name: 'Xã Phú Trạch',
+    area: 'Quảng Trạch',
+    lat: 17.9120,
+    lng: 106.4750,
+    subUnits: 'Quảng Đông, Quảng Phú, Quảng Kim, Quảng Hợp',
+    hamlets: [
+      'Thôn 19/5', 'Thôn Vịnh Sơn', 'Thôn Thọ Sơn', 'Thôn Vĩnh Sơn',
+      'Thôn Phú Lộc 1', 'Thôn Phú Lộc 2', 'Thôn Phú Lộc 3', 'Thôn Hải Đông', 'Thôn Nam Lãnh',
+      'Thôn Hùng Sơn', 'Thôn Trung Minh', 'Thôn Kim Sơn',
+      'Thôn Hợp Phú', 'Thôn Hợp Trung', 'Thôn Hợp Hạ'
+    ],
+  },
+  {
+    name: 'Xã Trung Thuần',
+    area: 'Quảng Trạch',
+    lat: 17.8120,
+    lng: 106.3650,
+    subUnits: 'Quảng Lưu, Quảng Thạch, Quảng Tiến',
+    hamlets: [
+      'Thôn Vân Tiền', 'Thôn Phúc Tự', 'Thôn Đông Thành', 'Thôn Tây Lưu',
+      'Thôn Thạch Trung', 'Thôn Thạch Nam', 'Thôn Thạch Bắc',
+      'Thôn Tiến Thành', 'Thôn Tiến Châu', 'Thôn Minh Tiến'
+    ],
+  },
+  {
+    name: 'Xã Tân Gianh',
+    area: 'Quảng Trạch',
+    lat: 17.7720,
+    lng: 106.3520,
+    subUnits: 'Phù Cảnh, Liên Trường, Quảng Thanh',
+    hamlets: [
+      'Thôn Phù Ninh', 'Thôn Phù Trịch', 'Thôn Cảnh Hóa',
+      'Thôn Liên Sơn', 'Thôn Trường Thủy', 'Thôn Liên Trường',
+      'Thôn Thanh Bình', 'Thôn Thanh Hà', 'Thôn Thanh Sơn', 'Thôn Thanh Tiến'
+    ],
+  },
 
   // Khu vực Tuyên Hóa (6 xã mới)
-  { name: 'Xã Tuyên Hóa', area: 'Tuyên Hóa', lat: 17.7950, lng: 106.2650, subUnits: 'Tiến Hóa, Châu Hóa, Cao Quảng, Văn Hóa' },
-  { name: 'Xã Tuyên Bình', area: 'Tuyên Hóa', lat: 17.8250, lng: 106.2150, subUnits: 'Phong Hóa, Ngư Hóa, Mai Hóa' },
-  { name: 'Xã Tuyên Phú', area: 'Tuyên Hóa', lat: 17.8650, lng: 106.1450, subUnits: 'Đồng Hóa, Thạch Hóa, Đức Hóa' },
-  { name: 'Xã Đồng Lê', area: 'Tuyên Hóa', lat: 17.9050, lng: 106.0350, subUnits: 'TT Đồng Lê, Kim Hóa, Lê Hóa, Thuận Hóa, Sơn Hóa' },
-  { name: 'Xã Tuyên Sơn', area: 'Tuyên Hóa', lat: 17.9550, lng: 105.9850, subUnits: 'Thanh Thạch, Hương Hóa' },
-  { name: 'Xã Tuyên Lâm', area: 'Tuyên Hóa', lat: 18.0150, lng: 105.9150, subUnits: 'Lâm Hóa, Thanh Hóa' },
+  {
+    name: 'Xã Tuyên Hóa',
+    area: 'Tuyên Hóa',
+    lat: 17.7950,
+    lng: 106.2650,
+    subUnits: 'Tiến Hóa, Châu Hóa, Cao Quảng, Văn Hóa',
+    hamlets: [
+      'Thôn Cương Trung A', 'Thôn Cương Trung B', 'Thôn Kinh Châu', 'Thôn Trung Thủy',
+      'Thôn Lạc Sơn', 'Thôn Lâm Lang', 'Thôn Uyên Phong', 'Thôn Kinh Trừng',
+      'Thôn Cao Cảnh', 'Thôn Quảng Hóa', 'Thôn Văn Phú', 'Thôn Hà Thâu'
+    ],
+  },
+  {
+    name: 'Xã Tuyên Bình',
+    area: 'Tuyên Hóa',
+    lat: 17.8250,
+    lng: 106.2150,
+    subUnits: 'Phong Hóa, Ngư Hóa, Mai Hóa',
+    hamlets: [
+      'Thôn Mã Thượng', 'Thôn Mã Hạ', 'Thôn Tân Phong', 'Thôn Yên Tố',
+      'Thôn Cấp Sơn', 'Thôn Ngư Đại', 'Thôn Phúc Tùng',
+      'Thôn Bắc Hóa', 'Thôn Nam Hóa', 'Thôn Xuân Mai', 'Thôn Đồng Lâm'
+    ],
+  },
+  {
+    name: 'Xã Tuyên Phú',
+    area: 'Tuyên Hóa',
+    lat: 17.8650,
+    lng: 106.1450,
+    subUnits: 'Đồng Hóa, Thạch Hóa, Đức Hóa',
+    hamlets: [
+      'Thôn Đồng Giang', 'Thôn Thuận Tiến', 'Thôn Đại Sơn', 'Thôn Tân Ấp',
+      'Thôn Thiết Sơn', 'Thôn Sơn Thủy', 'Thôn Đạm Thủy',
+      'Thôn Đức Phú 1', 'Thôn Đức Phú 2', 'Thôn Phúc Tự'
+    ],
+  },
+  {
+    name: 'Xã Đồng Lê',
+    area: 'Tuyên Hóa',
+    lat: 17.9050,
+    lng: 106.0350,
+    subUnits: 'TT Đồng Lê, Kim Hóa, Lê Hóa, Thuận Hóa, Sơn Hóa',
+    hamlets: [
+      'TDP Lưu Thuận', 'TDP Tân Lập', 'TDP Đồng Tân', 'TDP Đồng Văn', 'TDP Đồng Giang',
+      'Thôn Kim Tiến', 'Thôn Kim Lũ 1', 'Thôn Kim Lũ 2', 'Thôn Kim Bình',
+      'Thôn Lê Trực 1', 'Thôn Lê Trực 2', 'Thôn Thuận Tiến', 'Thôn Hà Sơn', 'Thôn Sơn Thành'
+    ],
+  },
+  {
+    name: 'Xã Tuyên Sơn',
+    area: 'Tuyên Hóa',
+    lat: 17.9550,
+    lng: 105.9850,
+    subUnits: 'Thanh Thạch, Hương Hóa',
+    hamlets: [
+      'Thôn Bàu 1', 'Thôn Bàu 2', 'Thôn Bàu 3', 'Thôn Tân Lập', 'Thôn Thanh Xuân',
+      'Thôn Hương Thọ', 'Thôn Tân Hương', 'Thôn Ba Tâm', 'Thôn Đồng Tâm'
+    ],
+  },
+  {
+    name: 'Xã Tuyên Lâm',
+    area: 'Tuyên Hóa',
+    lat: 18.0150,
+    lng: 105.9150,
+    subUnits: 'Lâm Hóa, Thanh Hóa',
+    hamlets: [
+      'Thôn Tiền Phong', 'Thôn Sơn Cảnh', 'Bản Kè', 'Bản Chuối', 'Bản Cáo',
+      'Thôn Bắc Lợi', 'Thôn Thanh Lâm', 'Thôn Thanh Bình', 'Thôn Thanh Lạng'
+    ],
+  },
 
   // Khu vực Minh Hóa (5 xã mới)
-  { name: 'Xã Minh Hóa', area: 'Minh Hóa', lat: 17.7850, lng: 105.9750, subUnits: 'TT Quy Đạt, Xuân Hóa, Yên Hóa, Hồng Hóa' },
-  { name: 'Xã Kim Phú', area: 'Minh Hóa', lat: 17.7350, lng: 106.0350, subUnits: 'Thượng Hóa, Trung Hóa, Minh Hóa, Tân Hóa' },
-  { name: 'Xã Kim Điền', area: 'Minh Hóa', lat: 17.8450, lng: 105.9150, subUnits: 'Hóa Sơn, Hóa Hợp' },
-  { name: 'Xã Dân Hóa', area: 'Minh Hóa', lat: 17.7650, lng: 105.7850, subUnits: 'Trọng Hóa, Dân Hóa' },
-  { name: 'Xã Tân Thành', area: 'Minh Hóa', lat: 17.7450, lng: 105.8950, subUnits: 'Giữ nguyên theo NQ 1680/NQ-UBTVQH15' },
+  {
+    name: 'Xã Minh Hóa',
+    area: 'Minh Hóa',
+    lat: 17.7850,
+    lng: 105.9750,
+    subUnits: 'TT Quy Đạt, Xuân Hóa, Yên Hóa, Hồng Hóa',
+    hamlets: [
+      'TDP 1 Quy Đạt', 'TDP 2 Quy Đạt', 'TDP 3 Quy Đạt', 'TDP 4 Quy Đạt', 'TDP 5 Quy Đạt',
+      'TDP 6 Quy Đạt', 'TDP 7 Quy Đạt', 'TDP 8 Quy Đạt',
+      'Thôn Xuân Tiến', 'Thôn Xuân Cảnh', 'Thôn Yên Thọ', 'Thôn Yên Thắng', 'Thôn Yên Bình',
+      'Thôn Hồng Quang', 'Thôn Rục', 'Thôn Vè'
+    ],
+  },
+  {
+    name: 'Xã Kim Phú',
+    area: 'Minh Hóa',
+    lat: 17.7350,
+    lng: 106.0350,
+    subUnits: 'Thượng Hóa, Trung Hóa, Minh Hóa, Tân Hóa',
+    hamlets: [
+      'Thôn Yên Hợp', 'Thôn Phú Nhiêu', 'Thôn Trung Minh', 'Bản Ón', 'Bản Yên Hợp', 'Bản Mò O Ồ Ồ',
+      'Thôn Liêm Hóa', 'Thôn Tiền Phong', 'Thôn Bình Minh',
+      'Thôn Kim Bảng', 'Thôn Tân Lý', 'Thôn Quyền', 'Thôn Cổ Liêm'
+    ],
+  },
+  {
+    name: 'Xã Kim Điền',
+    area: 'Minh Hóa',
+    lat: 17.8450,
+    lng: 105.9150,
+    subUnits: 'Hóa Sơn, Hóa Hợp',
+    hamlets: [
+      'Thôn Đặng Hóa', 'Thôn Cà Xen', 'Thôn Tăng Hóa', 'Thôn Hóa Lương',
+      'Thôn Bãi Dinh', 'Thôn Đa Năng', 'Thôn Phú Minh', 'Thôn Tân Hợp'
+    ],
+  },
+  {
+    name: 'Xã Dân Hóa',
+    area: 'Minh Hóa',
+    lat: 17.7650,
+    lng: 105.7850,
+    subUnits: 'Trọng Hóa, Dân Hóa',
+    hamlets: [
+      'Bản Bãi Dinh', 'Bản K-Ai', 'Bản Y Leng', 'Bản Hà Vi', 'Bản Tà Rà', 'Bản Ka Định',
+      'Bản Cha Lo', 'Bản Dộ - Tà Vờng', 'Bản Lòm', 'Bản Pa Chong', 'Bản Ông Tú', 'Bản Ra Mai'
+    ],
+  },
+  {
+    name: 'Xã Tân Thành',
+    area: 'Minh Hóa',
+    lat: 17.7450,
+    lng: 105.8950,
+    subUnits: 'Giữ nguyên theo NQ 1680/NQ-UBTVQH15',
+    hamlets: [
+      'Thôn Tân Lập', 'Thôn Tân Tiến', 'Thôn Tân Thành', 'Thôn Lạc Thiện', 'Thôn Yên Phú', 'Bản K-Ai'
+    ],
+  },
 ];
 
 // =========================================================================
@@ -1649,7 +1986,7 @@ export default function App() {
                             styles.communeChip,
                             isSelected && styles.communeChipActive,
                           ]}
-                          onPress={() => setSelectedPickupCommune(com)}
+                          onPress={() => { setSelectedPickupCommune(com); setPickupHamlet(''); }}
                         >
                           <Text
                             style={[
@@ -1672,11 +2009,45 @@ export default function App() {
                       </Text>
                     )}
                     <Text style={styles.subInputLabel}>
-                      Thôn / Tổ dân phố / Tiểu khu tại {selectedPickupCommune.name}:
+                      Chọn nhanh Thôn / Tổ dân phố / Bản tại {selectedPickupCommune.name}:
                     </Text>
+                    {Array.isArray(selectedPickupCommune.hamlets) && selectedPickupCommune.hamlets.length > 0 && (
+                      <ScrollView
+                        horizontal
+                        showsHorizontalScrollIndicator={false}
+                        style={styles.communeChipsRow}
+                      >
+                        {selectedPickupCommune.hamlets.map((hamletName, hIdx) => {
+                          const isHamletSelected = pickupHamlet === hamletName;
+                          return (
+                            <TouchableOpacity
+                              key={`hamlet-${hIdx}`}
+                              style={[
+                                styles.communeChip,
+                                { paddingVertical: 6 },
+                                isHamletSelected && styles.communeChipActive,
+                              ]}
+                              onPress={() =>
+                                setPickupHamlet(isHamletSelected ? '' : hamletName)
+                              }
+                            >
+                              <Text
+                                style={[
+                                  styles.communeChipText,
+                                  { fontSize: 12 },
+                                  isHamletSelected && styles.communeChipTextActive,
+                                ]}
+                              >
+                                {hamletName}
+                              </Text>
+                            </TouchableOpacity>
+                          );
+                        })}
+                      </ScrollView>
+                    )}
                     <TextInput
                       style={styles.modalInput}
-                      placeholder="VD: Thôn Trung Hòa / Tổ dân phố 3 / Thôn Cảnh Dương..."
+                      placeholder="Hoặc gõ tên Thôn / TDP / Bản nếu chưa có ở trên..."
                       value={pickupHamlet}
                       onChangeText={setPickupHamlet}
                     />
