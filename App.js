@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   StyleSheet,
   Text,
@@ -10,6 +10,8 @@ import {
   StatusBar,
   Alert,
   Modal,
+  Platform,
+  ActivityIndicator,
 } from 'react-native';
 
 const SERVICES_SMALL = [
@@ -23,14 +25,72 @@ const SERVICES_SMALL = [
   { id: 'gia-cuoc', title: 'Giá cước\nKm', icon: '💰' },
 ];
 
+// Danh sách xã/phường mẫu khu vực Ba Đồn - Quảng Trạch (Quảng Bình)
+const FALLBACK_COMMUNES = [
+  { name: 'Phường Ba Đồn', lat: 17.7524, lng: 106.4182 },
+  { name: 'Phường Quảng Long', lat: 17.7685, lng: 106.4251 },
+  { name: 'Phường Quảng Thọ', lat: 17.7431, lng: 106.4418 },
+  { name: 'Phường Quảng Thuận', lat: 17.7412, lng: 106.4045 },
+  { name: 'Phường Quảng Phúc', lat: 17.7215, lng: 106.4530 },
+  { name: 'Phường Quảng Phong', lat: 17.7590, lng: 106.3980 },
+  { name: 'Xã Quảng Hòa', lat: 17.7310, lng: 106.3755 },
+  { name: 'Xã Quảng Lộc', lat: 17.7220, lng: 106.3920 },
+  { name: 'Xã Quảng Tân', lat: 17.7150, lng: 106.4110 },
+  { name: 'Xã Quảng Trung', lat: 17.7080, lng: 106.3840 },
+  { name: 'Xã Quảng Tiên', lat: 17.7195, lng: 106.3650 },
+  { name: 'Xã Quảng Văn', lat: 17.7025, lng: 106.4280 },
+  { name: 'Xã Quảng Minh', lat: 17.6940, lng: 106.3710 },
+  { name: 'Xã Quảng Sơn', lat: 17.6850, lng: 106.3420 },
+  { name: 'Xã Quảng Thủy', lat: 17.6980, lng: 106.3540 },
+  { name: 'Xã Quảng Hải', lat: 17.7380, lng: 106.4290 },
+  { name: 'Xã Quảng Phương', lat: 17.7850, lng: 106.4120 },
+  { name: 'Xã Quảng Hưng', lat: 17.8120, lng: 106.3980 },
+  { name: 'Xã Quảng Thanh', lat: 17.7720, lng: 106.3820 },
+  { name: 'Xã Quảng Trạch (Cảnh Dương)', lat: 17.8540, lng: 106.4620 },
+];
+
+// Công thức Haversine tính khoảng cách thực tế (nhân hệ số đường bộ 1.25)
+function calculateRoadDistanceKm(lat1, lon1, lat2, lon2) {
+  if (
+    typeof lat1 !== 'number' ||
+    typeof lon1 !== 'number' ||
+    typeof lat2 !== 'number' ||
+    typeof lon2 !== 'number'
+  ) {
+    return 2.5;
+  }
+  const R = 6371;
+  const dLat = ((lat2 - lat1) * Math.PI) / 180;
+  const dLon = ((lon2 - lon1) * Math.PI) / 180;
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos((lat1 * Math.PI) / 180) *
+      Math.cos((lat2 * Math.PI) / 180) *
+      Math.sin(dLon / 2) *
+      Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  const straightKm = R * c;
+  const roadKm = Math.max(1.0, straightKm * 1.25);
+  return Math.round(roadKm * 10) / 10;
+}
+
 export default function App() {
   const [activeTab, setActiveTab] = useState('home');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedService, setSelectedService] = useState(null);
   const [itemNote, setItemNote] = useState('');
-  const [pickupAddress, setPickupAddress] = useState('45 Hùng Vương, Hải Châu');
-  const [dropoffAddress, setDropoffAddress] = useState('120 Lê Duẩn, Quận Hải Châu');
-  const [distanceKm, setDistanceKm] = useState('3.2');
+
+  // Vị trí & Tỉnh/Xã tự động
+  const [detectedProvince, setDetectedProvince] = useState('Quảng Bình');
+  const [communes, setCommunes] = useState(FALLBACK_COMMUNES);
+  const [selectedPickupCommune, setSelectedPickupCommune] = useState(null);
+  const [pickupDetailAddress, setPickupDetailAddress] = useState('');
+
+  // Điểm giao cho bạn (Vị trí chính xác)
+  const [dropoffCoords, setDropoffCoords] = useState({ lat: 17.7524, lng: 106.4182 });
+  const [dropoffAddress, setDropoffAddress] = useState('Đang định vị chính xác...');
+  const [isLocating, setIsLocating] = useState(false);
+
   const [advanceMoney, setAdvanceMoney] = useState('0');
   const [orders, setOrders] = useState([
     {
@@ -43,14 +103,103 @@ export default function App() {
     },
   ]);
 
+  // Tự động thu thập GPS & Tỉnh/Xã khi mở app
+  const detectUserLocationAndCommunes = () => {
+    setIsLocating(true);
+
+    const onSuccessCoords = async (lat, lng) => {
+      setDropoffCoords({ lat, lng });
+      try {
+        // 1. Reverse geocoding lấy địa chỉ chính xác & tỉnh đang sống
+        const revRes = await fetch(
+          `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}&accept-language=vi`
+        );
+        const revData = await revRes.json();
+        const addr = revData.address || {};
+        const prov =
+          addr.state || addr.province || addr.city || addr.region || 'Quảng Bình';
+        setDetectedProvince(prov);
+
+        const exactParts = [
+          addr.house_number,
+          addr.road,
+          addr.suburb || addr.quarter || addr.village || addr.town,
+          addr.county || addr.city_district,
+          prov,
+        ].filter(Boolean);
+        setDropoffAddress(
+          exactParts.length > 0
+            ? exactParts.join(', ')
+            : `${lat.toFixed(5)}, ${lng.toFixed(5)}`
+        );
+
+        // 2. Truy vấn danh sách các xã/phường thuộc tỉnh/huyện hiện tại
+        const queryArea = encodeURIComponent(prov);
+        const listRes = await fetch(
+          `https://nominatim.openstreetmap.org/search?format=json&q=xã+phường+${queryArea}&limit=25&accept-language=vi`
+        );
+        const listData = await listRes.json();
+        if (Array.isArray(listData) && listData.length >= 4) {
+          const parsedList = listData
+            .map((item) => ({
+              name: item.display_name.split(',')[0].trim(),
+              lat: parseFloat(item.lat),
+              lng: parseFloat(item.lon),
+            }))
+            .filter(
+              (v, idx, self) =>
+                v.name && self.findIndex((t) => t.name === v.name) === idx
+            );
+          if (parsedList.length > 0) {
+            setCommunes(parsedList);
+          }
+        }
+      } catch (e) {
+        setDropoffAddress(`Vị trí GPS (${lat.toFixed(5)}, ${lng.toFixed(5)})`);
+      } finally {
+        setIsLocating(false);
+      }
+    };
+
+    if (Platform.OS === 'web' && typeof navigator !== 'undefined' && navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => onSuccessCoords(pos.coords.latitude, pos.coords.longitude),
+        () => {
+          setIsLocating(false);
+          setDropoffAddress('Phường Ba Đồn, Thị xã Ba Đồn, Quảng Bình');
+        },
+        { enableHighAccuracy: true, timeout: 8000 }
+      );
+    } else {
+      setIsLocating(false);
+      setDropoffAddress('Phường Ba Đồn, Thị xã Ba Đồn, Quảng Bình');
+    }
+  };
+
+  useEffect(() => {
+    detectUserLocationAndCommunes();
+  }, []);
+
+  // Tự động tính Km theo Xã điểm lấy hàng -> Vị trí chính xác của khách (không phụ thuộc số nhà chi tiết)
+  const autoDistanceKm = selectedPickupCommune
+    ? calculateRoadDistanceKm(
+        selectedPickupCommune.lat,
+        selectedPickupCommune.lng,
+        dropoffCoords.lat,
+        dropoffCoords.lng
+      )
+    : 0;
+
   const RATE_PER_KM = 5000;
-  const parsedKm = parseFloat(distanceKm) || 0;
   const parsedAdvance = parseInt(advanceMoney.replace(/\D/g, ''), 10) || 0;
-  const shippingFee = Math.round(parsedKm * RATE_PER_KM);
+  const shippingFee = Math.round(autoDistanceKm * RATE_PER_KM);
   const totalAmount = shippingFee + parsedAdvance;
 
   const openOrderModal = (serviceName) => {
     setSelectedService(serviceName);
+    if (!dropoffAddress || dropoffAddress.startsWith('Đang định vị')) {
+      detectUserLocationAndCommunes();
+    }
   };
 
   const handleCreateOrder = () => {
@@ -58,10 +207,18 @@ export default function App() {
       Alert.alert('Thiếu thông tin', 'Vui lòng nhập món cần đặt hoặc nội dung nhờ mua hộ.');
       return;
     }
+    if (!selectedPickupCommune) {
+      Alert.alert('Chưa chọn xã/phường', 'Vui lòng chọn xã/phường nơi lấy hàng trước.');
+      return;
+    }
+    const fullPickup = pickupDetailAddress.trim()
+      ? `${pickupDetailAddress.trim()}, ${selectedPickupCommune.name}`
+      : selectedPickupCommune.name;
+
     const newOrder = {
       id: `NS-${Math.floor(1000 + Math.random() * 9000)}`,
       service: selectedService || 'Đặt đồ ăn',
-      note: itemNote.trim(),
+      note: `${itemNote.trim()} (Lấy tại: ${fullPickup} • ${autoDistanceKm} km)`,
       total: totalAmount,
       status: 'Đang tìm tài xế Ninja',
       time: 'Vừa xong',
@@ -70,14 +227,15 @@ export default function App() {
     setSelectedService(null);
     setItemNote('');
     setActiveTab('orders');
-    Alert.alert('Đặt đơn thành công', `Mã đơn ${newOrder.id} đang được gửi tới tài xế gần nhất!`);
+    Alert.alert(
+      'Đặt đơn thành công',
+      `Mã đơn ${newOrder.id} (${autoDistanceKm} km) đang được gửi tới tài xế gần nhất!`
+    );
   };
 
   return (
     <SafeAreaView style={styles.safeArea}>
       <StatusBar barStyle="dark-content" backgroundColor="#F6F7F9" />
-
-      {/* Nền gradient nhẹ phía trên */}
       <View style={styles.topTint} />
 
       {activeTab === 'home' && (
@@ -98,13 +256,15 @@ export default function App() {
               </View>
               <View style={styles.userDivider} />
               <Text style={styles.userName} numberOfLines={2}>
-                • Nguyễn Văn{'\n'}Khách
+                • {detectedProvince}
               </Text>
             </View>
 
             <TouchableOpacity
               style={styles.ratePill}
-              onPress={() => Alert.alert('Bảng giá Ninja Ship', 'Đồng giá siêu tiết kiệm: 5.000đ / 1 km đầu và các km tiếp theo.')}
+              onPress={() =>
+                Alert.alert('Bảng giá Ninja Ship', 'Đồng giá siêu tiết kiệm: 5.000đ / 1 km.')
+              }
             >
               <Text style={styles.rateGear}>⚙️</Text>
               <Text style={styles.rateText}>5.000đ/km</Text>
@@ -206,7 +366,9 @@ export default function App() {
           {orders.map((ord) => (
             <View key={ord.id} style={styles.orderCard}>
               <View style={styles.orderCardTop}>
-                <Text style={styles.orderId}>{ord.id} • {ord.service}</Text>
+                <Text style={styles.orderId}>
+                  {ord.id} • {ord.service}
+                </Text>
                 <Text style={styles.orderStatus}>{ord.status}</Text>
               </View>
               <Text style={styles.orderNote}>{ord.note}</Text>
@@ -235,7 +397,7 @@ export default function App() {
         <ScrollView style={styles.container} contentContainerStyle={styles.scrollContent}>
           <Text style={styles.pageHeading}>Tài khoản khách hàng</Text>
           <View style={styles.orderCard}>
-            <Text style={styles.orderId}>🥷 Nguyễn Văn Khách</Text>
+            <Text style={styles.orderId}>🥷 Nguyễn Văn Khách ({detectedProvince})</Text>
             <Text style={styles.orderNote}>Ví Ninja Pay: 1.700.000đ • Hạng Thành viên Vàng</Text>
           </View>
         </ScrollView>
@@ -261,13 +423,15 @@ export default function App() {
 
         <TouchableOpacity
           style={styles.trophyButton}
-          onPress={() => Alert.alert('Điểm thưởng Ninja', 'Bạn đang có 350 điểm đổi voucher miễn phí ship!')}
+          onPress={() =>
+            Alert.alert('Điểm thưởng Ninja', 'Bạn đang có 350 điểm đổi voucher miễn phí ship!')
+          }
         >
           <Text style={styles.trophyIcon}>🏆</Text>
         </TouchableOpacity>
       </View>
 
-      {/* MODAL ĐẶT ĐƠN NHANH */}
+      {/* MODAL ĐẶT ĐƠN NHANH (TỰ ĐỘNG TÍNH KM THEO XÃ -> VỊ TRÍ CHÍNH XÁC) */}
       <Modal visible={!!selectedService} animationType="slide" transparent>
         <View style={styles.modalOverlay}>
           <View style={styles.modalSheet}>
@@ -278,57 +442,111 @@ export default function App() {
               </TouchableOpacity>
             </View>
 
-            <Text style={styles.inputLabel}>Món cần đặt / Nội dung mua hộ *</Text>
-            <TextInput
-              style={styles.modalInput}
-              placeholder="VD: 2 tô Bún bò + 1 Trà đào cam sả"
-              value={itemNote}
-              onChangeText={setItemNote}
-            />
+            <ScrollView showsVerticalScrollIndicator={false} style={{ maxHeight: 520 }}>
+              <Text style={styles.inputLabel}>Món cần đặt / Nội dung mua hộ *</Text>
+              <TextInput
+                style={styles.modalInput}
+                placeholder="VD: 2 tô Bún bò + 1 Trà đào cam sả"
+                value={itemNote}
+                onChangeText={setItemNote}
+              />
 
-            <Text style={styles.inputLabel}>Điểm lấy hàng / Quán mua (Điểm A)</Text>
-            <TextInput
-              style={styles.modalInput}
-              value={pickupAddress}
-              onChangeText={setPickupAddress}
-            />
+              {/* ĐIỂM LẤY HÀNG: TỰ NHẬN TỈNH & HIỂN THỊ DANH SÁCH XÃ/PHƯỜNG */}
+              <View style={styles.labelRowBetween}>
+                <Text style={styles.inputLabel}>
+                  Điểm lấy hàng ({detectedProvince}) *
+                </Text>
+                <Text style={styles.autoBadge}>Chọn xã/phường</Text>
+              </View>
 
-            <Text style={styles.inputLabel}>Điểm giao cho bạn (Điểm B)</Text>
-            <TextInput
-              style={styles.modalInput}
-              value={dropoffAddress}
-              onChangeText={setDropoffAddress}
-            />
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                style={styles.communeChipsRow}
+              >
+                {communes.map((com, index) => {
+                  const isSelected = selectedPickupCommune?.name === com.name;
+                  return (
+                    <TouchableOpacity
+                      key={`${com.name}-${index}`}
+                      style={[
+                        styles.communeChip,
+                        isSelected && styles.communeChipActive,
+                      ]}
+                      onPress={() => setSelectedPickupCommune(com)}
+                    >
+                      <Text
+                        style={[
+                          styles.communeChipText,
+                          isSelected && styles.communeChipTextActive,
+                        ]}
+                      >
+                        {com.name}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </ScrollView>
 
-            <View style={styles.rowTwoCol}>
-              <View style={{ flex: 1, marginRight: 8 }}>
-                <Text style={styles.inputLabel}>Khoảng cách (Km)</Text>
+              {/* HIỆN Ô NHẬP ĐỊA CHỈ CỤ THỂ SAU KHI CHỌN XÃ (KHÔNG LÀM THAY ĐỔI SỐ KM) */}
+              {selectedPickupCommune && (
+                <View style={styles.detailAddrBox}>
+                  <Text style={styles.subInputLabel}>
+                    Địa chỉ cụ thể tại {selectedPickupCommune.name} (số nhà, tên quán):
+                  </Text>
+                  <TextInput
+                    style={styles.modalInput}
+                    placeholder={`VD: Số 15 đường chính, ${selectedPickupCommune.name}`}
+                    value={pickupDetailAddress}
+                    onChangeText={setPickupDetailAddress}
+                  />
+                </View>
+              )}
+
+              {/* ĐIỂM GIAO CHO BẠN: TỰ THU THẬP VỊ TRÍ CHÍNH XÁC */}
+              <View style={styles.labelRowBetween}>
+                <Text style={styles.inputLabel}>Điểm giao cho bạn (Vị trí chính xác) *</Text>
+                <TouchableOpacity onPress={detectUserLocationAndCommunes}>
+                  <Text style={styles.gpsRefreshText}>
+                    {isLocating ? 'Đang định vị...' : '📍 Cập nhật GPS'}
+                  </Text>
+                </TouchableOpacity>
+              </View>
+              <View style={styles.gpsBox}>
+                {isLocating && <ActivityIndicator size="small" color="#D92D20" style={{ marginRight: 8 }} />}
                 <TextInput
-                  style={styles.modalInput}
-                  keyboardType="numeric"
-                  value={distanceKm}
-                  onChangeText={setDistanceKm}
+                  style={styles.gpsInput}
+                  value={dropoffAddress}
+                  onChangeText={setDropoffAddress}
+                  placeholder="Vị trí GPS chính xác của bạn"
                 />
               </View>
-              <View style={{ flex: 1, marginLeft: 8 }}>
-                <Text style={styles.inputLabel}>Tiền hàng ứng (đ)</Text>
-                <TextInput
-                  style={styles.modalInput}
-                  keyboardType="numeric"
-                  value={advanceMoney}
-                  onChangeText={setAdvanceMoney}
-                />
+
+              {/* TIỀN HÀNG ỨNG TRƯỚC */}
+              <Text style={styles.inputLabel}>Tiền hàng ứng trước ước tính (đ)</Text>
+              <TextInput
+                style={styles.modalInput}
+                keyboardType="numeric"
+                value={advanceMoney}
+                onChangeText={setAdvanceMoney}
+              />
+
+              {/* TỰ ĐỘNG TÍNH KM & CƯỚC PHÍ */}
+              <View style={styles.priceSummary}>
+                <Text style={styles.priceLine}>
+                  {selectedPickupCommune
+                    ? `Tuyến tự động: ${selectedPickupCommune.name} → Vị trí của bạn (${autoDistanceKm} km × 5.000đ)`
+                    : 'Vui lòng chọn xã/phường lấy hàng để hệ thống tự tính Km'}
+                </Text>
+                <Text style={styles.priceTotal}>
+                  Tổng thanh toán: {totalAmount.toLocaleString('vi-VN')}đ
+                </Text>
               </View>
-            </View>
 
-            <View style={styles.priceSummary}>
-              <Text style={styles.priceLine}>Phí ship ({parsedKm} km × 5.000đ): {shippingFee.toLocaleString('vi-VN')}đ</Text>
-              <Text style={styles.priceTotal}>Tổng thanh toán: {totalAmount.toLocaleString('vi-VN')}đ</Text>
-            </View>
-
-            <TouchableOpacity style={styles.submitOrderBtn} onPress={handleCreateOrder}>
-              <Text style={styles.submitOrderText}>Đặt Ninja Ship ngay</Text>
-            </TouchableOpacity>
+              <TouchableOpacity style={styles.submitOrderBtn} onPress={handleCreateOrder}>
+                <Text style={styles.submitOrderText}>Đặt Ninja Ship ngay</Text>
+              </TouchableOpacity>
+            </ScrollView>
           </View>
         </View>
       </Modal>
@@ -748,11 +966,86 @@ const styles = StyleSheet.create({
     color: '#6B7280',
     padding: 4,
   },
+  labelRowBetween: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 6,
+  },
   inputLabel: {
     fontSize: 13,
     fontWeight: '700',
     color: '#374151',
     marginBottom: 4,
+  },
+  subInputLabel: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#4B5563',
+    marginBottom: 4,
+  },
+  autoBadge: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#059669',
+    backgroundColor: '#D1FAE5',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 8,
+  },
+  communeChipsRow: {
+    flexDirection: 'row',
+    marginBottom: 10,
+  },
+  communeChip: {
+    backgroundColor: '#F3F4F6',
+    borderRadius: 14,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    marginRight: 8,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+  },
+  communeChipActive: {
+    backgroundColor: '#FEF2F2',
+    borderColor: '#D92D20',
+  },
+  communeChipText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#374151',
+  },
+  communeChipTextActive: {
+    color: '#D92D20',
+    fontWeight: '800',
+  },
+  detailAddrBox: {
+    backgroundColor: '#F9FAFB',
+    borderRadius: 12,
+    padding: 10,
+    marginBottom: 10,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+  },
+  gpsRefreshText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#D92D20',
+  },
+  gpsBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F3F4F6',
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    height: 44,
+    marginBottom: 10,
+  },
+  gpsInput: {
+    flex: 1,
+    fontSize: 13,
+    color: '#111827',
+    fontWeight: '600',
   },
   modalInput: {
     backgroundColor: '#F3F4F6',
@@ -763,9 +1056,6 @@ const styles = StyleSheet.create({
     color: '#111827',
     marginBottom: 10,
   },
-  rowTwoCol: {
-    flexDirection: 'row',
-  },
   priceSummary: {
     backgroundColor: '#FEF2F2',
     borderRadius: 14,
@@ -775,7 +1065,8 @@ const styles = StyleSheet.create({
   priceLine: {
     fontSize: 13,
     color: '#7F1D1D',
-    marginBottom: 2,
+    marginBottom: 4,
+    lineHeight: 18,
   },
   priceTotal: {
     fontSize: 16,
