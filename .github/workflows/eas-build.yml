@@ -10,21 +10,25 @@ jobs:
   build_android_and_ios:
     name: Build Android APK & iOS IPA via Expo EAS
     runs-on: ubuntu-latest
+    env:
+      EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
     steps:
       - name: Tai ma nguon tu GitHub
         uses: actions/checkout@v4
+
       - name: Cai dat Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 20
-      - name: Ket noi Expo EAS
-        uses: expo/expo-github-action@v8
-        with:
-          eas-version: latest
-          token: ${{ secrets.EXPO_TOKEN }}
-      - name: Cai dat thu vien
+
+      - name: Cai dat thu vien du an
         run: npm install
+
+      - name: Cai dat EAS CLI bang npm
+        run: npm install -g eas-cli
+
       - name: Build Android APK
         run: eas build --platform android --profile preview --non-interactive --no-wait
+
       - name: Build iOS IPA
         run: eas build --platform ios --profile preview --non-interactive --no-wait
