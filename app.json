@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "Ninja Ship Khách",
-    "slug": "ninja-ship-khach",
+    "slug": "app-khach",
     "version": "1.0.0",
     "orientation": "portrait",
     "userInterfaceStyle": "light",
