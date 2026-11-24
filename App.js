@@ -399,14 +399,14 @@ export default function App() {
     showOtpNotification(cleanPhone, fallbackCode);
   };
 
+  const [authErrorMsg, setAuthErrorMsg] = useState('');
+
   const handleRequestOtp = () => {
     if (isSendingOtp) return;
+    setAuthErrorMsg('');
     const cleanPhone = normalizePhone(authPhone);
     if (!isValidVnPhone(cleanPhone)) {
-      Alert.alert(
-        'Số điện thoại không hợp lệ',
-        'Vui lòng nhập đúng số điện thoại di động Việt Nam (10 số, VD: 0912345678).'
-      );
+      setAuthErrorMsg('Số điện thoại không hợp lệ (VD: 0912345678).');
       return;
     }
 
@@ -418,38 +418,29 @@ export default function App() {
     if (authMode === 'register') {
       const trimmedName = authName.trim();
       if (!trimmedName || trimmedName.length < 2) {
-        Alert.alert('Thiếu họ tên', 'Vui lòng nhập họ và tên thật để đăng ký tài khoản.');
+        setAuthErrorMsg('Vui lòng nhập họ và tên (từ 2 ký tự trở lên) để đăng ký.');
         return;
       }
       if (existingAcc) {
-        Alert.alert(
-          'Số điện thoại đã đăng ký',
-          'Số điện thoại này đã tồn tại. Hệ thống chuyển sang Đăng nhập và gửi OTP cho bạn.'
-        );
         setAuthMode('login');
         triggerOtpDispatch(cleanPhone, 'login', existingAcc.name || trimmedName);
         return;
       }
       if (vault.boundPhones.length >= 2 && !vault.boundPhones.includes(cleanPhone)) {
-        Alert.alert(
-          'Giới hạn tài khoản trên thiết bị',
-          `Thiết bị (${deviceId}) đã liên kết tối đa 2 số điện thoại. Vui lòng đăng nhập bằng số đã đăng ký.`
+        setAuthErrorMsg(
+          `Thiết bị (${deviceId}) đã đạt giới hạn 2 tài khoản. Vui lòng đăng nhập bằng số đã đăng ký.`
         );
         return;
       }
       triggerOtpDispatch(cleanPhone, 'register', trimmedName);
     } else {
       if (!existingAcc) {
-        // Nếu đang ở tab Đăng nhập mà nhập số mới: tự chuyển sang đăng ký nếu đã có tên, hoặc nhắc nhập tên để tạo tài khoản & gửi OTP
         if (authName.trim().length >= 2) {
           setAuthMode('register');
           triggerOtpDispatch(cleanPhone, 'register', authName.trim());
         } else {
           setAuthMode('register');
-          Alert.alert(
-            'Đăng ký tài khoản mới',
-            'Số này chưa có tài khoản. Vui lòng nhập Họ và tên rồi bấm "Gửi mã xác thực OTP" để nhận mã đăng ký.'
-          );
+          setAuthErrorMsg('Số này chưa có tài khoản. Vui lòng nhập Họ và tên rồi bấm gửi mã OTP.');
         }
         return;
       }
@@ -460,9 +451,10 @@ export default function App() {
   const handleVerifyOtpAndEnter = () => {
     const cleanPhone = normalizePhone(authPhone);
     if (inputOtp.trim() !== generatedOtp) {
-      Alert.alert('Sai mã OTP', 'Mã OTP không chính xác. Vui lòng kiểm tra lại tin nhắn SMS.');
+      setAuthErrorMsg('Mã OTP không chính xác. Vui lòng kiểm tra lại.');
       return;
     }
+    setAuthErrorMsg('');
 
     const vault = readFraudVault();
     let userRecord = vault.accounts[cleanPhone];
@@ -652,6 +644,11 @@ export default function App() {
                 <Text style={styles.otpBannerText}>{authStatusMsg}</Text>
               </View>
             )}
+            {!!authErrorMsg && (
+              <View style={[styles.otpBannerBox, { backgroundColor: '#FEF2F2', borderColor: '#EF4444' }]}>
+                <Text style={[styles.otpBannerText, { color: '#B91C1C' }]}>{authErrorMsg}</Text>
+              </View>
+            )}
             {/* Tab chuyển đổi Đăng nhập / Đăng ký */}
             <View style={styles.authSwitchRow}>
               <TouchableOpacity
@@ -660,6 +657,8 @@ export default function App() {
                   setAuthMode('login');
                   setOtpSent(false);
                   setInputOtp('');
+                  setAuthStatusMsg('');
+                  setAuthErrorMsg('');
                 }}
               >
                 <Text
@@ -677,6 +676,8 @@ export default function App() {
                   setAuthMode('register');
                   setOtpSent(false);
                   setInputOtp('');
+                  setAuthStatusMsg('');
+                  setAuthErrorMsg('');
                 }}
               >
                 <Text
