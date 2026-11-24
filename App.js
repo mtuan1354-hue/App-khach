@@ -16,7 +16,7 @@ import {
 } from 'react-native';
 
 // ĐIỀN LINK CLOUDFLARE WORKER CỦA BẠN VÀO ĐÂY SAU KHI DEPLOY:
-const BACKEND_API_URL = 'https://ninja-ship-bot.your-subdomain.workers.dev';
+const BACKEND_API_URL = 'https://appkhach.mtuan1354.workers.dev/admin';
 
 
 const SERVICES_SMALL = [
