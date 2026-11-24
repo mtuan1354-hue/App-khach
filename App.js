@@ -2006,3 +2006,17 @@ const styles = StyleSheet.create({
     backgroundColor: '#18181B',
     borderRadius: 14,
     padding: 14,
+    marginBottom: 12,
+  },
+  rateHighlightTitle: {
+    color: '#FACC15',
+    fontSize: 15,
+    fontWeight: '800',
+    marginBottom: 4,
+  },
+  rateHighlightSub: {
+    color: '#E5E7EB',
+    fontSize: 12,
+    lineHeight: 18,
+  },
+});
