@@ -351,13 +351,28 @@ export default function App() {
 
   // Kiểm tra SĐT hợp lệ (10 số đầu 03, 05, 07, 08, 09)
   const normalizePhone = (raw) => raw.replace(/\D/g, '');
-  const isValidVnPhone = (p) => /^(03|05|07|08|09)\d{8}$/.test(p);
+  const isValidVnPhone = (p) => /^0\d{8,10}$/.test(p);
 
   const [isSendingOtp, setIsSendingOtp] = useState(false);
+  const [authStatusMsg, setAuthStatusMsg] = useState('');
+
+  const showOtpNotification = (cleanPhone, code) => {
+    const msg = `Mã OTP gửi tới ${cleanPhone}: ${code} (hiệu lực 60s)`;
+    setAuthStatusMsg(msg);
+    try {
+      Alert.alert('Đã gửi mã xác thực OTP', `Mã OTP cho số ${cleanPhone} là: ${code}\n(Có hiệu lực trong 60 giây)`);
+    } catch (e) {}
+    if (Platform.OS === 'web' && typeof window !== 'undefined' && typeof window.alert === 'function') {
+      try {
+        window.alert(`Mã OTP Ninja Ship cho số ${cleanPhone}: ${code}`);
+      } catch (e) {}
+    }
+  };
 
   const triggerOtpDispatch = async (cleanPhone, mode, name) => {
     const fallbackCode = Math.floor(100000 + Math.random() * 900000).toString();
     setIsSendingOtp(true);
+    setAuthStatusMsg(`Đang gửi mã OTP tới ${cleanPhone}...`);
     try {
       if (!BACKEND_API_URL.includes('your-subdomain')) {
         const res = await fetch(`${BACKEND_API_URL}/api/otp/request`, {
@@ -372,19 +387,16 @@ export default function App() {
         });
         if (res.ok) {
           const data = await res.json().catch(() => ({}));
-          const serverCode = data.otp || data.code || fallbackCode;
-          setGeneratedOtp(String(serverCode));
+          const serverCode = String(data.otp || data.code || fallbackCode);
+          setGeneratedOtp(serverCode);
           setOtpSent(true);
           setOtpCountdown(60);
-          Alert.alert(
-            'Đã gửi mã xác thực OTP',
-            `Mã OTP cho số ${cleanPhone}: ${serverCode}\n(Có hiệu lực trong 60 giây)`
-          );
+          showOtpNotification(cleanPhone, serverCode);
           return;
         }
       }
     } catch (e) {
-      // Fallback sang mã OTP cục bộ để không bao giờ bị kẹt khi chưa cấu hình backend
+      // Fallback sang mã OTP cục bộ khi chưa cấu hình backend hoặc lỗi mạng
     } finally {
       setIsSendingOtp(false);
     }
@@ -392,10 +404,7 @@ export default function App() {
     setGeneratedOtp(fallbackCode);
     setOtpSent(true);
     setOtpCountdown(60);
-    Alert.alert(
-      'Đã gửi mã xác thực OTP',
-      `Tin nhắn xác thực cho số ${cleanPhone}:\nMã OTP Ninja Ship của bạn là: ${fallbackCode}\n(Có hiệu lực trong 60 giây)`
-    );
+    showOtpNotification(cleanPhone, fallbackCode);
   };
 
   const handleRequestOtp = () => {
@@ -646,6 +655,11 @@ export default function App() {
           </View>
 
           <View style={styles.authCard}>
+            {!!authStatusMsg && (
+              <View style={styles.otpBannerBox}>
+                <Text style={styles.otpBannerText}>{authStatusMsg}</Text>
+              </View>
+            )}
             {/* Tab chuyển đổi Đăng nhập / Đăng ký */}
             <View style={styles.authSwitchRow}>
               <TouchableOpacity
@@ -2165,5 +2179,19 @@ const styles = StyleSheet.create({
     color: '#E5E7EB',
     fontSize: 12,
     lineHeight: 18,
+  },
+  otpBannerBox: {
+    backgroundColor: '#ECFDF5',
+    borderColor: '#10B981',
+    borderWidth: 1,
+    borderRadius: 12,
+    padding: 10,
+    marginBottom: 12,
+  },
+  otpBannerText: {
+    color: '#065F46',
+    fontSize: 13,
+    fontWeight: '700',
+    textAlign: 'center',
   },
 });
