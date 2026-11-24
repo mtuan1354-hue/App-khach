@@ -356,12 +356,7 @@ export default function App() {
     setGeneratedOtp(code);
     setOtpSent(true);
     setOtpCountdown(60);
-    Alert.alert(
-      'Mã xác thực OTP đã gửi',
-      `Tin nhắn SMS gửi tới ${cleanPhone}:
-Mã OTP Ninja Ship của bạn là: ${code}
-(Có hiệu lực trong 60 giây)`
-    );
+    Alert.alert('Mã xác thực OTP đã gửi', `Tin nhắn SMS gửi tới ${cleanPhone}:\nMã OTP Ninja Ship của bạn là: ${code}\n(Có hiệu lực trong 60 giây)`);
   };
 
   const handleVerifyOtpAndEnter = () => {
@@ -628,8 +623,7 @@ Mã OTP Ninja Ship của bạn là: ${code}
             <View style={styles.securityNoticeBox}>
               <Text style={styles.securityNoticeTitle}>🛡️ Chính sách chống gian lận ưu đãi</Text>
               <Text style={styles.securityNoticeDesc}>
-                • Mỗi khách hàng xác thực 1 SĐT chính chủ + 1 mã thiết bị ({deviceId}).{'
-'}
+                • Mỗi khách hàng xác thực 1 SĐT chính chủ + 1 mã thiết bị ({deviceId}).{"\n"}
                 • Các mã ưu đãi (-25%, -20%, -15%) chỉ áp dụng duy nhất 1 lần/người & 1 lần/thiết bị.
               </Text>
             </View>
@@ -844,8 +838,7 @@ Mã OTP Ninja Ship của bạn là: ${code}
                   key={item.id}
                   style={styles.gridItem}
                   activeOpacity={0.8}
-                  onPress={() => openModalFor(item.title.replace('
-', ' '))}
+                  onPress={() => openModalFor(item.title.replace("\n", ' '))}
                 >
                   {showBadge && (
                     <View style={[styles.gridBadge, { backgroundColor: item.badgeColor }]}>
@@ -1199,8 +1192,7 @@ Mã OTP Ninja Ship của bạn là: ${code}
                 <View style={styles.rateHighlightBox}>
                   <Text style={styles.rateHighlightTitle}>Bảng giá Ninja Ship ({detectedProvince})</Text>
                   <Text style={styles.rateHighlightSub}>
-                    • Đồng giá chuẩn: 5.000đ / 1 km (tính tự động từ tâm xã đến tâm xã){'
-'}
+                    • Đồng giá chuẩn: 5.000đ / 1 km (tính tự động từ tâm xã đến tâm xã){"\n"}
                     • Không phụ thu giờ cao điểm • Tài xế ứng trước tiền hàng miễn phí
                   </Text>
                 </View>
