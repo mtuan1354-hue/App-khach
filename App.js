@@ -2136,20 +2136,20 @@ export default function App() {
                 {selectedPickupCommune && (
                   <View style={styles.detailAddrBox}>
                     {!!selectedPickupCommune.subUnits && (
-                      <Text style={{ fontSize: 11, color: '#059669', fontWeight: '700', marginBottom: 6 }}>
-                        ℹ️ Hợp nhất từ: {selectedPickupCommune.subUnits}
+                      <Text style={styles.subUnitHintText} numberOfLines={2}>
+                        Gồm: {selectedPickupCommune.subUnits}
                       </Text>
                     )}
-                    <Text style={styles.subInputLabel}>
-                      Thôn / Tổ dân phố / Xóm tại {selectedPickupCommune.name} (tự nhập) *:
-                    </Text>
+
+                    <Text style={styles.subInputLabel}>Thôn / Tổ dân phố *</Text>
                     <TextInput
                       ref={hamletInputRef}
                       style={[
-                        styles.modalInput,
+                        styles.compactInput,
                         missingFieldKey === 'hamlet' && styles.inputMissingHighlight,
                       ]}
-                      placeholder="Nhập tên Thôn / Tổ dân phố / Xóm của điểm lấy hàng..."
+                      placeholder="VD: TDP 3 / Thôn Đức Ninh..."
+                      placeholderTextColor="#9CA3AF"
                       value={pickupHamlet}
                       onChangeText={(v) => {
                         setPickupHamlet(v);
@@ -2159,12 +2159,12 @@ export default function App() {
                         }
                       }}
                     />
-                    <Text style={styles.subInputLabel}>
-                      Số nhà, tên đường / tên quán tại {selectedPickupCommune.name}:
-                    </Text>
+
+                    <Text style={styles.subInputLabel}>Số nhà / Đường / Tên quán</Text>
                     <TextInput
-                      style={styles.modalInput}
-                      placeholder={currentServiceConfig.detailPlaceholder}
+                      style={[styles.compactInput, { marginBottom: 0 }]}
+                      placeholder="VD: 24 Hùng Vương, Shop Lan..."
+                      placeholderTextColor="#9CA3AF"
                       value={pickupDetailAddress}
                       onChangeText={setPickupDetailAddress}
                     />
@@ -3303,8 +3303,8 @@ const styles = StyleSheet.create({
   },
   subInputLabel: {
     fontSize: 12,
-    fontWeight: '600',
-    color: '#4B5563',
+    fontWeight: '700',
+    color: '#374151',
     marginBottom: 4,
   },
   autoBadge: {
@@ -3344,11 +3344,34 @@ const styles = StyleSheet.create({
   },
   detailAddrBox: {
     backgroundColor: '#F9FAFB',
-    borderRadius: 12,
-    padding: 10,
-    marginBottom: 10,
+    borderRadius: 14,
+    padding: 12,
+    marginBottom: 12,
     borderWidth: 1,
     borderColor: '#E5E7EB',
+  },
+  subUnitHintText: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: '#047857',
+    backgroundColor: '#ECFDF5',
+    paddingHorizontal: 8,
+    paddingVertical: 5,
+    borderRadius: 8,
+    marginBottom: 8,
+    lineHeight: 15,
+  },
+  compactInput: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    paddingHorizontal: 12,
+    height: 40,
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#111827',
+    marginBottom: 8,
   },
   gpsRefreshText: {
     fontSize: 12,
