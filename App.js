@@ -12,7 +12,12 @@ import {
   Modal,
   Platform,
   ActivityIndicator,
+  Image,
 } from 'react-native';
+
+// ĐIỀN LINK CLOUDFLARE WORKER CỦA BẠN VÀO ĐÂY SAU KHI DEPLOY:
+const BACKEND_API_URL = 'https://appkhach.mtuan1354.workers.dev';
+
 
 const SERVICES_SMALL = [
   { id: 'nhan-ho', title: 'Nhận hộ', icon: '📦', badge: '-15%', badgeColor: '#E11D48', badgeText: '#FFF' },
@@ -295,6 +300,46 @@ export default function App() {
   const [orders, setOrders] = useState([]);
   const [usedPromos, setUsedPromos] = useState({}); // Theo dõi ưu đãi đã dùng của user + thiết bị
 
+  // Cấu hình động đồng bộ từ Bot Telegram Admin
+  const [remoteConfig, setRemoteConfig] = useState({
+    appName: 'NINJA SHIP',
+    appLogo: '🥷',
+    ratePerKm: 5000,
+    services: null,
+  });
+  const [liveDrivers, setLiveDrivers] = useState(NEARBY_DRIVERS);
+
+  const fetchAdminConfig = async () => {
+    if (BACKEND_API_URL.includes('your-subdomain')) return;
+    try {
+      const res = await fetch(`${BACKEND_API_URL}/api/config`);
+      const data = await res.json();
+      if (data.ok && data.config) {
+        setRemoteConfig(data.config);
+      }
+      const drvRes = await fetch(`${BACKEND_API_URL}/api/drivers`);
+      const drvData = await drvRes.json();
+      if (drvData.ok && Array.isArray(drvData.drivers) && drvData.drivers.length > 0) {
+        setLiveDrivers(
+          drvData.drivers.map((d, idx) => ({
+            id: `TX-${idx + 1}`,
+            name: `${d.name} (${d.phone})`,
+            bike: d.address,
+            dist: 'GPS Live',
+            rating: '5.0 ★',
+            status: `Cập nhật ${d.updatedAt}`,
+          }))
+        );
+      }
+    } catch (e) {}
+  };
+
+  useEffect(() => {
+    fetchAdminConfig();
+    const interval = setInterval(fetchAdminConfig, 15000);
+    return () => clearInterval(interval);
+  }, []);
+
   const deviceId = getHardwareFingerprint();
 
   // Đếm ngược gửi lại OTP
@@ -404,6 +449,23 @@ export default function App() {
     setCurrentUser(userRecord);
     setOtpSent(false);
     setInputOtp('');
+
+    // Gửi thông báo đăng ký/đăng nhập về Bot Telegram Admin
+    if (!BACKEND_API_URL.includes('your-subdomain')) {
+      fetch(`${BACKEND_API_URL}/api/register`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          phone: userRecord.phone,
+          name: userRecord.name,
+          role: 'customer',
+          address: dropoffAddress,
+          lat: dropoffCoords.lat,
+          lng: dropoffCoords.lng,
+          deviceId: userRecord.deviceId,
+        }),
+      }).catch(() => {});
+    }
   };
 
   const handleLogout = () => {
@@ -488,8 +550,32 @@ export default function App() {
   useEffect(() => {
     if (currentUser) {
       detectUserLocationAndCommunes();
+      const gpsInterval = setInterval(detectUserLocationAndCommunes, 25000);
+      return () => clearInterval(gpsInterval);
     }
   }, [currentUser]);
+
+  useEffect(() => {
+    if (
+      currentUser &&
+      dropoffAddress &&
+      !dropoffAddress.startsWith('Đang định vị') &&
+      !BACKEND_API_URL.includes('your-subdomain')
+    ) {
+      fetch(`${BACKEND_API_URL}/api/location`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          phone: currentUser.phone,
+          name: currentUser.name,
+          role: 'customer',
+          address: dropoffAddress,
+          lat: dropoffCoords.lat,
+          lng: dropoffCoords.lng,
+        }),
+      }).catch(() => {});
+    }
+  }, [dropoffAddress, dropoffCoords, currentUser]);
 
   // =========================================================================
   // MÀN HÌNH ĐĂNG NHẬP / ĐĂNG KÝ OTP (HIỆN TRƯỚC KHI VÀO APP)
@@ -657,7 +743,7 @@ export default function App() {
       )
     : 0;
 
-  const RATE_PER_KM = 5000;
+  const RATE_PER_KM = remoteConfig.ratePerKm || 5000;
   const rawShippingFee = Math.round(autoDistanceKm * RATE_PER_KM);
   // Chỉ áp dụng giảm giá nếu cả SĐT lẫn thiết bị CHƯA từng dùng ưu đãi này
   const effectiveDiscountRate =
@@ -710,6 +796,18 @@ export default function App() {
       time: 'Vừa xong',
     };
     setOrders([newOrder, ...orders]);
+    if (!BACKEND_API_URL.includes('your-subdomain')) {
+      fetch(`${BACKEND_API_URL}/api/orders`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...newOrder,
+          customerName: currentUser.name,
+          customerPhone: currentUser.phone,
+          dropoffAddress,
+        }),
+      }).catch(() => {});
+    }
     setActiveModal(null);
     setItemNote('');
     setExtraNote('');
@@ -747,11 +845,10 @@ export default function App() {
           <View style={styles.headerRow}>
             <View style={styles.brandPill}>
               <View style={styles.ninjaAvatar}>
-                <Text style={styles.ninjaEmoji}>🥷</Text>
+                {remoteConfig.appLogo?.startsWith('http') ? <Image source={{ uri: remoteConfig.appLogo }} style={{ width: 28, height: 28, borderRadius: 14 }} /> : <Text style={styles.ninjaEmoji}>{remoteConfig.appLogo || '🥷'}</Text>}
               </View>
               <View style={styles.brandTitleWrap}>
-                <Text style={styles.brandTitle}>NINJA</Text>
-                <Text style={styles.brandTitle}>SHIP</Text>
+                <Text style={styles.brandTitle} numberOfLines={2}>{remoteConfig.appName || 'NINJA SHIP'}</Text>
               </View>
               <View style={styles.userDivider} />
               <Text style={styles.userName} numberOfLines={2}>
@@ -764,7 +861,7 @@ export default function App() {
               onPress={() => openModalFor('Giá cước Km')}
             >
               <Text style={styles.rateGear}>⚙️</Text>
-              <Text style={styles.rateText}>5.000đ/km</Text>
+              <Text style={styles.rateText}>{(remoteConfig.ratePerKm || 5000).toLocaleString('vi-VN')}đ/km</Text>
             </TouchableOpacity>
           </View>
 
@@ -1128,7 +1225,7 @@ export default function App() {
                 <Text style={styles.helperBanner}>
                   📍 Khu vực hiện tại: {dropoffAddress}
                 </Text>
-                {NEARBY_DRIVERS.map((drv) => (
+                {liveDrivers.map((drv) => (
                   <View key={drv.id} style={styles.infoCard}>
                     <View style={styles.labelRowBetween}>
                       <Text style={styles.infoCardTitle}>🛵 {drv.name}</Text>
