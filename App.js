@@ -16,7 +16,31 @@ import {
 } from 'react-native';
 
 // ĐIỀN LINK CLOUDFLARE WORKER CỦA BẠN VÀO ĐÂY SAU KHI DEPLOY:
-const BACKEND_API_URL = 'https://appkhach.mtuan1354.workers.dev/admin';
+const BACKEND_API_URL = (typeof process !== 'undefined' && process.env && process.env.EXPO_PUBLIC_BACKEND_API_URL) || 'https://appkhach.mtuan1354.workers.dev';
+
+const isBackendConfigured =
+  typeof BACKEND_API_URL === 'string' &&
+  BACKEND_API_URL.trim().length > 0 &&
+  !BACKEND_API_URL.includes('your-subdomain');
+
+async function postToBackend(path, payload) {
+  if (!isBackendConfigured) {
+    return { ok: false, reason: 'missing_url' };
+  }
+  try {
+    const baseUrl = BACKEND_API_URL.replace(/\/+$/, '');
+    const res = await fetch(`${baseUrl}${path}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    const data = await res.json().catch(() => ({}));
+    return { ok: res.ok && (data.ok !== false), status: res.status, data };
+  } catch (err) {
+    return { ok: false, reason: 'network_error', error: String(err) };
+  }
+}
+
 
 
 const SERVICES_SMALL = [
@@ -309,29 +333,48 @@ export default function App() {
   });
   const [liveDrivers, setLiveDrivers] = useState(NEARBY_DRIVERS);
 
+  const [adminSyncNote, setAdminSyncNote] = useState(
+    isBackendConfigured
+      ? 'Đang kết nối máy chủ Admin...'
+      : 'Chưa điền link Cloudflare Worker (BACKEND_API_URL) nên chưa đẩy đơn/đăng ký về Admin.'
+  );
+
   const fetchAdminConfig = async () => {
-    if (BACKEND_API_URL.includes('your-subdomain')) return;
+    if (!isBackendConfigured) {
+      setAdminSyncNote('Chưa điền link Cloudflare Worker (BACKEND_API_URL) nên chưa đẩy đơn/đăng ký về Admin.');
+      return;
+    }
+    const baseUrl = BACKEND_API_URL.replace(/\/+$/, '');
     try {
-      const res = await fetch(`${BACKEND_API_URL}/api/config`);
-      const data = await res.json();
+      const res = await fetch(`${baseUrl}/api/config`);
+      if (!res.ok) {
+        setAdminSyncNote(`Máy chủ Admin phản hồi lỗi HTTP ${res.status} khi đọc cấu hình.`);
+        return;
+      }
+      const data = await res.json().catch(() => ({}));
       if (data.ok && data.config) {
         setRemoteConfig(data.config);
       }
-      const drvRes = await fetch(`${BACKEND_API_URL}/api/drivers`);
-      const drvData = await drvRes.json();
-      if (drvData.ok && Array.isArray(drvData.drivers) && drvData.drivers.length > 0) {
-        setLiveDrivers(
-          drvData.drivers.map((d, idx) => ({
-            id: `TX-${idx + 1}`,
-            name: `${d.name} (${d.phone})`,
-            bike: d.address,
-            dist: 'GPS Live',
-            rating: '5.0 ★',
-            status: `Cập nhật ${d.updatedAt}`,
-          }))
-        );
+      setAdminSyncNote('Đã đồng bộ cấu hình & kết nối máy chủ Admin.');
+      const drvRes = await fetch(`${baseUrl}/api/drivers`);
+      if (drvRes.ok) {
+        const drvData = await drvRes.json().catch(() => ({}));
+        if (drvData.ok && Array.isArray(drvData.drivers) && drvData.drivers.length > 0) {
+          setLiveDrivers(
+            drvData.drivers.map((d, idx) => ({
+              id: `TX-${idx + 1}`,
+              name: `${d.name} (${d.phone})`,
+              bike: d.address,
+              dist: 'GPS Live',
+              rating: '5.0 ★',
+              status: `Cập nhật ${d.updatedAt}`,
+            }))
+          );
+        }
       }
-    } catch (e) {}
+    } catch (e) {
+      setAdminSyncNote('Không thể kết nối máy chủ Admin (kiểm tra link Worker hoặc CORS).');
+    }
   };
 
   useEffect(() => {
@@ -366,7 +409,7 @@ export default function App() {
     setIsSendingOtp(true);
     setAuthStatusMsg(`Đang gửi mã OTP tới ${cleanPhone}...`);
     try {
-      if (!BACKEND_API_URL.includes('your-subdomain')) {
+      if (isBackendConfigured) {
         const res = await fetch(`${BACKEND_API_URL}/api/otp/request`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -496,21 +539,23 @@ export default function App() {
     setInputOtp('');
 
     // Gửi thông báo đăng ký/đăng nhập về Bot Telegram Admin
-    if (!BACKEND_API_URL.includes('your-subdomain')) {
-      fetch(`${BACKEND_API_URL}/api/register`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          phone: userRecord.phone,
-          name: userRecord.name,
-          role: 'customer',
-          address: dropoffAddress,
-          lat: dropoffCoords.lat,
-          lng: dropoffCoords.lng,
-          deviceId: userRecord.deviceId,
-        }),
-      }).catch(() => {});
-    }
+    postToBackend('/api/register', {
+      phone: userRecord.phone,
+      name: userRecord.name,
+      role: 'customer',
+      address: dropoffAddress,
+      lat: dropoffCoords.lat,
+      lng: dropoffCoords.lng,
+      deviceId: userRecord.deviceId,
+    }).then((r) => {
+      if (r.ok) {
+        setAdminSyncNote('Đã gửi thông tin tài khoản mới/đăng nhập về Admin.');
+      } else if (r.reason === 'missing_url') {
+        setAdminSyncNote('Chưa cấu hình BACKEND_API_URL nên chưa gửi đăng ký mới về Admin.');
+      } else {
+        setAdminSyncNote(`Gửi đăng ký về Admin chưa thành công (lỗi ${r.status || r.reason}).`);
+      }
+    });
   };
 
   const handleLogout = () => {
@@ -605,20 +650,16 @@ export default function App() {
       currentUser &&
       dropoffAddress &&
       !dropoffAddress.startsWith('Đang định vị') &&
-      !BACKEND_API_URL.includes('your-subdomain')
+      isBackendConfigured
     ) {
-      fetch(`${BACKEND_API_URL}/api/location`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          phone: currentUser.phone,
-          name: currentUser.name,
-          role: 'customer',
-          address: dropoffAddress,
-          lat: dropoffCoords.lat,
-          lng: dropoffCoords.lng,
-        }),
-      }).catch(() => {});
+      postToBackend('/api/location', {
+        phone: currentUser.phone,
+        name: currentUser.name,
+        role: 'customer',
+        address: dropoffAddress,
+        lat: dropoffCoords.lat,
+        lng: dropoffCoords.lng,
+      });
     }
   }, [dropoffAddress, dropoffCoords, currentUser]);
 
@@ -861,18 +902,20 @@ export default function App() {
       time: 'Vừa xong',
     };
     setOrders([newOrder, ...orders]);
-    if (!BACKEND_API_URL.includes('your-subdomain')) {
-      fetch(`${BACKEND_API_URL}/api/orders`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          ...newOrder,
-          customerName: currentUser.name,
-          customerPhone: currentUser.phone,
-          dropoffAddress,
-        }),
-      }).catch(() => {});
-    }
+    postToBackend('/api/orders', {
+      ...newOrder,
+      customerName: currentUser.name,
+      customerPhone: currentUser.phone,
+      dropoffAddress,
+    }).then((r) => {
+      if (r.ok) {
+        setAdminSyncNote(`Đã đẩy đơn ${newOrder.id} về máy chủ Admin.`);
+      } else if (r.reason === 'missing_url') {
+        setAdminSyncNote(`Đơn ${newOrder.id} mới lưu trên máy vì chưa điền BACKEND_API_URL.`);
+      } else {
+        setAdminSyncNote(`Đơn ${newOrder.id} gửi về Admin bị lỗi (${r.status || r.reason}).`);
+      }
+    });
     setActiveModal(null);
     setItemNote('');
     setExtraNote('');
@@ -1071,6 +1114,10 @@ export default function App() {
             <Text style={styles.orderNote}>
               Tài khoản {currentUser.phone} đã liên kết với mã thiết bị {currentUser.deviceId}.
             </Text>
+          </View>
+          <View style={styles.orderCard}>
+            <Text style={styles.orderId}>📡 Trạng thái đồng bộ Admin</Text>
+            <Text style={styles.orderNote}>{adminSyncNote}</Text>
           </View>
         </ScrollView>
       )}
