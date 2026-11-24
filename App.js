@@ -743,10 +743,28 @@ function readFraudVault() {
   try {
     if (Platform.OS === 'web' && typeof window !== 'undefined' && window.localStorage) {
       const raw = window.localStorage.getItem(DEVICE_VAULT_KEY);
-      return raw ? JSON.parse(raw) : { accounts: {}, devicePromos: {}, boundPhones: [] };
+      const parsed = raw ? JSON.parse(raw) : {};
+      return {
+        accounts: parsed.accounts || {},
+        devicePromos: parsed.devicePromos || {},
+        boundPhones: parsed.boundPhones || [],
+        lastPhone: parsed.lastPhone || '',
+        lastName: parsed.lastName || '',
+        lastAddress: parsed.lastAddress || '',
+        savedAddresses: Array.isArray(parsed.savedAddresses) ? parsed.savedAddresses : [],
+      };
     }
   } catch (e) {}
-  return memoryFallbackVault.data || { accounts: {}, devicePromos: {}, boundPhones: [] };
+  const fb = memoryFallbackVault.data || {};
+  return {
+    accounts: fb.accounts || {},
+    devicePromos: fb.devicePromos || {},
+    boundPhones: fb.boundPhones || [],
+    lastPhone: fb.lastPhone || '',
+    lastName: fb.lastName || '',
+    lastAddress: fb.lastAddress || '',
+    savedAddresses: Array.isArray(fb.savedAddresses) ? fb.savedAddresses : [],
+  };
 }
 
 function writeFraudVault(vault) {
@@ -782,11 +800,16 @@ function calculateRoadDistanceKm(lat1, lon1, lat2, lon2) {
 }
 
 export default function App() {
-  // TRẠNG THÁI ĐĂNG NHẬP / ĐĂNG KÝ OTP
+  // TRẠNG THÁI ĐĂNG NHẬP / ĐĂNG KÝ OTP (TỰ ĐỘNG NHỚ SĐT & ĐỊA CHỈ LẦN TRƯỚC)
+  const initialVault = readFraudVault();
   const [currentUser, setCurrentUser] = useState(null); // { phone, name, deviceId, isDeviceFlagged }
   const [authMode, setAuthMode] = useState('login'); // 'login' | 'register'
-  const [authPhone, setAuthPhone] = useState('');
-  const [authName, setAuthName] = useState('');
+  const [authPhone, setAuthPhone] = useState(initialVault.lastPhone || '');
+  const [authName, setAuthName] = useState(initialVault.lastName || '');
+  const [savedAddresses, setSavedAddresses] = useState(initialVault.savedAddresses || []);
+  const [addressMode, setAddressMode] = useState('saved'); // 'saved' | 'new'
+  const [newAddressLabel, setNewAddressLabel] = useState('');
+  const [newAddressInput, setNewAddressInput] = useState('');
   const [otpSent, setOtpSent] = useState(false);
   const [generatedOtp, setGeneratedOtp] = useState('');
   const [inputOtp, setInputOtp] = useState('');
@@ -1033,6 +1056,12 @@ export default function App() {
     setAuthErrorMsg('');
 
     const vault = readFraudVault();
+    vault.lastPhone = cleanPhone;
+    if (authName && authName.trim()) {
+      vault.lastName = authName.trim();
+    } else if (vault.accounts[cleanPhone]?.name) {
+      vault.lastName = vault.accounts[cleanPhone].name;
+    }
     let userRecord = vault.accounts[cleanPhone];
 
     if (!userRecord) {
@@ -1066,7 +1095,12 @@ export default function App() {
       ...(userRecord.usedPromos || {}),
     };
 
+    writeFraudVault(vault);
     setUsedPromos(mergedUsedPromos);
+    if (vault.lastAddress) {
+      setDropoffAddress(vault.lastAddress);
+    }
+    setSavedAddresses(vault.savedAddresses || []);
     setCurrentUser(userRecord);
     setOtpSent(false);
     setInputOtp('');
@@ -1121,11 +1155,20 @@ export default function App() {
           addr.county || addr.city_district,
           prov,
         ].filter(Boolean);
-        setDropoffAddress(
+        const resolvedAddr =
           exactParts.length > 0
             ? exactParts.join(', ')
-            : `${lat.toFixed(5)}, ${lng.toFixed(5)}`
-        );
+            : `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
+        setDropoffAddress((prev) => {
+          const v = readFraudVault();
+          // Nếu khách đã chọn địa chỉ đã lưu/địa chỉ mới thì giữ nguyên, chỉ cập nhật khi chưa có địa chỉ
+          if (v.lastAddress && prev && !prev.startsWith('Đang định vị')) {
+            return prev;
+          }
+          v.lastAddress = resolvedAddr;
+          writeFraudVault(v);
+          return resolvedAddr;
+        });
 
         const queryArea = encodeURIComponent(prov);
         const listRes = await fetch(
@@ -1390,10 +1433,14 @@ export default function App() {
   const rawAdvanceDigits = currentServiceConfig?.showAdvance
     ? advanceMoney.replace(/\D/g, '')
     : '';
-  // Gõ 1 -> 10.000đ, gõ 2 -> 20.000đ ... gõ 9 -> 90.000đ, gõ 15 -> 150.000đ (tự thêm .000đ / nhân 10.000đ)
   const parsedAdvance = rawAdvanceDigits
-    ? (parseInt(rawAdvanceDigits, 10) || 0) * 10000
+    ? parseInt(rawAdvanceDigits, 10) || 0
     : 0;
+
+  const formatWithCommas = (num) => {
+    if (!num) return '';
+    return String(num).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  };
 
   const handleAdvanceMoneyChange = (text) => {
     const digitsOnly = String(text || '').replace(/\D/g, '').replace(/^0+/, '');
@@ -1402,7 +1449,7 @@ export default function App() {
       return;
     }
     setAdvanceMoney(digitsOnly);
-    if (missingFieldKey === 'advance' && parseInt(digitsOnly, 10) * 10000 >= 10000) {
+    if (missingFieldKey === 'advance' && parseInt(digitsOnly, 10) >= 1000) {
       setMissingFieldKey('');
       setFormValidationMsg('');
     }
@@ -1480,10 +1527,10 @@ export default function App() {
     }
     if (currentServiceConfig.showAdvance) {
       const isAdvanceRequired = currentServiceConfig.advanceLabel.includes('*');
-      if ((isAdvanceRequired && parsedAdvance < 10000) || (parsedAdvance > 0 && parsedAdvance < 10000)) {
+      if (isAdvanceRequired && parsedAdvance <= 0) {
         focusAndRemindField(
           'advance',
-          '⚠️ Tiền ứng trước / giá trị hàng phải từ 10.000đ trở lên (VD: gõ 1 → 10.000đ, gõ 5 → 50.000đ). Vui lòng nhập lại!',
+          '⚠️ Vui lòng nhập số tiền ứng trước / giá trị hàng (VD: 50,000 VND)!',
           advanceInputRef,
           320
         );
@@ -1504,6 +1551,31 @@ export default function App() {
         badWeatherFee: weatherSurcharge,
       },
     });
+
+    // Tự động nhớ SĐT và địa chỉ giao gần nhất cho lần đặt sau
+    {
+      const v = readFraudVault();
+      v.lastPhone = currentUser.phone;
+      v.lastName = currentUser.name;
+      if (dropoffAddress && !dropoffAddress.startsWith('Đang định vị')) {
+        v.lastAddress = dropoffAddress.trim();
+        const exists = (v.savedAddresses || []).some(
+          (item) => item.address.toLowerCase() === dropoffAddress.trim().toLowerCase()
+        );
+        if (!exists) {
+          v.savedAddresses = [
+            {
+              id: `ADDR-${Date.now()}`,
+              label: 'Giao gần nhất',
+              address: dropoffAddress.trim(),
+            },
+            ...(v.savedAddresses || []),
+          ].slice(0, 10);
+          setSavedAddresses(v.savedAddresses);
+        }
+      }
+      writeFraudVault(v);
+    }
 
     // Nếu đơn này có áp dụng ưu đãi 1 lần -> Khóa vĩnh viễn ưu đãi đó cho SĐT + Thiết bị
     if (promoKey && verifiedPricing.discountAmount > 0) {
@@ -1800,9 +1872,76 @@ export default function App() {
           <Text style={styles.pageHeading}>Tài khoản khách hàng</Text>
           <View style={styles.orderCard}>
             <Text style={styles.orderId}>🥷 {currentUser.name}</Text>
-            <Text style={styles.orderNote}>Số điện thoại OTP: {currentUser.phone}</Text>
+            <Text style={styles.orderNote}>Số điện thoại đã nhớ: {currentUser.phone}</Text>
+            <Text style={styles.orderNote}>Địa chỉ gần nhất: {dropoffAddress}</Text>
             <Text style={styles.orderNote}>Khu vực: {detectedProvince}</Text>
-            <Text style={styles.orderNote}>Mã thiết bị chống gian lận: {currentUser.deviceId}</Text>
+          </View>
+
+          <View style={styles.orderCard}>
+            <Text style={styles.orderId}>📌 Sổ địa chỉ đã lưu ({savedAddresses.length})</Text>
+            {savedAddresses.length === 0 ? (
+              <Text style={styles.orderNote}>Chưa có địa chỉ nào được lưu.</Text>
+            ) : (
+              savedAddresses.map((item) => (
+                <View key={item.id} style={styles.profileSavedAddrRow}>
+                  <View style={{ flex: 1, paddingRight: 8 }}>
+                    <Text style={{ fontSize: 12, fontWeight: '800', color: '#D92D20' }}>
+                      {item.label}
+                    </Text>
+                    <Text style={{ fontSize: 13, color: '#1F2937' }}>{item.address}</Text>
+                  </View>
+                  <TouchableOpacity
+                    onPress={() => {
+                      const v = readFraudVault();
+                      const filtered = (v.savedAddresses || []).filter((a) => a.id !== item.id);
+                      v.savedAddresses = filtered;
+                      writeFraudVault(v);
+                      setSavedAddresses(filtered);
+                    }}
+                  >
+                    <Text style={{ fontSize: 12, color: '#6B7280', fontWeight: '700' }}>Xóa</Text>
+                  </TouchableOpacity>
+                </View>
+              ))
+            )}
+
+            <Text style={[styles.inputLabel, { marginTop: 10 }]}>➕ Thêm địa chỉ mới</Text>
+            <TextInput
+              style={[styles.modalInput, { height: 40, marginBottom: 8 }]}
+              placeholder="Tên gợi nhớ (VD: Nhà riêng, Cửa hàng...)"
+              value={newAddressLabel}
+              onChangeText={setNewAddressLabel}
+            />
+            <TextInput
+              style={[styles.modalInput, { height: 42, marginBottom: 8 }]}
+              placeholder="Nhập địa chỉ mới..."
+              value={newAddressInput}
+              onChangeText={setNewAddressInput}
+            />
+            <TouchableOpacity
+              style={styles.saveNewAddrBtn}
+              onPress={() => {
+                const cleanAddr = newAddressInput.trim();
+                if (!cleanAddr) return;
+                const labelText = newAddressLabel.trim() || 'Địa chỉ đã lưu';
+                const v = readFraudVault();
+                const updated = [
+                  { id: `ADDR-${Date.now()}`, label: labelText, address: cleanAddr },
+                  ...(v.savedAddresses || []).filter(
+                    (it) => it.address.toLowerCase() !== cleanAddr.toLowerCase()
+                  ),
+                ].slice(0, 10);
+                v.savedAddresses = updated;
+                v.lastAddress = cleanAddr;
+                writeFraudVault(v);
+                setSavedAddresses(updated);
+                setDropoffAddress(cleanAddr);
+                setNewAddressLabel('');
+                setNewAddressInput('');
+              }}
+            >
+              <Text style={styles.saveNewAddrBtnText}>Lưu địa chỉ mới</Text>
+            </TouchableOpacity>
           </View>
 
           <TouchableOpacity
@@ -2014,36 +2153,199 @@ export default function App() {
                 )}
 
                 <View style={styles.labelRowBetween}>
-                  <Text style={styles.inputLabel}>Điểm giao cho bạn (Vị trí chính xác) *</Text>
-                  <TouchableOpacity onPress={detectUserLocationAndCommunes}>
+                  <Text style={styles.inputLabel}>Điểm giao cho bạn *</Text>
+                  <TouchableOpacity onPress={() => {
+                    const v = readFraudVault();
+                    v.lastAddress = '';
+                    writeFraudVault(v);
+                    setDropoffAddress('Đang định vị chính xác...');
+                    detectUserLocationAndCommunes();
+                  }}>
                     <Text style={styles.gpsRefreshText}>
-                      {isLocating ? 'Đang định vị...' : '📍 Cập nhật GPS'}
+                      {isLocating ? 'Đang định vị...' : '📍 Lấy GPS hiện tại'}
                     </Text>
                   </TouchableOpacity>
                 </View>
-                <View
-                  style={[
-                    styles.gpsBox,
-                    missingFieldKey === 'dropoff' && styles.inputMissingHighlight,
-                  ]}
-                >
-                  {isLocating && (
-                    <ActivityIndicator size="small" color="#D92D20" style={{ marginRight: 8 }} />
-                  )}
-                  <TextInput
-                    ref={dropoffInputRef}
-                    style={styles.gpsInput}
-                    value={dropoffAddress}
-                    onChangeText={(v) => {
-                      setDropoffAddress(v);
-                      if (missingFieldKey === 'dropoff' && v.trim()) {
-                        setMissingFieldKey('');
-                        setFormValidationMsg('');
-                      }
+
+                {/* Tab chuyển đổi: Địa chỉ đã lưu | Địa chỉ mới */}
+                <View style={styles.addrTabRow}>
+                  <TouchableOpacity
+                    style={[
+                      styles.addrTabBtn,
+                      addressMode === 'saved' && styles.addrTabBtnActive,
+                    ]}
+                    onPress={() => setAddressMode('saved')}
+                  >
+                    <Text
+                      style={[
+                        styles.addrTabText,
+                        addressMode === 'saved' && styles.addrTabTextActive,
+                      ]}
+                    >
+                      📌 Địa chỉ đã lưu ({savedAddresses.length})
+                    </Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={[
+                      styles.addrTabBtn,
+                      addressMode === 'new' && styles.addrTabBtnActive,
+                    ]}
+                    onPress={() => {
+                      setAddressMode('new');
+                      setNewAddressInput('');
                     }}
-                    placeholder="Vị trí GPS chính xác của bạn"
-                  />
+                  >
+                    <Text
+                      style={[
+                        styles.addrTabText,
+                        addressMode === 'new' && styles.addrTabTextActive,
+                      ]}
+                    >
+                      ➕ Địa chỉ mới
+                    </Text>
+                  </TouchableOpacity>
                 </View>
+
+                {addressMode === 'saved' && (
+                  <View style={styles.savedAddrBox}>
+                    {savedAddresses.length === 0 ? (
+                      <Text style={styles.savedAddrEmpty}>
+                        Chưa có địa chỉ đã lưu. Chọn "➕ Địa chỉ mới" hoặc dùng GPS hiện tại bên dưới.
+                      </Text>
+                    ) : (
+                      <ScrollView
+                        horizontal
+                        showsHorizontalScrollIndicator={false}
+                        style={{ marginBottom: 8 }}
+                      >
+                        {savedAddresses.map((item) => {
+                          const isSelected = dropoffAddress === item.address;
+                          return (
+                            <TouchableOpacity
+                              key={item.id}
+                              style={[
+                                styles.savedAddrChip,
+                                isSelected && styles.savedAddrChipActive,
+                              ]}
+                              onPress={() => {
+                                setDropoffAddress(item.address);
+                                const v = readFraudVault();
+                                v.lastAddress = item.address;
+                                writeFraudVault(v);
+                                if (missingFieldKey === 'dropoff') {
+                                  setMissingFieldKey('');
+                                  setFormValidationMsg('');
+                                }
+                              }}
+                            >
+                              <Text
+                                style={[
+                                  styles.savedAddrChipLabel,
+                                  isSelected && { color: '#D92D20' },
+                                ]}
+                              >
+                                {item.label || 'Đã lưu'}
+                              </Text>
+                              <Text
+                                numberOfLines={1}
+                                style={[
+                                  styles.savedAddrChipText,
+                                  isSelected && { color: '#111827', fontWeight: '700' },
+                                ]}
+                              >
+                                {item.address}
+                              </Text>
+                            </TouchableOpacity>
+                          );
+                        })}
+                      </ScrollView>
+                    )}
+
+                    <View
+                      style={[
+                        styles.gpsBox,
+                        { marginBottom: 0 },
+                        missingFieldKey === 'dropoff' && styles.inputMissingHighlight,
+                      ]}
+                    >
+                      {isLocating && (
+                        <ActivityIndicator size="small" color="#D92D20" style={{ marginRight: 8 }} />
+                      )}
+                      <TextInput
+                        ref={dropoffInputRef}
+                        style={styles.gpsInput}
+                        value={dropoffAddress}
+                        onChangeText={(v) => {
+                          setDropoffAddress(v);
+                          const vault = readFraudVault();
+                          vault.lastAddress = v;
+                          writeFraudVault(vault);
+                          if (missingFieldKey === 'dropoff' && v.trim()) {
+                            setMissingFieldKey('');
+                            setFormValidationMsg('');
+                          }
+                        }}
+                        placeholder="Địa chỉ nhận hàng..."
+                      />
+                    </View>
+                  </View>
+                )}
+
+                {addressMode === 'new' && (
+                  <View style={styles.newAddrCard}>
+                    <TextInput
+                      style={[styles.modalInput, { height: 40, marginBottom: 8 }]}
+                      placeholder="Tên gợi nhớ (VD: Nhà riêng, Cơ quan...)"
+                      value={newAddressLabel}
+                      onChangeText={setNewAddressLabel}
+                    />
+                    <TextInput
+                      style={[styles.modalInput, { height: 42, marginBottom: 8 }]}
+                      placeholder="Nhập số nhà, tên đường, xã/phường mới..."
+                      value={newAddressInput}
+                      onChangeText={setNewAddressInput}
+                    />
+                    <TouchableOpacity
+                      style={styles.saveNewAddrBtn}
+                      onPress={() => {
+                        const cleanAddr = newAddressInput.trim();
+                        if (!cleanAddr) {
+                          Alert.alert('Thiếu địa chỉ', 'Vui lòng nhập địa chỉ mới trước khi lưu.');
+                          return;
+                        }
+                        const labelText = newAddressLabel.trim() || 'Địa chỉ mới';
+                        const v = readFraudVault();
+                        const updatedList = [
+                          {
+                            id: `ADDR-${Date.now()}`,
+                            label: labelText,
+                            address: cleanAddr,
+                          },
+                          ...(v.savedAddresses || []).filter(
+                            (it) => it.address.toLowerCase() !== cleanAddr.toLowerCase()
+                          ),
+                        ].slice(0, 10);
+                        v.savedAddresses = updatedList;
+                        v.lastAddress = cleanAddr;
+                        writeFraudVault(v);
+                        setSavedAddresses(updatedList);
+                        setDropoffAddress(cleanAddr);
+                        setNewAddressLabel('');
+                        setNewAddressInput('');
+                        setAddressMode('saved');
+                        if (missingFieldKey === 'dropoff') {
+                          setMissingFieldKey('');
+                          setFormValidationMsg('');
+                        }
+                      }}
+                    >
+                      <Text style={styles.saveNewAddrBtnText}>
+                        💾 Lưu & Chọn địa chỉ này
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+                )}
 
                 {currentServiceConfig.showDuration && (
                   <View style={{ marginBottom: 10 }}>
@@ -2080,10 +2382,7 @@ export default function App() {
 
                 {currentServiceConfig.showAdvance && (
                   <View style={{ marginBottom: 10 }}>
-                    <View style={styles.labelRowBetween}>
-                      <Text style={styles.inputLabel}>Số tiền ứng trước</Text>
-                      <Text style={styles.autoBadge}>Gõ 1 = 10.000đ</Text>
-                    </View>
+                    <Text style={styles.inputLabel}>Số tiền ứng trước</Text>
                     <View
                       style={[
                         styles.bankAmountBox,
@@ -2096,7 +2395,7 @@ export default function App() {
                         keyboardType="numeric"
                         placeholder="0"
                         placeholderTextColor="#9CA3AF"
-                        value={advanceMoney ? parsedAdvance.toLocaleString('vi-VN') : ''}
+                        value={parsedAdvance > 0 ? formatWithCommas(parsedAdvance) : ''}
                         onChangeText={handleAdvanceMoneyChange}
                       />
                       {!!advanceMoney && (
@@ -2111,8 +2410,8 @@ export default function App() {
                     </View>
                     <Text style={styles.bankAmountWords}>
                       {parsedAdvance > 0
-                        ? `${parsedAdvance.toLocaleString('vi-VN')} đồng (nhập số ${advanceMoney} × 10k)`
-                        : 'Nhập số: VD gõ 1 = 10.000đ, gõ 5 = 50.000đ'}
+                        ? `${formatWithCommas(parsedAdvance)} đồng`
+                        : 'Nhập số tiền cần ứng (tự định dạng dấu phẩy)'}
                     </Text>
                     <ScrollView
                       horizontal
@@ -2120,16 +2419,17 @@ export default function App() {
                       style={{ marginTop: 6 }}
                     >
                       {[
-                        { d: '1', label: '10,000' },
-                        { d: '2', label: '20,000' },
-                        { d: '5', label: '50,000' },
-                        { d: '10', label: '100,000' },
-                        { d: '20', label: '200,000' },
+                        { val: '10000', label: '10,000' },
+                        { val: '20000', label: '20,000' },
+                        { val: '50000', label: '50,000' },
+                        { val: '100000', label: '100,000' },
+                        { val: '200000', label: '200,000' },
+                        { val: '500000', label: '500,000' },
                       ].map((chip) => (
                         <TouchableOpacity
-                          key={chip.d}
+                          key={chip.val}
                           style={styles.bankQuickChip}
-                          onPress={() => handleAdvanceMoneyChange(chip.d)}
+                          onPress={() => handleAdvanceMoneyChange(chip.val)}
                         >
                           <Text style={styles.bankQuickChipText}>{chip.label}</Text>
                         </TouchableOpacity>
@@ -3263,5 +3563,94 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '700',
     color: '#1F2937',
+  },
+  addrTabRow: {
+    flexDirection: 'row',
+    backgroundColor: '#F3F4F6',
+    borderRadius: 12,
+    padding: 3,
+    marginBottom: 8,
+  },
+  addrTabBtn: {
+    flex: 1,
+    paddingVertical: 7,
+    alignItems: 'center',
+    borderRadius: 9,
+  },
+  addrTabBtnActive: {
+    backgroundColor: '#FFFFFF',
+    shadowColor: '#000',
+    shadowOpacity: 0.06,
+    shadowRadius: 3,
+    shadowOffset: { width: 0, height: 1 },
+    elevation: 1,
+  },
+  addrTabText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#6B7280',
+  },
+  addrTabTextActive: {
+    color: '#D92D20',
+  },
+  savedAddrBox: {
+    marginBottom: 10,
+  },
+  savedAddrEmpty: {
+    fontSize: 12,
+    color: '#6B7280',
+    fontStyle: 'italic',
+    marginBottom: 6,
+  },
+  savedAddrChip: {
+    backgroundColor: '#F9FAFB',
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    marginRight: 8,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    maxWidth: 210,
+  },
+  savedAddrChipActive: {
+    backgroundColor: '#FEF2F2',
+    borderColor: '#D92D20',
+  },
+  savedAddrChipLabel: {
+    fontSize: 11,
+    fontWeight: '800',
+    color: '#4B5563',
+    marginBottom: 2,
+  },
+  savedAddrChipText: {
+    fontSize: 12,
+    color: '#374151',
+  },
+  newAddrCard: {
+    backgroundColor: '#F9FAFB',
+    borderRadius: 12,
+    padding: 10,
+    marginBottom: 10,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+  },
+  saveNewAddrBtn: {
+    backgroundColor: '#111827',
+    borderRadius: 10,
+    paddingVertical: 10,
+    alignItems: 'center',
+  },
+  saveNewAddrBtnText: {
+    color: '#FFFFFF',
+    fontSize: 13,
+    fontWeight: '800',
+  },
+  profileSavedAddrRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F3F4F6',
   },
 });
