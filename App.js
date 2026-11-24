@@ -602,15 +602,15 @@ const SERVICE_CONFIGS = {
     promoKey: 'promo_receive_15',
     discountRate: 0.15,
     discountLabel: '0–2km: 15.000đ • +5.000đ/km • Giảm 15% (1 lần)',
-    mainLabel: 'Thông tin bưu phẩm / Hàng cần nhận hộ *',
-    mainPlaceholder: 'VD: Nhận thùng hàng xe khách / Bưu phẩm Shopee',
-    pickupLabel: 'Điểm nhận hàng (Bến xe / Bưu cục / Người gửi)',
-    detailPlaceholder: 'VD: Nhà xe Hưng Long hoặc Bưu cục Viettel Post...',
+    mainLabel: 'Hàng nhận hộ *',
+    mainPlaceholder: 'Nhập tên hàng cần nhận hộ...',
+    pickupLabel: 'Điểm nhận hàng *',
+    detailPlaceholder: 'Số nhà, tên đường / điểm nhận...',
     showAdvance: true,
-    advanceLabel: 'Tiền COD / Phí nhà xe cần trả hộ (đ)',
+    advanceLabel: 'Số tiền ứng trước',
     showDuration: false,
-    extraLabel: 'Tên & SĐT người gửi / Mã vận đơn',
-    extraPlaceholder: 'VD: Anh Nam - 0912xxx, đọc mã 8842',
+    extraLabel: 'Ghi chú',
+    extraPlaceholder: 'SĐT người gửi / mã đơn (nếu có)',
     submitText: 'Đặt tài xế nhận hộ',
   },
   'Làm hộ': {
@@ -2048,9 +2048,8 @@ export default function App() {
 
                 <View style={styles.labelRowBetween}>
                   <Text style={styles.inputLabel}>
-                    {currentServiceConfig.pickupLabel} (Tỉnh {detectedProvince} - Từ Đồng Hới trở ra) *
+                    {currentServiceConfig.pickupLabel.replace(' *', '')} *
                   </Text>
-                  <Text style={styles.autoBadge}>Xã/Phường mới 2025</Text>
                 </View>
 
                 {/* Bộ lọc nhanh theo cụm khu vực từ Đồng Hới trở ra Bắc */}
@@ -2408,11 +2407,11 @@ export default function App() {
                       )}
                       <Text style={styles.bankCurrencyLabel}>VND</Text>
                     </View>
-                    <Text style={styles.bankAmountWords}>
-                      {parsedAdvance > 0
-                        ? `${formatWithCommas(parsedAdvance)} đồng`
-                        : 'Nhập số tiền cần ứng (tự định dạng dấu phẩy)'}
-                    </Text>
+                    {parsedAdvance > 0 && (
+                      <Text style={styles.bankAmountWords}>
+                        {`${formatWithCommas(parsedAdvance)} đồng`}
+                      </Text>
+                    )}
                     <ScrollView
                       horizontal
                       showsHorizontalScrollIndicator={false}
@@ -2484,7 +2483,7 @@ export default function App() {
                 <View style={styles.priceSummary}>
                   {!selectedPickupCommune ? (
                     <Text style={styles.priceLine}>
-                      Vui lòng chọn xã/phường điểm lấy hàng để hệ thống GPS tính chi tiết từng khoản phí.
+                      Chọn xã/phường điểm nhận hàng để tính phí.
                     </Text>
                   ) : (
                     <>
