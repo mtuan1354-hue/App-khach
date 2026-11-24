@@ -55,26 +55,47 @@ const SERVICES_SMALL = [
 ];
 
 const FALLBACK_COMMUNES = [
-  { name: 'Phường Ba Đồn', lat: 17.7524, lng: 106.4182 },
-  { name: 'Phường Quảng Long', lat: 17.7685, lng: 106.4251 },
-  { name: 'Phường Quảng Thọ', lat: 17.7431, lng: 106.4418 },
-  { name: 'Phường Quảng Thuận', lat: 17.7412, lng: 106.4045 },
-  { name: 'Phường Quảng Phúc', lat: 17.7215, lng: 106.4530 },
-  { name: 'Phường Quảng Phong', lat: 17.7590, lng: 106.3980 },
-  { name: 'Xã Quảng Hòa', lat: 17.7310, lng: 106.3755 },
-  { name: 'Xã Quảng Lộc', lat: 17.7220, lng: 106.3920 },
-  { name: 'Xã Quảng Tân', lat: 17.7150, lng: 106.4110 },
-  { name: 'Xã Quảng Trung', lat: 17.7080, lng: 106.3840 },
-  { name: 'Xã Quảng Tiên', lat: 17.7195, lng: 106.3650 },
-  { name: 'Xã Quảng Văn', lat: 17.7025, lng: 106.4280 },
-  { name: 'Xã Quảng Minh', lat: 17.6940, lng: 106.3710 },
-  { name: 'Xã Quảng Sơn', lat: 17.6850, lng: 106.3420 },
-  { name: 'Xã Quảng Thủy', lat: 17.6980, lng: 106.3540 },
-  { name: 'Xã Quảng Hải', lat: 17.7380, lng: 106.4290 },
-  { name: 'Xã Quảng Phương', lat: 17.7850, lng: 106.4120 },
-  { name: 'Xã Quảng Hưng', lat: 17.8120, lng: 106.3980 },
-  { name: 'Xã Quảng Thanh', lat: 17.7720, lng: 106.3820 },
-  { name: 'Xã Quảng Trạch (Cảnh Dương)', lat: 17.8540, lng: 106.4620 },
+  // Khu vực Đồng Hới (3 phường mới)
+  { name: 'Phường Đồng Hới', area: 'Đồng Hới', lat: 17.4689, lng: 106.6223, subUnits: 'Đức Ninh Đông, Đồng Hải, Đồng Phú, Phú Hải, Hải Thành, Nam Lý, Bảo Ninh, Đức Ninh' },
+  { name: 'Phường Đồng Thuận', area: 'Đồng Hới', lat: 17.5032, lng: 106.5985, subUnits: 'Bắc Lý, Lộc Ninh, Quang Phú' },
+  { name: 'Phường Đồng Sơn', area: 'Đồng Hới', lat: 17.4520, lng: 106.5780, subUnits: 'Bắc Nghĩa, Đồng Sơn, Nghĩa Ninh, Thuận Đức' },
+
+  // Khu vực Bố Trạch (7 xã mới)
+  { name: 'Xã Nam Trạch', area: 'Bố Trạch', lat: 17.5350, lng: 106.5450, subUnits: 'TT NT Việt Trung, Nhân Trạch, Lý Nam' },
+  { name: 'Xã Hoàn Lão', area: 'Bố Trạch', lat: 17.5765, lng: 106.5280, subUnits: 'TT Hoàn Lão, Trung Trạch, Đại Trạch, Tây Trạch, Hòa Trạch' },
+  { name: 'Xã Đông Trạch', area: 'Bố Trạch', lat: 17.6120, lng: 106.5050, subUnits: 'Hải Phú, Sơn Lộc, Đức Trạch, Đồng Trạch' },
+  { name: 'Xã Bắc Trạch', area: 'Bố Trạch', lat: 17.6520, lng: 106.4720, subUnits: 'Thanh Trạch, Hạ Mỹ, Liên Trạch, Bắc Trạch' },
+  { name: 'Xã Bố Trạch', area: 'Bố Trạch', lat: 17.5850, lng: 106.4350, subUnits: 'Hưng Trạch, Cự Nẫm, Vạn Trạch, Phú Định' },
+  { name: 'Xã Phong Nha', area: 'Bố Trạch', lat: 17.5910, lng: 106.2880, subUnits: 'TT Phong Nha, Lâm Trạch, Xuân Trạch, Phúc Trạch' },
+  { name: 'Xã Thượng Trạch', area: 'Bố Trạch', lat: 17.4250, lng: 106.1950, subUnits: 'Tân Trạch, Thượng Trạch' },
+
+  // Khu vực Ba Đồn (2 phường, 2 xã mới)
+  { name: 'Phường Ba Đồn', area: 'Ba Đồn', lat: 17.7524, lng: 106.4182, subUnits: 'Quảng Phong, Quảng Long, Ba Đồn, Quảng Hải' },
+  { name: 'Phường Bắc Gianh', area: 'Ba Đồn', lat: 17.7431, lng: 106.4418, subUnits: 'Quảng Phúc, Quảng Thọ, Quảng Thuận' },
+  { name: 'Xã Nam Gianh', area: 'Ba Đồn', lat: 17.7245, lng: 106.3910, subUnits: 'Quảng Hòa, Quảng Lộc, Quảng Văn, Quảng Minh' },
+  { name: 'Xã Nam Ba Đồn', area: 'Ba Đồn', lat: 17.7050, lng: 106.3750, subUnits: 'Quảng Tân, Quảng Trung, Quảng Tiên, Quảng Sơn, Quảng Thủy' },
+
+  // Khu vực Quảng Trạch (5 xã mới)
+  { name: 'Xã Quảng Trạch', area: 'Quảng Trạch', lat: 17.7850, lng: 106.4120, subUnits: 'Quảng Phương, Quảng Xuân, Quảng Hưng' },
+  { name: 'Xã Hòa Trạch', area: 'Quảng Trạch', lat: 17.8540, lng: 106.4620, subUnits: 'Quảng Châu, Quảng Tùng, Cảnh Dương' },
+  { name: 'Xã Phú Trạch', area: 'Quảng Trạch', lat: 17.9120, lng: 106.4750, subUnits: 'Quảng Đông, Quảng Phú, Quảng Kim, Quảng Hợp' },
+  { name: 'Xã Trung Thuần', area: 'Quảng Trạch', lat: 17.8120, lng: 106.3650, subUnits: 'Quảng Lưu, Quảng Thạch, Quảng Tiến' },
+  { name: 'Xã Tân Gianh', area: 'Quảng Trạch', lat: 17.7720, lng: 106.3520, subUnits: 'Phù Cảnh, Liên Trường, Quảng Thanh' },
+
+  // Khu vực Tuyên Hóa (6 xã mới)
+  { name: 'Xã Tuyên Hóa', area: 'Tuyên Hóa', lat: 17.7950, lng: 106.2650, subUnits: 'Tiến Hóa, Châu Hóa, Cao Quảng, Văn Hóa' },
+  { name: 'Xã Tuyên Bình', area: 'Tuyên Hóa', lat: 17.8250, lng: 106.2150, subUnits: 'Phong Hóa, Ngư Hóa, Mai Hóa' },
+  { name: 'Xã Tuyên Phú', area: 'Tuyên Hóa', lat: 17.8650, lng: 106.1450, subUnits: 'Đồng Hóa, Thạch Hóa, Đức Hóa' },
+  { name: 'Xã Đồng Lê', area: 'Tuyên Hóa', lat: 17.9050, lng: 106.0350, subUnits: 'TT Đồng Lê, Kim Hóa, Lê Hóa, Thuận Hóa, Sơn Hóa' },
+  { name: 'Xã Tuyên Sơn', area: 'Tuyên Hóa', lat: 17.9550, lng: 105.9850, subUnits: 'Thanh Thạch, Hương Hóa' },
+  { name: 'Xã Tuyên Lâm', area: 'Tuyên Hóa', lat: 18.0150, lng: 105.9150, subUnits: 'Lâm Hóa, Thanh Hóa' },
+
+  // Khu vực Minh Hóa (5 xã mới)
+  { name: 'Xã Minh Hóa', area: 'Minh Hóa', lat: 17.7850, lng: 105.9750, subUnits: 'TT Quy Đạt, Xuân Hóa, Yên Hóa, Hồng Hóa' },
+  { name: 'Xã Kim Phú', area: 'Minh Hóa', lat: 17.7350, lng: 106.0350, subUnits: 'Thượng Hóa, Trung Hóa, Minh Hóa, Tân Hóa' },
+  { name: 'Xã Kim Điền', area: 'Minh Hóa', lat: 17.8450, lng: 105.9150, subUnits: 'Hóa Sơn, Hóa Hợp' },
+  { name: 'Xã Dân Hóa', area: 'Minh Hóa', lat: 17.7650, lng: 105.7850, subUnits: 'Trọng Hóa, Dân Hóa' },
+  { name: 'Xã Tân Thành', area: 'Minh Hóa', lat: 17.7450, lng: 105.8950, subUnits: 'Giữ nguyên theo NQ 1680/NQ-UBTVQH15' },
 ];
 
 // =========================================================================
@@ -604,10 +625,12 @@ export default function App() {
   const [bulkySurcharge, setBulkySurcharge] = useState(0); // 0 | 10000 | 20000
   const [weatherSurcharge, setWeatherSurcharge] = useState(0); // 0 | 5000 | 10000
 
-  const [detectedProvince, setDetectedProvince] = useState('Quảng Bình');
+  const [detectedProvince, setDetectedProvince] = useState('Quảng Trị');
   const [communes, setCommunes] = useState(FALLBACK_COMMUNES);
   const [selectedPickupCommune, setSelectedPickupCommune] = useState(null);
+  const [pickupHamlet, setPickupHamlet] = useState(''); // Thôn / Tổ dân phố / Xóm
   const [pickupDetailAddress, setPickupDetailAddress] = useState('');
+  const [selectedAreaFilter, setSelectedAreaFilter] = useState('Tất cả');
 
   const [dropoffCoords, setDropoffCoords] = useState({ lat: 17.7524, lng: 106.4182 });
   const [dropoffAddress, setDropoffAddress] = useState('Đang định vị chính xác...');
@@ -871,8 +894,9 @@ export default function App() {
         );
         const revData = await revRes.json();
         const addr = revData.address || {};
-        const prov =
-          addr.state || addr.province || addr.city || addr.region || 'Quảng Bình';
+        const rawProv =
+          addr.state || addr.province || addr.city || addr.region || 'Quảng Trị';
+        const prov = /quảng bình/i.test(rawProv) ? 'Quảng Trị' : rawProv;
         setDetectedProvince(prov);
 
         const exactParts = [
@@ -893,7 +917,7 @@ export default function App() {
           `https://nominatim.openstreetmap.org/search?format=json&q=xã+phường+${queryArea}&limit=25&accept-language=vi`
         );
         const listData = await listRes.json();
-        if (Array.isArray(listData) && listData.length >= 4) {
+        if (!/quảng trị/i.test(prov) && Array.isArray(listData) && listData.length >= 4) {
           const parsedList = listData
             .map((item) => ({
               name: item.display_name.split(',')[0].trim(),
@@ -922,13 +946,13 @@ export default function App() {
         (pos) => onSuccessCoords(pos.coords.latitude, pos.coords.longitude),
         () => {
           setIsLocating(false);
-          setDropoffAddress('Phường Ba Đồn, Thị xã Ba Đồn, Quảng Bình');
+          setDropoffAddress('Phường Ba Đồn, Tỉnh Quảng Trị');
         },
         { enableHighAccuracy: true, timeout: 8000 }
       );
     } else {
       setIsLocating(false);
-      setDropoffAddress('Phường Ba Đồn, Thị xã Ba Đồn, Quảng Bình');
+      setDropoffAddress('Phường Ba Đồn, Tỉnh Quảng Trị');
     }
   };
 
@@ -1205,9 +1229,14 @@ export default function App() {
       setUsedPromos({ ...usedPromos, [promoKey]: true });
     }
 
-    const fullPickup = pickupDetailAddress.trim()
-      ? `${pickupDetailAddress.trim()}, ${selectedPickupCommune.name}`
-      : selectedPickupCommune.name;
+    const fullPickup = [
+      pickupDetailAddress.trim(),
+      pickupHamlet.trim(),
+      selectedPickupCommune.name,
+      detectedProvince,
+    ]
+      .filter(Boolean)
+      .join(', ');
 
     const feeTags = [
       verifiedPricing.shippingFee > 0 ? `Ship: ${verifiedPricing.shippingFee.toLocaleString('vi-VN')}đ` : null,
@@ -1258,6 +1287,7 @@ export default function App() {
     setActiveModal(null);
     setItemNote('');
     setExtraNote('');
+    setPickupHamlet('');
     setAdvanceMoney('0');
     setTaskDurationMinutes(15);
     setExtraStopsCount(0);
@@ -1568,44 +1598,90 @@ export default function App() {
 
                 <View style={styles.labelRowBetween}>
                   <Text style={styles.inputLabel}>
-                    {currentServiceConfig.pickupLabel} ({detectedProvince}) *
+                    {currentServiceConfig.pickupLabel} (Tỉnh {detectedProvince} - Từ Đồng Hới trở ra) *
                   </Text>
-                  <Text style={styles.autoBadge}>Chọn xã/phường</Text>
+                  <Text style={styles.autoBadge}>Xã/Phường mới 2025</Text>
                 </View>
 
+                {/* Bộ lọc nhanh theo cụm khu vực từ Đồng Hới trở ra Bắc */}
                 <ScrollView
                   horizontal
                   showsHorizontalScrollIndicator={false}
                   style={styles.communeChipsRow}
                 >
-                  {communes.map((com, index) => {
-                    const isSelected = selectedPickupCommune?.name === com.name;
+                  {['Tất cả', 'Đồng Hới', 'Bố Trạch', 'Ba Đồn', 'Quảng Trạch', 'Tuyên Hóa', 'Minh Hóa'].map((area) => {
+                    const activeArea = selectedAreaFilter === area;
                     return (
                       <TouchableOpacity
-                        key={`${com.name}-${index}`}
+                        key={`area-${area}`}
                         style={[
                           styles.communeChip,
-                          isSelected && styles.communeChipActive,
+                          { paddingVertical: 5, backgroundColor: activeArea ? '#111827' : '#F3F4F6', borderColor: activeArea ? '#111827' : '#E5E7EB' },
                         ]}
-                        onPress={() => setSelectedPickupCommune(com)}
+                        onPress={() => setSelectedAreaFilter(area)}
                       >
                         <Text
                           style={[
                             styles.communeChipText,
-                            isSelected && styles.communeChipTextActive,
+                            { fontSize: 12, color: activeArea ? '#FFFFFF' : '#374151' },
                           ]}
                         >
-                          {com.name}
+                          {area}
                         </Text>
                       </TouchableOpacity>
                     );
                   })}
                 </ScrollView>
 
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  style={styles.communeChipsRow}
+                >
+                  {communes
+                    .filter((com) => selectedAreaFilter === 'Tất cả' || com.area === selectedAreaFilter)
+                    .map((com, index) => {
+                      const isSelected = selectedPickupCommune?.name === com.name;
+                      return (
+                        <TouchableOpacity
+                          key={`${com.name}-${index}`}
+                          style={[
+                            styles.communeChip,
+                            isSelected && styles.communeChipActive,
+                          ]}
+                          onPress={() => setSelectedPickupCommune(com)}
+                        >
+                          <Text
+                            style={[
+                              styles.communeChipText,
+                              isSelected && styles.communeChipTextActive,
+                            ]}
+                          >
+                            {com.name}
+                          </Text>
+                        </TouchableOpacity>
+                      );
+                    })}
+                </ScrollView>
+
                 {selectedPickupCommune && (
                   <View style={styles.detailAddrBox}>
+                    {!!selectedPickupCommune.subUnits && (
+                      <Text style={{ fontSize: 11, color: '#059669', fontWeight: '700', marginBottom: 6 }}>
+                        ℹ️ Hợp nhất từ: {selectedPickupCommune.subUnits}
+                      </Text>
+                    )}
                     <Text style={styles.subInputLabel}>
-                      Địa chỉ cụ thể tại {selectedPickupCommune.name} (số nhà, tên quán):
+                      Thôn / Tổ dân phố / Tiểu khu tại {selectedPickupCommune.name}:
+                    </Text>
+                    <TextInput
+                      style={styles.modalInput}
+                      placeholder="VD: Thôn Trung Hòa / Tổ dân phố 3 / Thôn Cảnh Dương..."
+                      value={pickupHamlet}
+                      onChangeText={setPickupHamlet}
+                    />
+                    <Text style={styles.subInputLabel}>
+                      Số nhà, tên đường / tên quán tại {selectedPickupCommune.name}:
                     </Text>
                     <TextInput
                       style={styles.modalInput}
@@ -1732,7 +1808,7 @@ export default function App() {
                   ) : (
                     <>
                       <Text style={styles.priceLine}>
-                        • Tuyến GPS: {selectedPickupCommune.name} → Vị trí của bạn ({autoDistanceKm} km)
+                        • Tuyến GPS: {[pickupHamlet.trim(), selectedPickupCommune.name, detectedProvince].filter(Boolean).join(', ')} → Vị trí của bạn ({autoDistanceKm} km)
                       </Text>
                       {pricing.shippingFee > 0 && (
                         <Text style={styles.priceLine}>
