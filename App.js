@@ -62,14 +62,6 @@ const FALLBACK_COMMUNES = [
     lat: 17.4689,
     lng: 106.6223,
     subUnits: 'Đức Ninh Đông, Đồng Hải, Đồng Phú, Phú Hải, Hải Thành, Nam Lý, Bảo Ninh, Đức Ninh',
-    hamlets: [
-      'TDP 1 Đồng Hải', 'TDP 2 Đồng Hải', 'TDP 1 Đồng Phú', 'TDP 2 Đồng Phú', 'TDP 3 Đồng Phú',
-      'TDP 1 Nam Lý', 'TDP 2 Nam Lý', 'TDP 3 Nam Lý', 'TDP 4 Nam Lý', 'TDP 5 Nam Lý',
-      'TDP 1 Hải Thành', 'TDP 2 Hải Thành', 'TDP 3 Hải Thành', 'TDP 1 Phú Hải', 'TDP 2 Phú Hải',
-      'TDP 1 Đức Ninh Đông', 'TDP 2 Đức Ninh Đông', 'Thôn Mỹ Cảnh (Bảo Ninh)', 'Thôn Hà Dương (Bảo Ninh)',
-      'Thôn Đồng Dương (Bảo Ninh)', 'Thôn Sa Động (Bảo Ninh)', 'Thôn Trung Bính (Bảo Ninh)',
-      'Thôn Đức Hoa (Đức Ninh)', 'Thôn Đức Thủy (Đức Ninh)', 'Thôn Đức Thịnh (Đức Ninh)'
-    ],
   },
   {
     name: 'Phường Đồng Thuận',
@@ -77,13 +69,6 @@ const FALLBACK_COMMUNES = [
     lat: 17.5032,
     lng: 106.5985,
     subUnits: 'Bắc Lý, Lộc Ninh, Quang Phú',
-    hamlets: [
-      'TDP 1 Bắc Lý', 'TDP 2 Bắc Lý', 'TDP 3 Bắc Lý', 'TDP 4 Bắc Lý', 'TDP 5 Bắc Lý',
-      'TDP 6 Bắc Lý', 'TDP 7 Bắc Lý', 'TDP 8 Bắc Lý', 'TDP 9 Bắc Lý', 'TDP 10 Bắc Lý',
-      'Thôn 1 Lộc Ninh', 'Thôn 2 Lộc Ninh', 'Thôn 3 Lộc Ninh', 'Thôn 4 Lộc Ninh', 'Thôn 5 Lộc Ninh',
-      'Thôn 6 Lộc Ninh', 'Thôn 7 Lộc Ninh', 'Thôn 8 Lộc Ninh', 'Thôn 9 Lộc Ninh',
-      'Thôn Nhân Trạch (Quang Phú)', 'Thôn Tân Phú (Quang Phú)', 'Thôn Đông Phú (Quang Phú)'
-    ],
   },
   {
     name: 'Phường Đồng Sơn',
@@ -91,12 +76,6 @@ const FALLBACK_COMMUNES = [
     lat: 17.4520,
     lng: 106.5780,
     subUnits: 'Bắc Nghĩa, Đồng Sơn, Nghĩa Ninh, Thuận Đức',
-    hamlets: [
-      'TDP 1 Đồng Sơn', 'TDP 2 Đồng Sơn', 'TDP 3 Đồng Sơn', 'TDP 4 Đồng Sơn', 'TDP 5 Đồng Sơn',
-      'TDP 1 Bắc Nghĩa', 'TDP 2 Bắc Nghĩa', 'TDP 3 Bắc Nghĩa', 'TDP 4 Bắc Nghĩa', 'TDP 5 Bắc Nghĩa',
-      'Thôn 1 Nghĩa Ninh', 'Thôn 2 Nghĩa Ninh', 'Thôn 3 Nghĩa Ninh', 'Thôn 4 Nghĩa Ninh',
-      'Thôn 1 Thuận Đức', 'Thôn 2 Thuận Đức', 'Thôn 3 Thuận Đức', 'Thôn 4 Thuận Đức', 'Thôn 5 Thuận Đức'
-    ],
   },
 
   // Khu vực Bố Trạch (7 xã mới)
@@ -106,11 +85,6 @@ const FALLBACK_COMMUNES = [
     lat: 17.5350,
     lng: 106.5450,
     subUnits: 'TT NT Việt Trung, Nhân Trạch, Lý Nam',
-    hamlets: [
-      'TDP Quyết Tiến', 'TDP Hữu Nghị', 'TDP Thống Nhất', 'TDP Dũng Cảm', 'TDP Nam Sơn',
-      'Thôn Nhân Quang', 'Thôn Nhân Hải', 'Thôn Nhân Nam', 'Thôn Nhân Bình', 'Thôn Nhân Tiến',
-      'Thôn Lý Nhân', 'Thôn Lý Hòa', 'Thôn Nam Hồng', 'Thôn Bắc Sơn'
-    ],
   },
   {
     name: 'Xã Hoàn Lão',
@@ -118,13 +92,6 @@ const FALLBACK_COMMUNES = [
     lat: 17.5765,
     lng: 106.5280,
     subUnits: 'TT Hoàn Lão, Trung Trạch, Đại Trạch, Tây Trạch, Hòa Trạch',
-    hamlets: [
-      'TDP 1 Hoàn Lão', 'TDP 2 Hoàn Lão', 'TDP 3 Hoàn Lão', 'TDP 4 Hoàn Lão', 'TDP 5 Hoàn Lão',
-      'TDP 6 Hoàn Lão', 'TDP 7 Hoàn Lão', 'TDP 8 Hoàn Lão', 'TDP 9 Hoàn Lão', 'TDP 10 Hoàn Lão',
-      'Thôn 1 Trung Trạch', 'Thôn 2 Trung Trạch', 'Thôn 3 Trung Trạch', 'Thôn 4 Trung Trạch',
-      'Thôn Đại Nam', 'Thôn Đại Phúc', 'Thôn Đại Hòa', 'Thôn Tây Thành', 'Thôn Tây Minh',
-      'Thôn Hòa Bình', 'Thôn Hòa Sơn', 'Thôn Hòa Đồng'
-    ],
   },
   {
     name: 'Xã Đông Trạch',
@@ -132,11 +99,6 @@ const FALLBACK_COMMUNES = [
     lat: 17.6120,
     lng: 106.5050,
     subUnits: 'Hải Phú, Sơn Lộc, Đức Trạch, Đồng Trạch',
-    hamlets: [
-      'Thôn Nội Hải', 'Thôn Ngoại Hải', 'Thôn Thượng Hòa', 'Thôn Trung Hòa', 'Thôn Tân Lý',
-      'Thôn Sơn Lý', 'Thôn Sơn Lộc', 'Thôn Sơn Hạ', 'Thôn Đức Trung', 'Thôn Đức Nam',
-      'Thôn Đức Bắc', 'Thôn Đồng Bắc', 'Thôn Đồng Nam', 'Thôn Đồng Tâm'
-    ],
   },
   {
     name: 'Xã Bắc Trạch',
@@ -144,11 +106,6 @@ const FALLBACK_COMMUNES = [
     lat: 17.6520,
     lng: 106.4720,
     subUnits: 'Thanh Trạch, Hạ Mỹ, Liên Trạch, Bắc Trạch',
-    hamlets: [
-      'Thôn Tiền Phong', 'Thôn Thanh Gianh', 'Thôn Thanh Khê', 'Thôn Quyết Thắng', 'Thôn Đá Nhảy',
-      'Thôn Hạ Trạch', 'Thôn Mỹ Trạch', 'Thôn Liên Sơn', 'Thôn Liên Thủy', 'Thôn Bắc Sơn',
-      'Thôn Bắc Hòa', 'Thôn Bắc Minh'
-    ],
   },
   {
     name: 'Xã Bố Trạch',
@@ -156,11 +113,6 @@ const FALLBACK_COMMUNES = [
     lat: 17.5850,
     lng: 106.4350,
     subUnits: 'Hưng Trạch, Cự Nẫm, Vạn Trạch, Phú Định',
-    hamlets: [
-      'Thôn Khương Hà 1', 'Thôn Khương Hà 2', 'Thôn Khương Hà 3', 'Thôn Bồng Lai 1', 'Thôn Bồng Lai 2',
-      'Thôn Trung Nẫm', 'Thôn Đông Nẫm', 'Thôn Tây Nẫm', 'Thôn Nam Nẫm', 'Thôn Bắc Nẫm',
-      'Thôn Vạn Lộc', 'Thôn Vạn Xuân', 'Thôn Phú Hữu', 'Thôn Phú Kinh'
-    ],
   },
   {
     name: 'Xã Phong Nha',
@@ -168,11 +120,6 @@ const FALLBACK_COMMUNES = [
     lat: 17.5910,
     lng: 106.2880,
     subUnits: 'TT Phong Nha, Lâm Trạch, Xuân Trạch, Phúc Trạch',
-    hamlets: [
-      'TDP Phong Nha', 'TDP Cù Lạc 1', 'TDP Cù Lạc 2', 'TDP Hà Lời', 'TDP Trằm Mé',
-      'Thôn Phúc Đồng', 'Thôn Phúc Khê', 'Thôn Phúc Lộc', 'Thôn Chày Lập', 'Thôn Na',
-      'Thôn Xuân Sơn', 'Thôn Xuân Hòa', 'Thôn Lâm Lang', 'Thôn Liên Trạch'
-    ],
   },
   {
     name: 'Xã Thượng Trạch',
@@ -180,10 +127,6 @@ const FALLBACK_COMMUNES = [
     lat: 17.4250,
     lng: 106.1950,
     subUnits: 'Tân Trạch, Thượng Trạch',
-    hamlets: [
-      'Bản Đoòng', 'Bản Cà Roòng 1', 'Bản Cà Roòng 2', 'Bản Nồng Cũ', 'Bản Nồng Mới',
-      'Bản Cồn Roàng', 'Bản Chăm Pu', 'Bản A Ki', 'Bản Troi', 'Bản Tuộc', 'Bản 61'
-    ],
   },
 
   // Khu vực Ba Đồn (2 phường, 2 xã mới)
@@ -193,12 +136,6 @@ const FALLBACK_COMMUNES = [
     lat: 17.7524,
     lng: 106.4182,
     subUnits: 'Quảng Phong, Quảng Long, Ba Đồn, Quảng Hải',
-    hamlets: [
-      'TDP 1 Ba Đồn', 'TDP 2 Ba Đồn', 'TDP 3 Ba Đồn', 'TDP 4 Ba Đồn', 'TDP 5 Ba Đồn', 'TDP 6 Ba Đồn',
-      'TDP Thủy Sơn', 'TDP Minh Lợi', 'TDP Cầu', 'TDP Tiền Phong', 'TDP Trường Sơn',
-      'TDP Thọ Đơn', 'TDP Chính Trực', 'TDP Đơn Sa', 'TDP Cồn',
-      'Thôn Vân Nam', 'Thôn Vân Bắc', 'Thôn Tân Thành', 'Thôn Đông Thành'
-    ],
   },
   {
     name: 'Phường Bắc Gianh',
@@ -206,11 +143,6 @@ const FALLBACK_COMMUNES = [
     lat: 17.7431,
     lng: 106.4418,
     subUnits: 'Quảng Phúc, Quảng Thọ, Quảng Thuận',
-    hamlets: [
-      'TDP Tân Mỹ', 'TDP Mỹ Hòa', 'TDP Xuân Lộc', 'TDP Hải Hòa', 'TDP Đơn Sa (Quảng Phúc)',
-      'TDP Thọ Linh', 'TDP Minh Phượng', 'TDP Cồn Sẻ', 'TDP Tân Định', 'TDP Trung Thôn',
-      'TDP Thuận Bài', 'TDP Dinh Chánh', 'TDP Thổ Ngọa', 'TDP Nhân Thọ'
-    ],
   },
   {
     name: 'Xã Nam Gianh',
@@ -218,12 +150,6 @@ const FALLBACK_COMMUNES = [
     lat: 17.7245,
     lng: 106.3910,
     subUnits: 'Quảng Hòa, Quảng Lộc, Quảng Văn, Quảng Minh',
-    hamlets: [
-      'Thôn Cao Cựu', 'Thôn Thanh Tân', 'Thôn Vĩnh Phú', 'Thôn Hợp Hòa',
-      'Thôn Cồn Sẻ', 'Thôn Vĩnh Lộc', 'Thôn Tân Lộc', 'Thôn Phù Ninh',
-      'Thôn La Hà Đông', 'Thôn La Hà Tây', 'Thôn Văn Phú',
-      'Thôn Minh Hà', 'Thôn Tân Định', 'Thôn Bắc Minh Lệ', 'Thôn Nam Minh Lệ'
-    ],
   },
   {
     name: 'Xã Nam Ba Đồn',
@@ -231,13 +157,6 @@ const FALLBACK_COMMUNES = [
     lat: 17.7050,
     lng: 106.3750,
     subUnits: 'Quảng Tân, Quảng Trung, Quảng Tiên, Quảng Sơn, Quảng Thủy',
-    hamlets: [
-      'Thôn Tân Đức', 'Thôn Tân Tiến', 'Thôn Tân Trường',
-      'Thôn Trung Thôn', 'Thôn Thượng Thôn', 'Thôn Hạ Thôn',
-      'Thôn Tiên Phong', 'Thôn Tiên Xuân', 'Thôn Tiên Phan',
-      'Thôn Thọ Hạ', 'Thôn Hà Sơn', 'Thôn Tân Sơn', 'Thôn Linh Cận Sơn',
-      'Thôn Thủy Sơn', 'Thôn Trung Thủy', 'Thôn Đông Thủy'
-    ],
   },
 
   // Khu vực Quảng Trạch (5 xã mới)
@@ -247,11 +166,6 @@ const FALLBACK_COMMUNES = [
     lat: 17.7850,
     lng: 106.4120,
     subUnits: 'Quảng Phương, Quảng Xuân, Quảng Hưng',
-    hamlets: [
-      'Thôn Pháp Kệ', 'Thôn Đông Dương', 'Thôn Hướng Phương', 'Thôn Tô Xá', 'Thôn Xuân Kiều',
-      'Thôn Xuân Hòa', 'Thôn Thanh Lương', 'Thôn Di Luân', 'Thôn Tân Xuân',
-      'Thôn Hưng Lộc', 'Thôn Phù Lưu', 'Thôn Quốc Lộ', 'Thôn Minh Tiến'
-    ],
   },
   {
     name: 'Xã Hòa Trạch',
@@ -259,11 +173,6 @@ const FALLBACK_COMMUNES = [
     lat: 17.8540,
     lng: 106.4620,
     subUnits: 'Quảng Châu, Quảng Tùng, Cảnh Dương',
-    hamlets: [
-      'Thôn Trung Vũ', 'Thôn Hòa Lạc', 'Thôn Tân An', 'Thôn Minh Sơn',
-      'Thôn Tùng Giang', 'Thôn Tân Tùng', 'Thôn Phúc Tùng', 'Thôn Di Lộc',
-      'Thôn Cảnh Thượng', 'Thôn Cảnh Trung', 'Thôn Cảnh Hạ', 'Thôn Tân Cảnh', 'Thôn Yên Hải'
-    ],
   },
   {
     name: 'Xã Phú Trạch',
@@ -271,12 +180,6 @@ const FALLBACK_COMMUNES = [
     lat: 17.9120,
     lng: 106.4750,
     subUnits: 'Quảng Đông, Quảng Phú, Quảng Kim, Quảng Hợp',
-    hamlets: [
-      'Thôn 19/5', 'Thôn Vịnh Sơn', 'Thôn Thọ Sơn', 'Thôn Vĩnh Sơn',
-      'Thôn Phú Lộc 1', 'Thôn Phú Lộc 2', 'Thôn Phú Lộc 3', 'Thôn Hải Đông', 'Thôn Nam Lãnh',
-      'Thôn Hùng Sơn', 'Thôn Trung Minh', 'Thôn Kim Sơn',
-      'Thôn Hợp Phú', 'Thôn Hợp Trung', 'Thôn Hợp Hạ'
-    ],
   },
   {
     name: 'Xã Trung Thuần',
@@ -284,11 +187,6 @@ const FALLBACK_COMMUNES = [
     lat: 17.8120,
     lng: 106.3650,
     subUnits: 'Quảng Lưu, Quảng Thạch, Quảng Tiến',
-    hamlets: [
-      'Thôn Vân Tiền', 'Thôn Phúc Tự', 'Thôn Đông Thành', 'Thôn Tây Lưu',
-      'Thôn Thạch Trung', 'Thôn Thạch Nam', 'Thôn Thạch Bắc',
-      'Thôn Tiến Thành', 'Thôn Tiến Châu', 'Thôn Minh Tiến'
-    ],
   },
   {
     name: 'Xã Tân Gianh',
@@ -296,11 +194,6 @@ const FALLBACK_COMMUNES = [
     lat: 17.7720,
     lng: 106.3520,
     subUnits: 'Phù Cảnh, Liên Trường, Quảng Thanh',
-    hamlets: [
-      'Thôn Phù Ninh', 'Thôn Phù Trịch', 'Thôn Cảnh Hóa',
-      'Thôn Liên Sơn', 'Thôn Trường Thủy', 'Thôn Liên Trường',
-      'Thôn Thanh Bình', 'Thôn Thanh Hà', 'Thôn Thanh Sơn', 'Thôn Thanh Tiến'
-    ],
   },
 
   // Khu vực Tuyên Hóa (6 xã mới)
@@ -310,11 +203,6 @@ const FALLBACK_COMMUNES = [
     lat: 17.7950,
     lng: 106.2650,
     subUnits: 'Tiến Hóa, Châu Hóa, Cao Quảng, Văn Hóa',
-    hamlets: [
-      'Thôn Cương Trung A', 'Thôn Cương Trung B', 'Thôn Kinh Châu', 'Thôn Trung Thủy',
-      'Thôn Lạc Sơn', 'Thôn Lâm Lang', 'Thôn Uyên Phong', 'Thôn Kinh Trừng',
-      'Thôn Cao Cảnh', 'Thôn Quảng Hóa', 'Thôn Văn Phú', 'Thôn Hà Thâu'
-    ],
   },
   {
     name: 'Xã Tuyên Bình',
@@ -322,11 +210,6 @@ const FALLBACK_COMMUNES = [
     lat: 17.8250,
     lng: 106.2150,
     subUnits: 'Phong Hóa, Ngư Hóa, Mai Hóa',
-    hamlets: [
-      'Thôn Mã Thượng', 'Thôn Mã Hạ', 'Thôn Tân Phong', 'Thôn Yên Tố',
-      'Thôn Cấp Sơn', 'Thôn Ngư Đại', 'Thôn Phúc Tùng',
-      'Thôn Bắc Hóa', 'Thôn Nam Hóa', 'Thôn Xuân Mai', 'Thôn Đồng Lâm'
-    ],
   },
   {
     name: 'Xã Tuyên Phú',
@@ -334,11 +217,6 @@ const FALLBACK_COMMUNES = [
     lat: 17.8650,
     lng: 106.1450,
     subUnits: 'Đồng Hóa, Thạch Hóa, Đức Hóa',
-    hamlets: [
-      'Thôn Đồng Giang', 'Thôn Thuận Tiến', 'Thôn Đại Sơn', 'Thôn Tân Ấp',
-      'Thôn Thiết Sơn', 'Thôn Sơn Thủy', 'Thôn Đạm Thủy',
-      'Thôn Đức Phú 1', 'Thôn Đức Phú 2', 'Thôn Phúc Tự'
-    ],
   },
   {
     name: 'Xã Đồng Lê',
@@ -346,11 +224,6 @@ const FALLBACK_COMMUNES = [
     lat: 17.9050,
     lng: 106.0350,
     subUnits: 'TT Đồng Lê, Kim Hóa, Lê Hóa, Thuận Hóa, Sơn Hóa',
-    hamlets: [
-      'TDP Lưu Thuận', 'TDP Tân Lập', 'TDP Đồng Tân', 'TDP Đồng Văn', 'TDP Đồng Giang',
-      'Thôn Kim Tiến', 'Thôn Kim Lũ 1', 'Thôn Kim Lũ 2', 'Thôn Kim Bình',
-      'Thôn Lê Trực 1', 'Thôn Lê Trực 2', 'Thôn Thuận Tiến', 'Thôn Hà Sơn', 'Thôn Sơn Thành'
-    ],
   },
   {
     name: 'Xã Tuyên Sơn',
@@ -358,10 +231,6 @@ const FALLBACK_COMMUNES = [
     lat: 17.9550,
     lng: 105.9850,
     subUnits: 'Thanh Thạch, Hương Hóa',
-    hamlets: [
-      'Thôn Bàu 1', 'Thôn Bàu 2', 'Thôn Bàu 3', 'Thôn Tân Lập', 'Thôn Thanh Xuân',
-      'Thôn Hương Thọ', 'Thôn Tân Hương', 'Thôn Ba Tâm', 'Thôn Đồng Tâm'
-    ],
   },
   {
     name: 'Xã Tuyên Lâm',
@@ -369,10 +238,6 @@ const FALLBACK_COMMUNES = [
     lat: 18.0150,
     lng: 105.9150,
     subUnits: 'Lâm Hóa, Thanh Hóa',
-    hamlets: [
-      'Thôn Tiền Phong', 'Thôn Sơn Cảnh', 'Bản Kè', 'Bản Chuối', 'Bản Cáo',
-      'Thôn Bắc Lợi', 'Thôn Thanh Lâm', 'Thôn Thanh Bình', 'Thôn Thanh Lạng'
-    ],
   },
 
   // Khu vực Minh Hóa (5 xã mới)
@@ -382,12 +247,6 @@ const FALLBACK_COMMUNES = [
     lat: 17.7850,
     lng: 105.9750,
     subUnits: 'TT Quy Đạt, Xuân Hóa, Yên Hóa, Hồng Hóa',
-    hamlets: [
-      'TDP 1 Quy Đạt', 'TDP 2 Quy Đạt', 'TDP 3 Quy Đạt', 'TDP 4 Quy Đạt', 'TDP 5 Quy Đạt',
-      'TDP 6 Quy Đạt', 'TDP 7 Quy Đạt', 'TDP 8 Quy Đạt',
-      'Thôn Xuân Tiến', 'Thôn Xuân Cảnh', 'Thôn Yên Thọ', 'Thôn Yên Thắng', 'Thôn Yên Bình',
-      'Thôn Hồng Quang', 'Thôn Rục', 'Thôn Vè'
-    ],
   },
   {
     name: 'Xã Kim Phú',
@@ -395,11 +254,6 @@ const FALLBACK_COMMUNES = [
     lat: 17.7350,
     lng: 106.0350,
     subUnits: 'Thượng Hóa, Trung Hóa, Minh Hóa, Tân Hóa',
-    hamlets: [
-      'Thôn Yên Hợp', 'Thôn Phú Nhiêu', 'Thôn Trung Minh', 'Bản Ón', 'Bản Yên Hợp', 'Bản Mò O Ồ Ồ',
-      'Thôn Liêm Hóa', 'Thôn Tiền Phong', 'Thôn Bình Minh',
-      'Thôn Kim Bảng', 'Thôn Tân Lý', 'Thôn Quyền', 'Thôn Cổ Liêm'
-    ],
   },
   {
     name: 'Xã Kim Điền',
@@ -407,10 +261,6 @@ const FALLBACK_COMMUNES = [
     lat: 17.8450,
     lng: 105.9150,
     subUnits: 'Hóa Sơn, Hóa Hợp',
-    hamlets: [
-      'Thôn Đặng Hóa', 'Thôn Cà Xen', 'Thôn Tăng Hóa', 'Thôn Hóa Lương',
-      'Thôn Bãi Dinh', 'Thôn Đa Năng', 'Thôn Phú Minh', 'Thôn Tân Hợp'
-    ],
   },
   {
     name: 'Xã Dân Hóa',
@@ -418,10 +268,6 @@ const FALLBACK_COMMUNES = [
     lat: 17.7650,
     lng: 105.7850,
     subUnits: 'Trọng Hóa, Dân Hóa',
-    hamlets: [
-      'Bản Bãi Dinh', 'Bản K-Ai', 'Bản Y Leng', 'Bản Hà Vi', 'Bản Tà Rà', 'Bản Ka Định',
-      'Bản Cha Lo', 'Bản Dộ - Tà Vờng', 'Bản Lòm', 'Bản Pa Chong', 'Bản Ông Tú', 'Bản Ra Mai'
-    ],
   },
   {
     name: 'Xã Tân Thành',
@@ -429,9 +275,6 @@ const FALLBACK_COMMUNES = [
     lat: 17.7450,
     lng: 105.8950,
     subUnits: 'Giữ nguyên theo NQ 1680/NQ-UBTVQH15',
-    hamlets: [
-      'Thôn Tân Lập', 'Thôn Tân Tiến', 'Thôn Tân Thành', 'Thôn Lạc Thiện', 'Thôn Yên Phú', 'Bản K-Ai'
-    ],
   },
 ];
 
@@ -953,10 +796,18 @@ export default function App() {
   const [activeTab, setActiveTab] = useState('home');
   const [searchQuery, setSearchQuery] = useState('');
   const [activeModal, setActiveModal] = useState(null);
+  const orderScrollRef = React.useRef(null);
+  const itemInputRef = React.useRef(null);
+  const hamletInputRef = React.useRef(null);
+  const dropoffInputRef = React.useRef(null);
+  const advanceInputRef = React.useRef(null);
+  const [formValidationMsg, setFormValidationMsg] = useState('');
+  const [missingFieldKey, setMissingFieldKey] = useState(''); // 'item' | 'commune' | 'hamlet' | 'dropoff' | 'advance'
+
 
   const [itemNote, setItemNote] = useState('');
   const [extraNote, setExtraNote] = useState('');
-  const [advanceMoney, setAdvanceMoney] = useState('0');
+  const [advanceMoney, setAdvanceMoney] = useState('');
   const [taskDurationMinutes, setTaskDurationMinutes] = useState(15);
   const [extraStopsCount, setExtraStopsCount] = useState(0);
   const [bulkySurcharge, setBulkySurcharge] = useState(0); // 0 | 10000 | 20000
@@ -1036,6 +887,33 @@ export default function App() {
     fetchAdminConfig();
     const interval = setInterval(fetchAdminConfig, 15000);
     return () => clearInterval(interval);
+  }, []);
+
+  // Chống kẹt phóng to màn hình trên iPhone Safari khi nhập liệu & tự khôi phục tỷ lệ thu phóng
+  useEffect(() => {
+    if (Platform.OS !== 'web' || typeof document === 'undefined') return;
+    let meta = document.querySelector('meta[name="viewport"]');
+    if (!meta) {
+      meta = document.createElement('meta');
+      meta.setAttribute('name', 'viewport');
+      document.head.appendChild(meta);
+    }
+    meta.setAttribute(
+      'content',
+      'width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no'
+    );
+
+    const resetZoom = () => {
+      meta.setAttribute(
+        'content',
+        'width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no'
+      );
+      if (typeof window !== 'undefined' && window.scrollTo) {
+        window.scrollTo(0, 0);
+      }
+    };
+    document.addEventListener('focusout', resetZoom);
+    return () => document.removeEventListener('focusout', resetZoom);
   }, []);
 
   const deviceId = getHardwareFingerprint();
@@ -1486,6 +1364,8 @@ export default function App() {
   // =========================================================================
   const openModalFor = (name, prefillText = '') => {
     setActiveModal(name);
+    setFormValidationMsg('');
+    setMissingFieldKey('');
     if (prefillText) setItemNote(prefillText);
     if (!dropoffAddress || dropoffAddress.startsWith('Đang định vị')) {
       detectUserLocationAndCommunes();
@@ -1507,9 +1387,26 @@ export default function App() {
 
   const effectiveDiscountRate =
     currentServiceConfig && !isPromoAlreadyUsed ? currentServiceConfig.discountRate : 0;
-  const parsedAdvance = currentServiceConfig?.showAdvance
-    ? parseInt(advanceMoney.replace(/\D/g, ''), 10) || 0
+  const rawAdvanceDigits = currentServiceConfig?.showAdvance
+    ? advanceMoney.replace(/\D/g, '')
+    : '';
+  // Gõ 1 -> 10.000đ, gõ 2 -> 20.000đ ... gõ 9 -> 90.000đ, gõ 15 -> 150.000đ (tự thêm .000đ / nhân 10.000đ)
+  const parsedAdvance = rawAdvanceDigits
+    ? (parseInt(rawAdvanceDigits, 10) || 0) * 10000
     : 0;
+
+  const handleAdvanceMoneyChange = (text) => {
+    const digitsOnly = String(text || '').replace(/\D/g, '').replace(/^0+/, '');
+    if (!digitsOnly) {
+      setAdvanceMoney('');
+      return;
+    }
+    setAdvanceMoney(digitsOnly);
+    if (missingFieldKey === 'advance' && parseInt(digitsOnly, 10) * 10000 >= 10000) {
+      setMissingFieldKey('');
+      setFormValidationMsg('');
+    }
+  };
 
   // Tính giá tập trung qua PRICING_TABLE (không tự cho sửa giá tay)
   const pricing = calculateNinjaOrderPricing({
@@ -1528,14 +1425,70 @@ export default function App() {
   const discountAmount = pricing.discountAmount;
   const totalAmount = pricing.totalAmount;
 
+  const focusAndRemindField = (fieldKey, message, inputRef, scrollY = 0) => {
+    setMissingFieldKey(fieldKey);
+    setFormValidationMsg(message);
+    if (orderScrollRef.current && orderScrollRef.current.scrollTo) {
+      orderScrollRef.current.scrollTo({ y: scrollY, animated: true });
+    }
+    setTimeout(() => {
+      if (inputRef && inputRef.current && inputRef.current.focus) {
+        inputRef.current.focus();
+      }
+    }, 180);
+  };
+
   const handleCreateOrder = () => {
+    setFormValidationMsg('');
+    setMissingFieldKey('');
+
     if (!itemNote.trim()) {
-      Alert.alert('Thiếu thông tin', 'Vui lòng nhập đầy đủ nội dung yêu cầu.');
+      focusAndRemindField(
+        'item',
+        `⚠️ Bạn chưa nhập "${currentServiceConfig.mainLabel.replace(' *', '')}". Vui lòng nhập vào ô bên dưới!`,
+        itemInputRef,
+        0
+      );
       return;
     }
     if (!selectedPickupCommune) {
-      Alert.alert('Chưa chọn xã/phường', 'Vui lòng chọn xã/phường điểm lấy hàng.');
+      focusAndRemindField(
+        'commune',
+        '⚠️ Bạn chưa chọn Xã / Phường điểm lấy hàng. Vui lòng chọn ở mục bên dưới!',
+        null,
+        70
+      );
       return;
+    }
+    if (!pickupHamlet.trim()) {
+      focusAndRemindField(
+        'hamlet',
+        `⚠️ Bạn chưa nhập Thôn / Tổ dân phố tại ${selectedPickupCommune.name}. Vui lòng tự nhập vào ô bên dưới!`,
+        hamletInputRef,
+        150
+      );
+      return;
+    }
+    if (!dropoffAddress.trim() || dropoffAddress.startsWith('Đang định vị')) {
+      focusAndRemindField(
+        'dropoff',
+        '⚠️ Chưa có địa chỉ điểm giao cho bạn. Vui lòng nhập địa chỉ hoặc bấm Cập nhật GPS!',
+        dropoffInputRef,
+        240
+      );
+      return;
+    }
+    if (currentServiceConfig.showAdvance) {
+      const isAdvanceRequired = currentServiceConfig.advanceLabel.includes('*');
+      if ((isAdvanceRequired && parsedAdvance < 10000) || (parsedAdvance > 0 && parsedAdvance < 10000)) {
+        focusAndRemindField(
+          'advance',
+          '⚠️ Tiền ứng trước / giá trị hàng phải từ 10.000đ trở lên (VD: gõ 1 → 10.000đ, gõ 5 → 50.000đ). Vui lòng nhập lại!',
+          advanceInputRef,
+          320
+        );
+        return;
+      }
     }
 
     // Tính lại giá chính xác tại thời điểm tạo đơn để chống can thiệp dữ liệu
@@ -1625,7 +1578,7 @@ export default function App() {
     setItemNote('');
     setExtraNote('');
     setPickupHamlet('');
-    setAdvanceMoney('0');
+    setAdvanceMoney('');
     setTaskDurationMinutes(15);
     setExtraStopsCount(0);
     setBulkySurcharge(0);
@@ -1924,13 +1877,34 @@ export default function App() {
 
             {/* NHÓM 1: BIỂU MẪU ĐẶT DỊCH VỤ */}
             {currentServiceConfig && (
-              <ScrollView showsVerticalScrollIndicator={false} style={{ maxHeight: 540 }}>
+              <ScrollView
+                ref={orderScrollRef}
+                showsVerticalScrollIndicator={false}
+                keyboardShouldPersistTaps="handled"
+                style={{ maxHeight: 540 }}
+              >
+                {!!formValidationMsg && (
+                  <View style={styles.validationAlertBanner}>
+                    <Text style={styles.validationAlertText}>{formValidationMsg}</Text>
+                  </View>
+                )}
+
                 <Text style={styles.inputLabel}>{currentServiceConfig.mainLabel}</Text>
                 <TextInput
-                  style={styles.modalInput}
+                  ref={itemInputRef}
+                  style={[
+                    styles.modalInput,
+                    missingFieldKey === 'item' && styles.inputMissingHighlight,
+                  ]}
                   placeholder={currentServiceConfig.mainPlaceholder}
                   value={itemNote}
-                  onChangeText={setItemNote}
+                  onChangeText={(v) => {
+                    setItemNote(v);
+                    if (missingFieldKey === 'item' && v.trim()) {
+                      setMissingFieldKey('');
+                      setFormValidationMsg('');
+                    }
+                  }}
                 />
 
                 <View style={styles.labelRowBetween}>
@@ -1986,7 +1960,7 @@ export default function App() {
                             styles.communeChip,
                             isSelected && styles.communeChipActive,
                           ]}
-                          onPress={() => { setSelectedPickupCommune(com); setPickupHamlet(''); }}
+                          onPress={() => { setSelectedPickupCommune(com); setPickupHamlet(''); if (missingFieldKey === 'commune') { setMissingFieldKey(''); setFormValidationMsg(''); } }}
                         >
                           <Text
                             style={[
@@ -2009,47 +1983,23 @@ export default function App() {
                       </Text>
                     )}
                     <Text style={styles.subInputLabel}>
-                      Chọn nhanh Thôn / Tổ dân phố / Bản tại {selectedPickupCommune.name}:
+                      Thôn / Tổ dân phố / Xóm tại {selectedPickupCommune.name} (tự nhập) *:
                     </Text>
-                    {Array.isArray(selectedPickupCommune.hamlets) && selectedPickupCommune.hamlets.length > 0 && (
-                      <ScrollView
-                        horizontal
-                        showsHorizontalScrollIndicator={false}
-                        style={styles.communeChipsRow}
-                      >
-                        {selectedPickupCommune.hamlets.map((hamletName, hIdx) => {
-                          const isHamletSelected = pickupHamlet === hamletName;
-                          return (
-                            <TouchableOpacity
-                              key={`hamlet-${hIdx}`}
-                              style={[
-                                styles.communeChip,
-                                { paddingVertical: 6 },
-                                isHamletSelected && styles.communeChipActive,
-                              ]}
-                              onPress={() =>
-                                setPickupHamlet(isHamletSelected ? '' : hamletName)
-                              }
-                            >
-                              <Text
-                                style={[
-                                  styles.communeChipText,
-                                  { fontSize: 12 },
-                                  isHamletSelected && styles.communeChipTextActive,
-                                ]}
-                              >
-                                {hamletName}
-                              </Text>
-                            </TouchableOpacity>
-                          );
-                        })}
-                      </ScrollView>
-                    )}
                     <TextInput
-                      style={styles.modalInput}
-                      placeholder="Hoặc gõ tên Thôn / TDP / Bản nếu chưa có ở trên..."
+                      ref={hamletInputRef}
+                      style={[
+                        styles.modalInput,
+                        missingFieldKey === 'hamlet' && styles.inputMissingHighlight,
+                      ]}
+                      placeholder="Nhập tên Thôn / Tổ dân phố / Xóm của điểm lấy hàng..."
                       value={pickupHamlet}
-                      onChangeText={setPickupHamlet}
+                      onChangeText={(v) => {
+                        setPickupHamlet(v);
+                        if (missingFieldKey === 'hamlet' && v.trim()) {
+                          setMissingFieldKey('');
+                          setFormValidationMsg('');
+                        }
+                      }}
                     />
                     <Text style={styles.subInputLabel}>
                       Số nhà, tên đường / tên quán tại {selectedPickupCommune.name}:
@@ -2071,14 +2021,26 @@ export default function App() {
                     </Text>
                   </TouchableOpacity>
                 </View>
-                <View style={styles.gpsBox}>
+                <View
+                  style={[
+                    styles.gpsBox,
+                    missingFieldKey === 'dropoff' && styles.inputMissingHighlight,
+                  ]}
+                >
                   {isLocating && (
                     <ActivityIndicator size="small" color="#D92D20" style={{ marginRight: 8 }} />
                   )}
                   <TextInput
+                    ref={dropoffInputRef}
                     style={styles.gpsInput}
                     value={dropoffAddress}
-                    onChangeText={setDropoffAddress}
+                    onChangeText={(v) => {
+                      setDropoffAddress(v);
+                      if (missingFieldKey === 'dropoff' && v.trim()) {
+                        setMissingFieldKey('');
+                        setFormValidationMsg('');
+                      }
+                    }}
                     placeholder="Vị trí GPS chính xác của bạn"
                   />
                 </View>
@@ -2118,13 +2080,38 @@ export default function App() {
 
                 {currentServiceConfig.showAdvance && (
                   <>
-                    <Text style={styles.inputLabel}>{currentServiceConfig.advanceLabel}</Text>
-                    <TextInput
-                      style={styles.modalInput}
-                      keyboardType="numeric"
-                      value={advanceMoney}
-                      onChangeText={setAdvanceMoney}
-                    />
+                    <View style={styles.labelRowBetween}>
+                      <Text style={styles.inputLabel}>{currentServiceConfig.advanceLabel}</Text>
+                      <Text style={styles.autoBadge}>Gõ 1 = 10.000đ</Text>
+                    </View>
+                    <View style={styles.advanceUnitInputWrap}>
+                      <TextInput
+                        ref={advanceInputRef}
+                        style={[
+                          styles.modalInput,
+                          { flex: 1, marginBottom: 0 },
+                          missingFieldKey === 'advance' && styles.inputMissingHighlight,
+                        ]}
+                        keyboardType="numeric"
+                        placeholder="Gõ 1 → 10.000đ, 5 → 50.000đ, 12 → 120.000đ..."
+                        value={advanceMoney}
+                        onChangeText={handleAdvanceMoneyChange}
+                      />
+                      {parsedAdvance > 0 && (
+                        <View style={styles.advanceSuffixPill}>
+                          <Text style={styles.advanceSuffixText}>
+                            = {parsedAdvance.toLocaleString('vi-VN')}đ
+                          </Text>
+                        </View>
+                      )}
+                    </View>
+                    {parsedAdvance > 0 && (
+                      <View style={styles.liveAmountPreviewBox}>
+                        <Text style={styles.liveAmountPreviewText}>
+                          💰 Tiền ứng trước: {parsedAdvance.toLocaleString('vi-VN')}đ (Gõ {advanceMoney} → {parsedAdvance.toLocaleString('vi-VN')}đ)
+                        </Text>
+                      </View>
+                    )}
                   </>
                 )}
 
@@ -2612,7 +2599,7 @@ const styles = StyleSheet.create({
   },
   searchInput: {
     flex: 1,
-    fontSize: 15,
+    fontSize: 16,
     color: '#111827',
     fontWeight: '500',
   },
@@ -3003,7 +2990,7 @@ const styles = StyleSheet.create({
   },
   gpsInput: {
     flex: 1,
-    fontSize: 13,
+    fontSize: 16,
     color: '#111827',
     fontWeight: '600',
   },
@@ -3012,7 +2999,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     paddingHorizontal: 12,
     height: 44,
-    fontSize: 14,
+    fontSize: 16,
     color: '#111827',
     marginBottom: 10,
   },
@@ -3145,5 +3132,57 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '700',
     textAlign: 'center',
+  },
+  validationAlertBanner: {
+    backgroundColor: '#FEF2F2',
+    borderWidth: 1.5,
+    borderColor: '#DC2626',
+    borderRadius: 12,
+    padding: 10,
+    marginBottom: 10,
+  },
+  validationAlertText: {
+    color: '#B91C1C',
+    fontSize: 13,
+    fontWeight: '800',
+    lineHeight: 18,
+  },
+  inputMissingHighlight: {
+    borderWidth: 1.5,
+    borderColor: '#DC2626',
+    backgroundColor: '#FFF5F5',
+  },
+  liveAmountPreviewBox: {
+    backgroundColor: '#ECFDF5',
+    borderRadius: 10,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    marginTop: -4,
+    marginBottom: 10,
+    borderWidth: 1,
+    borderColor: '#A7F3D0',
+  },
+  liveAmountPreviewText: {
+    fontSize: 13,
+    fontWeight: '800',
+    color: '#065F46',
+  },
+}  advanceUnitInputWrap: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  advanceSuffixPill: {
+    backgroundColor: '#111827',
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    height: 44,
+    justifyContent: 'center',
+    marginLeft: 8,
+  },
+  advanceSuffixText: {
+    color: '#FACC15',
+    fontSize: 15,
+    fontWeight: '900',
   },
 });
