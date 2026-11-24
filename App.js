@@ -25,7 +25,6 @@ const SERVICES_SMALL = [
   { id: 'gia-cuoc', title: 'Giá cước\nKm', icon: '💰' },
 ];
 
-// Danh sách xã/phường khu vực Ba Đồn - Quảng Trạch (Quảng Bình)
 const FALLBACK_COMMUNES = [
   { name: 'Phường Ba Đồn', lat: 17.7524, lng: 106.4182 },
   { name: 'Phường Quảng Long', lat: 17.7685, lng: 106.4251 },
@@ -49,13 +48,13 @@ const FALLBACK_COMMUNES = [
   { name: 'Xã Quảng Trạch (Cảnh Dương)', lat: 17.8540, lng: 106.4620 },
 ];
 
-// Cấu hình biểu mẫu riêng biệt cho từng loại dịch vụ đặt đơn
 const SERVICE_CONFIGS = {
   'Đặt đồ ăn': {
     type: 'order',
     icon: '🍜',
+    promoKey: 'promo_food_25',
     discountRate: 0.25,
-    discountLabel: 'Giảm 25% phí ship',
+    discountLabel: 'Giảm 25% phí ship (1 lần duy nhất/khách)',
     mainLabel: 'Tên món ăn & số lượng *',
     mainPlaceholder: 'VD: 2 tô Bún bò + 1 Trà đào cam sả, ít cay',
     pickupLabel: 'Quán ăn / Nhà hàng lấy món',
@@ -69,8 +68,9 @@ const SERVICE_CONFIGS = {
   'Mua hộ đồ': {
     type: 'order',
     icon: '🛍️',
+    promoKey: 'promo_buy_20',
     discountRate: 0.20,
-    discountLabel: 'Giảm 20% phí ship',
+    discountLabel: 'Giảm 20% phí ship (1 lần duy nhất/khách)',
     mainLabel: 'Danh sách đồ cần mua hộ *',
     mainPlaceholder: 'VD: 1 thùng sữa Vinamilk, 1 túi bột giặt OMO 3kg',
     pickupLabel: 'Cửa hàng / Siêu thị / Tạp hóa mua đồ',
@@ -84,8 +84,9 @@ const SERVICE_CONFIGS = {
   'Nhận hộ': {
     type: 'order',
     icon: '📦',
+    promoKey: 'promo_receive_15',
     discountRate: 0.15,
-    discountLabel: 'Giảm 15% phí ship',
+    discountLabel: 'Giảm 15% phí ship (1 lần duy nhất/khách)',
     mainLabel: 'Thông tin bưu phẩm / Hàng cần nhận hộ *',
     mainPlaceholder: 'VD: Nhận thùng hàng xe khách / Bưu phẩm Shopee',
     pickupLabel: 'Điểm nhận hàng (Bến xe / Bưu cục / Người gửi)',
@@ -99,6 +100,7 @@ const SERVICE_CONFIGS = {
   'Làm hộ': {
     type: 'order',
     icon: '⚡',
+    promoKey: null,
     discountRate: 0,
     discountLabel: 'Dịch vụ mới • Ưu tiên xử lý nhanh',
     mainLabel: 'Nội dung công việc cần làm hộ *',
@@ -114,6 +116,7 @@ const SERVICE_CONFIGS = {
   'Đi chợ hộ': {
     type: 'order',
     icon: '🥬',
+    promoKey: null,
     discountRate: 0,
     discountLabel: 'Chọn đồ tươi ngon theo yêu cầu',
     mainLabel: 'Danh sách thực phẩm đi chợ *',
@@ -129,6 +132,7 @@ const SERVICE_CONFIGS = {
   'Mua thuốc': {
     type: 'order',
     icon: '💊',
+    promoKey: null,
     discountRate: 0,
     discountLabel: 'Giao thuốc khẩn cấp 15 phút',
     mainLabel: 'Tên thuốc / Triệu chứng cần dược sĩ tư vấn *',
@@ -144,6 +148,7 @@ const SERVICE_CONFIGS = {
   'Giao đồ Km': {
     type: 'order',
     icon: '🛵',
+    promoKey: null,
     discountRate: 0,
     discountLabel: 'Tính cước chuẩn 5.000đ/km',
     mainLabel: 'Tên hàng hóa & kích thước gói hàng *',
@@ -159,6 +164,7 @@ const SERVICE_CONFIGS = {
   'Siêu tốc Ninja': {
     type: 'order',
     icon: '🚀',
+    promoKey: null,
     discountRate: 0,
     discountLabel: 'Hỏa tốc 15 phút • Nhận đơn ngay lập tức',
     mainLabel: 'Hàng hóa / Giấy tờ cần giao hỏa tốc *',
@@ -177,15 +183,59 @@ const NEARBY_DRIVERS = [
   { id: 'TX-01', name: 'Trần Văn Hùng', bike: 'Honda Wave • 73K1-458.21', dist: '0.4 km', rating: '4.9 ★', status: 'Đang rảnh' },
   { id: 'TX-02', name: 'Nguyễn Minh Tuấn', bike: 'Yamaha Sirius • 73K1-892.10', dist: '0.9 km', rating: '5.0 ★', status: 'Đang rảnh' },
   { id: 'TX-03', name: 'Lê Hoàng Phúc', bike: 'Honda Vision • 73K1-319.66', dist: '1.4 km', rating: '4.8 ★', status: 'Đang rảnh' },
-  { id: 'TX-04', name: 'Phạm Quốc Bảo', bike: 'Honda Winner • 73K1-774.05', dist: '2.1 km', rating: '4.9 ★', status: 'Sắp xong đơn' },
 ];
 
 const VOUCHERS_LIST = [
-  { code: 'NINJA25', title: 'Giảm 25% phí ship Đặt đồ ăn', desc: 'Áp dụng cho mọi quán ăn trong khu vực', tag: 'Đặt đồ ăn' },
-  { code: 'MUAHO20', title: 'Giảm 20% phí Mua hộ đồ', desc: 'Tối đa 15.000đ cho đơn siêu thị, tạp hóa', tag: 'Mua hộ đồ' },
-  { code: 'NHANHO15', title: 'Giảm 15% dịch vụ Nhận hộ', desc: 'Nhận bưu phẩm, hàng xe khách tận nơi', tag: 'Nhận hộ' },
-  { code: 'FREESHIP1KM', title: 'Miễn phí 1km đầu tiên', desc: 'Dành cho khách hàng đặt đơn lần đầu trong ngày', tag: 'Tất cả' },
+  { key: 'promo_food_25', code: 'NINJA25', title: 'Giảm 25% phí ship Đặt đồ ăn', desc: 'Áp dụng duy nhất 1 lần cho mỗi khách hàng / thiết bị', tag: 'Đặt đồ ăn' },
+  { key: 'promo_buy_20', code: 'MUAHO20', title: 'Giảm 20% phí Mua hộ đồ', desc: 'Áp dụng duy nhất 1 lần cho mỗi khách hàng / thiết bị', tag: 'Mua hộ đồ' },
+  { key: 'promo_receive_15', code: 'NHANHO15', title: 'Giảm 15% dịch vụ Nhận hộ', desc: 'Áp dụng duy nhất 1 lần cho mỗi khách hàng / thiết bị', tag: 'Nhận hộ' },
 ];
+
+// =========================================================================
+// HỆ THỐNG CHỐNG GIAN LẬN 4 LỚP (ANTI-FRAUD DEVICE & ACCOUNT FINGERPRINT)
+// =========================================================================
+function getHardwareFingerprint() {
+  if (Platform.OS === 'web' && typeof navigator !== 'undefined' && typeof window !== 'undefined') {
+    const raw = [
+      navigator.userAgent,
+      navigator.language,
+      window.screen?.width,
+      window.screen?.height,
+      window.screen?.colorDepth,
+      Intl.DateTimeFormat().resolvedOptions().timeZone,
+    ].join('|');
+    let hash = 0;
+    for (let i = 0; i < raw.length; i++) {
+      hash = (hash << 5) - hash + raw.charCodeAt(i);
+      hash |= 0;
+    }
+    return `DEV-${Math.abs(hash).toString(16).toUpperCase()}`;
+  }
+  return `DEV-${Platform.OS.toUpperCase()}-98A2F1`;
+}
+
+// Bộ nhớ lưu trữ bền vững trên thiết bị (chặn xóa app/tạo nick mới nhận lại ưu đãi)
+const DEVICE_VAULT_KEY = 'NINJA_SHIP_ANTI_FRAUD_VAULT_V1';
+const memoryFallbackVault = {};
+
+function readFraudVault() {
+  try {
+    if (Platform.OS === 'web' && typeof window !== 'undefined' && window.localStorage) {
+      const raw = window.localStorage.getItem(DEVICE_VAULT_KEY);
+      return raw ? JSON.parse(raw) : { accounts: {}, devicePromos: {}, boundPhones: [] };
+    }
+  } catch (e) {}
+  return memoryFallbackVault.data || { accounts: {}, devicePromos: {}, boundPhones: [] };
+}
+
+function writeFraudVault(vault) {
+  memoryFallbackVault.data = vault;
+  try {
+    if (Platform.OS === 'web' && typeof window !== 'undefined' && window.localStorage) {
+      window.localStorage.setItem(DEVICE_VAULT_KEY, JSON.stringify(vault));
+    }
+  } catch (e) {}
+}
 
 function calculateRoadDistanceKm(lat1, lon1, lat2, lon2) {
   if (
@@ -206,47 +256,169 @@ function calculateRoadDistanceKm(lat1, lon1, lat2, lon2) {
       Math.sin(dLon / 2) *
       Math.sin(dLon / 2);
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-  const straightKm = R * c;
-  const roadKm = Math.max(1.0, straightKm * 1.25);
+  const roadKm = Math.max(1.0, R * c * 1.25);
   return Math.round(roadKm * 10) / 10;
 }
 
 export default function App() {
+  // TRẠNG THÁI ĐĂNG NHẬP / ĐĂNG KÝ OTP
+  const [currentUser, setCurrentUser] = useState(null); // { phone, name, deviceId, isDeviceFlagged }
+  const [authMode, setAuthMode] = useState('login'); // 'login' | 'register'
+  const [authPhone, setAuthPhone] = useState('');
+  const [authName, setAuthName] = useState('');
+  const [otpSent, setOtpSent] = useState(false);
+  const [generatedOtp, setGeneratedOtp] = useState('');
+  const [inputOtp, setInputOtp] = useState('');
+  const [otpCountdown, setOtpCountdown] = useState(0);
+
+  // TRẠNG THÁI ỨNG DỤNG CHÍNH
   const [activeTab, setActiveTab] = useState('home');
   const [searchQuery, setSearchQuery] = useState('');
-  const [activeModal, setActiveModal] = useState(null); // Tên mục đang mở
+  const [activeModal, setActiveModal] = useState(null);
 
-  // State chung cho các biểu mẫu đặt đơn
   const [itemNote, setItemNote] = useState('');
   const [extraNote, setExtraNote] = useState('');
   const [advanceMoney, setAdvanceMoney] = useState('0');
 
-  // Vị trí & Tỉnh/Xã tự động
   const [detectedProvince, setDetectedProvince] = useState('Quảng Bình');
   const [communes, setCommunes] = useState(FALLBACK_COMMUNES);
   const [selectedPickupCommune, setSelectedPickupCommune] = useState(null);
   const [pickupDetailAddress, setPickupDetailAddress] = useState('');
 
-  // Điểm giao cho bạn (Vị trí chính xác)
   const [dropoffCoords, setDropoffCoords] = useState({ lat: 17.7524, lng: 106.4182 });
   const [dropoffAddress, setDropoffAddress] = useState('Đang định vị chính xác...');
   const [isLocating, setIsLocating] = useState(false);
 
-  // State riêng cho mục "Mở bản đồ Km" & "Giá cước Km"
   const [calcFromCommune, setCalcFromCommune] = useState(FALLBACK_COMMUNES[0]);
   const [calcToCommune, setCalcToCommune] = useState(FALLBACK_COMMUNES[2]);
 
-  const [orders, setOrders] = useState([
-    {
-      id: 'NS-8821',
-      service: 'Đặt đồ ăn',
-      note: '2 tô Bún bò + 1 Trà đào cam sả',
-      total: 101000,
-      status: 'Đang giao hàng',
-      time: 'Hôm nay, 08:05',
-    },
-  ]);
+  const [orders, setOrders] = useState([]);
+  const [usedPromos, setUsedPromos] = useState({}); // Theo dõi ưu đãi đã dùng của user + thiết bị
 
+  const deviceId = getHardwareFingerprint();
+
+  // Đếm ngược gửi lại OTP
+  useEffect(() => {
+    if (otpCountdown <= 0) return;
+    const timer = setTimeout(() => setOtpCountdown(otpCountdown - 1), 1000);
+    return () => clearTimeout(timer);
+  }, [otpCountdown]);
+
+  // Kiểm tra SĐT hợp lệ (10 số đầu 03, 05, 07, 08, 09)
+  const normalizePhone = (raw) => raw.replace(/\D/g, '');
+  const isValidVnPhone = (p) => /^(03|05|07|08|09)\d{8}$/.test(p);
+
+  const handleRequestOtp = () => {
+    const cleanPhone = normalizePhone(authPhone);
+    if (!isValidVnPhone(cleanPhone)) {
+      Alert.alert(
+        'Số điện thoại không hợp lệ',
+        'Vui lòng nhập đúng số điện thoại di động Việt Nam (10 số, VD: 0912345678). Không chấp nhận số ảo.'
+      );
+      return;
+    }
+
+    const vault = readFraudVault();
+    const existingAcc = vault.accounts[cleanPhone];
+
+    if (authMode === 'register') {
+      if (!authName.trim() || authName.trim().length < 2) {
+        Alert.alert('Thiếu họ tên', 'Vui lòng nhập họ và tên thật để xác minh tài khoản.');
+        return;
+      }
+      if (existingAcc) {
+        Alert.alert(
+          'Số điện thoại đã đăng ký',
+          'Số điện thoại này đã có tài khoản. Vui lòng chuyển sang tab Đăng nhập.'
+        );
+        setAuthMode('login');
+        return;
+      }
+      // Chặn tạo quá 2 tài khoản trên cùng 1 điện thoại
+      if (vault.boundPhones.length >= 2 && !vault.boundPhones.includes(cleanPhone)) {
+        Alert.alert(
+          'Cảnh báo bảo mật thiết bị',
+          `Thiết bị (${deviceId}) đã đạt giới hạn tối đa 2 tài khoản đăng ký. Vui lòng đăng nhập bằng số điện thoại đã liên kết.`
+        );
+        return;
+      }
+    } else if (!existingAcc) {
+      Alert.alert(
+        'Chưa có tài khoản',
+        'Số điện thoại này chưa đăng ký. Hệ thống sẽ chuyển bạn sang mục Đăng ký tài khoản mới.'
+      );
+      setAuthMode('register');
+      return;
+    }
+
+    // Tạo mã OTP 6 số ngẫu nhiên
+    const code = Math.floor(100000 + Math.random() * 900000).toString();
+    setGeneratedOtp(code);
+    setOtpSent(true);
+    setOtpCountdown(60);
+    Alert.alert(
+      'Mã xác thực OTP đã gửi',
+      `Tin nhắn SMS gửi tới ${cleanPhone}:
+Mã OTP Ninja Ship của bạn là: ${code}
+(Có hiệu lực trong 60 giây)`
+    );
+  };
+
+  const handleVerifyOtpAndEnter = () => {
+    const cleanPhone = normalizePhone(authPhone);
+    if (inputOtp.trim() !== generatedOtp) {
+      Alert.alert('Sai mã OTP', 'Mã OTP không chính xác. Vui lòng kiểm tra lại tin nhắn SMS.');
+      return;
+    }
+
+    const vault = readFraudVault();
+    let userRecord = vault.accounts[cleanPhone];
+
+    if (!userRecord) {
+      // Đăng ký mới: gắn chặt SĐT với mã phần cứng thiết bị
+      const isSecondaryOnSameDevice = vault.boundPhones.length > 0;
+      userRecord = {
+        phone: cleanPhone,
+        name: authName.trim(),
+        deviceId,
+        createdAt: new Date().toISOString(),
+        usedPromos: {},
+        isSecondaryAccount: isSecondaryOnSameDevice,
+      };
+      vault.accounts[cleanPhone] = userRecord;
+      if (!vault.boundPhones.includes(cleanPhone)) {
+        vault.boundPhones.push(cleanPhone);
+      }
+      writeFraudVault(vault);
+
+      if (isSecondaryOnSameDevice) {
+        Alert.alert(
+          'Lưu ý chính sách ưu đãi',
+          'Tài khoản mới tạo thành công! Tuy nhiên do thiết bị này đã từng nhận ưu đãi tân thủ trước đó, các mã giảm giá 1 lần/người sẽ được khóa để đảm bảo công bằng.'
+        );
+      }
+    }
+
+    // Hợp nhất lịch sử dùng ưu đãi của CẢ SỐ ĐIỆN THOẠI lẫn MÃ THIẾT BỊ (chống tạo nick phụ ăn mã)
+    const mergedUsedPromos = {
+      ...(vault.devicePromos || {}),
+      ...(userRecord.usedPromos || {}),
+    };
+
+    setUsedPromos(mergedUsedPromos);
+    setCurrentUser(userRecord);
+    setOtpSent(false);
+    setInputOtp('');
+  };
+
+  const handleLogout = () => {
+    setCurrentUser(null);
+    setOtpSent(false);
+    setInputOtp('');
+    setActiveTab('home');
+  };
+
+  // Tự động thu thập GPS & Tỉnh/Xã khi đã đăng nhập
   const detectUserLocationAndCommunes = () => {
     setIsLocating(true);
     const onSuccessCoords = async (lat, lng) => {
@@ -319,9 +491,157 @@ export default function App() {
   };
 
   useEffect(() => {
-    detectUserLocationAndCommunes();
-  }, []);
+    if (currentUser) {
+      detectUserLocationAndCommunes();
+    }
+  }, [currentUser]);
 
+  // =========================================================================
+  // MÀN HÌNH ĐĂNG NHẬP / ĐĂNG KÝ OTP (HIỆN TRƯỚC KHI VÀO APP)
+  // =========================================================================
+  if (!currentUser) {
+    return (
+      <SafeAreaView style={styles.authSafeArea}>
+        <StatusBar barStyle="dark-content" backgroundColor="#F5F6F8" />
+        <ScrollView contentContainerStyle={styles.authContainer} keyboardShouldPersistTaps="handled">
+          <View style={styles.authLogoBox}>
+            <View style={styles.authNinjaCircle}>
+              <Text style={{ fontSize: 38 }}>🥷</Text>
+            </View>
+            <Text style={styles.authBrandTitle}>NINJA SHIP KHÁCH</Text>
+            <Text style={styles.authBrandSub}>Giao hàng • Đặt đồ ăn • Mua hộ 5.000đ/km</Text>
+          </View>
+
+          <View style={styles.authCard}>
+            {/* Tab chuyển đổi Đăng nhập / Đăng ký */}
+            <View style={styles.authSwitchRow}>
+              <TouchableOpacity
+                style={[styles.authSwitchTab, authMode === 'login' && styles.authSwitchTabActive]}
+                onPress={() => {
+                  setAuthMode('login');
+                  setOtpSent(false);
+                  setInputOtp('');
+                }}
+              >
+                <Text
+                  style={[
+                    styles.authSwitchText,
+                    authMode === 'login' && styles.authSwitchTextActive,
+                  ]}
+                >
+                  Đăng nhập
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.authSwitchTab, authMode === 'register' && styles.authSwitchTabActive]}
+                onPress={() => {
+                  setAuthMode('register');
+                  setOtpSent(false);
+                  setInputOtp('');
+                }}
+              >
+                <Text
+                  style={[
+                    styles.authSwitchText,
+                    authMode === 'register' && styles.authSwitchTextActive,
+                  ]}
+                >
+                  Đăng ký mới
+                </Text>
+              </TouchableOpacity>
+            </View>
+
+            {authMode === 'register' && (
+              <>
+                <Text style={styles.inputLabel}>Họ và tên khách hàng *</Text>
+                <TextInput
+                  style={styles.modalInput}
+                  placeholder="VD: Nguyễn Văn An"
+                  value={authName}
+                  onChangeText={setAuthName}
+                  editable={!otpSent}
+                />
+              </>
+            )}
+
+            <Text style={styles.inputLabel}>Số điện thoại nhận mã OTP *</Text>
+            <TextInput
+              style={styles.modalInput}
+              placeholder="VD: 0912345678"
+              keyboardType="phone-pad"
+              maxLength={10}
+              value={authPhone}
+              onChangeText={setAuthPhone}
+              editable={!otpSent}
+            />
+
+            {!otpSent ? (
+              <TouchableOpacity style={styles.submitOrderBtn} onPress={handleRequestOtp}>
+                <Text style={styles.submitOrderText}>Gửi mã xác thực OTP</Text>
+              </TouchableOpacity>
+            ) : (
+              <View style={styles.otpVerifyBox}>
+                <View style={styles.labelRowBetween}>
+                  <Text style={styles.inputLabel}>Nhập mã OTP 6 số vừa gửi *</Text>
+                  <TouchableOpacity
+                    disabled={otpCountdown > 0}
+                    onPress={handleRequestOtp}
+                  >
+                    <Text style={styles.gpsRefreshText}>
+                      {otpCountdown > 0 ? `Gửi lại (${otpCountdown}s)` : 'Gửi lại mã'}
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+                <TextInput
+                  style={[styles.modalInput, styles.otpInputField]}
+                  placeholder="• • • • • •"
+                  keyboardType="numeric"
+                  maxLength={6}
+                  value={inputOtp}
+                  onChangeText={setInputOtp}
+                />
+                <Text style={styles.otpHintText}>
+                  Mã OTP thử nghiệm hiện tại: <Text style={{ fontWeight: '900', color: '#D92D20' }}>{generatedOtp}</Text>
+                </Text>
+
+                <TouchableOpacity style={styles.submitOrderBtn} onPress={handleVerifyOtpAndEnter}>
+                  <Text style={styles.submitOrderText}>
+                    {authMode === 'register' ? 'Hoàn tất đăng ký & Vào app' : 'Xác nhận OTP & Đăng nhập'}
+                  </Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={{ marginTop: 12, alignItems: 'center' }}
+                  onPress={() => {
+                    setOtpSent(false);
+                    setInputOtp('');
+                  }}
+                >
+                  <Text style={{ fontSize: 13, color: '#6B7280', fontWeight: '600' }}>
+                    ← Đổi số điện thoại khác
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            )}
+
+            {/* Khung giải thích cơ chế bảo vệ ưu đãi 1 người / 1 lần */}
+            <View style={styles.securityNoticeBox}>
+              <Text style={styles.securityNoticeTitle}>🛡️ Chính sách chống gian lận ưu đãi</Text>
+              <Text style={styles.securityNoticeDesc}>
+                • Mỗi khách hàng xác thực 1 SĐT chính chủ + 1 mã thiết bị ({deviceId}).{'
+'}
+                • Các mã ưu đãi (-25%, -20%, -15%) chỉ áp dụng duy nhất 1 lần/người & 1 lần/thiết bị.
+              </Text>
+            </View>
+          </View>
+        </ScrollView>
+      </SafeAreaView>
+    );
+  }
+
+  // =========================================================================
+  // GIAO DIỆN CHÍNH SAU KHI ĐÃ XÁC THỰC OTP
+  // =========================================================================
   const openModalFor = (name, prefillText = '') => {
     setActiveModal(name);
     if (prefillText) setItemNote(prefillText);
@@ -331,8 +651,9 @@ export default function App() {
   };
 
   const currentServiceConfig = SERVICE_CONFIGS[activeModal] || null;
+  const promoKey = currentServiceConfig?.promoKey || null;
+  const isPromoAlreadyUsed = promoKey ? !!usedPromos[promoKey] : false;
 
-  // Tính khoảng cách tự động từ xã lấy hàng -> vị trí chính xác của khách
   const autoDistanceKm = selectedPickupCommune
     ? calculateRoadDistanceKm(
         selectedPickupCommune.lat,
@@ -344,8 +665,10 @@ export default function App() {
 
   const RATE_PER_KM = 5000;
   const rawShippingFee = Math.round(autoDistanceKm * RATE_PER_KM);
-  const discountRate = currentServiceConfig?.discountRate || 0;
-  const discountAmount = Math.round(rawShippingFee * discountRate);
+  // Chỉ áp dụng giảm giá nếu cả SĐT lẫn thiết bị CHƯA từng dùng ưu đãi này
+  const effectiveDiscountRate =
+    currentServiceConfig && !isPromoAlreadyUsed ? currentServiceConfig.discountRate : 0;
+  const discountAmount = Math.round(rawShippingFee * effectiveDiscountRate);
   const finalShippingFee = Math.max(0, rawShippingFee - discountAmount);
   const parsedAdvance = currentServiceConfig?.showAdvance
     ? parseInt(advanceMoney.replace(/\D/g, ''), 10) || 0
@@ -361,6 +684,21 @@ export default function App() {
       Alert.alert('Chưa chọn xã/phường', 'Vui lòng chọn xã/phường điểm lấy hàng.');
       return;
     }
+
+    // Nếu đơn này có áp dụng ưu đãi 1 lần -> Khóa vĩnh viễn ưu đãi đó cho SĐT + Thiết bị + Địa chỉ giao
+    if (promoKey && discountAmount > 0) {
+      const vault = readFraudVault();
+      vault.devicePromos = { ...(vault.devicePromos || {}), [promoKey]: true };
+      if (vault.accounts[currentUser.phone]) {
+        vault.accounts[currentUser.phone].usedPromos = {
+          ...(vault.accounts[currentUser.phone].usedPromos || {}),
+          [promoKey]: true,
+        };
+      }
+      writeFraudVault(vault);
+      setUsedPromos({ ...usedPromos, [promoKey]: true });
+    }
+
     const fullPickup = pickupDetailAddress.trim()
       ? `${pickupDetailAddress.trim()}, ${selectedPickupCommune.name}`
       : selectedPickupCommune.name;
@@ -389,7 +727,6 @@ export default function App() {
     );
   };
 
-  // Tính khoảng cách cho công cụ tra cứu "Mở bản đồ Km" / "Giá cước Km"
   const previewKm =
     calcFromCommune && calcToCommune
       ? calculateRoadDistanceKm(
@@ -412,7 +749,7 @@ export default function App() {
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
         >
-          {/* 1. HEADER BAR */}
+          {/* 1. HEADER BAR HIỂN THỊ TÊN KHÁCH ĐÃ ĐĂNG NHẬP */}
           <View style={styles.headerRow}>
             <View style={styles.brandPill}>
               <View style={styles.ninjaAvatar}>
@@ -424,7 +761,7 @@ export default function App() {
               </View>
               <View style={styles.userDivider} />
               <Text style={styles.userName} numberOfLines={2}>
-                • {detectedProvince}
+                • {currentUser.name}
               </Text>
             </View>
 
@@ -450,7 +787,7 @@ export default function App() {
             />
           </View>
 
-          {/* 3. HAI THẺ DỊCH VỤ LỚN */}
+          {/* 3. HAI THẺ DỊCH VỤ LỚN (HIỂN THỊ TRẠNG THÁI ĐÃ DÙNG / CÒN LƯỢT ƯU ĐÃI) */}
           <View style={styles.bigCardsRow}>
             <TouchableOpacity
               style={styles.bigCard}
@@ -458,9 +795,15 @@ export default function App() {
               onPress={() => openModalFor('Đặt đồ ăn')}
             >
               <Text style={styles.bigCardTitle}>Đặt đồ ăn</Text>
-              <View style={styles.discountBadgePink}>
-                <Text style={styles.discountTextPink}>-25%</Text>
-              </View>
+              {!usedPromos.promo_food_25 ? (
+                <View style={styles.discountBadgePink}>
+                  <Text style={styles.discountTextPink}>-25% (1 lần)</Text>
+                </View>
+              ) : (
+                <View style={styles.usedBadge}>
+                  <Text style={styles.usedBadgeText}>Đã dùng ưu đãi</Text>
+                </View>
+              )}
               <Text style={styles.bigCardEmoji}>🍜</Text>
             </TouchableOpacity>
 
@@ -470,9 +813,15 @@ export default function App() {
               onPress={() => openModalFor('Mua hộ đồ')}
             >
               <Text style={styles.bigCardTitle}>Mua hộ đồ</Text>
-              <View style={styles.discountBadgeYellow}>
-                <Text style={styles.discountTextYellow}>-20%</Text>
-              </View>
+              {!usedPromos.promo_buy_20 ? (
+                <View style={styles.discountBadgeYellow}>
+                  <Text style={styles.discountTextYellow}>-20% (1 lần)</Text>
+                </View>
+              ) : (
+                <View style={styles.usedBadge}>
+                  <Text style={styles.usedBadgeText}>Đã dùng ưu đãi</Text>
+                </View>
+              )}
               <Text style={styles.bigCardEmoji}>🛍️</Text>
             </TouchableOpacity>
           </View>
@@ -487,24 +836,29 @@ export default function App() {
 
           {/* 5. LƯỚI 8 DỊCH VỤ NHỎ */}
           <View style={styles.gridWrap}>
-            {SERVICES_SMALL.map((item) => (
-              <TouchableOpacity
-                key={item.id}
-                style={styles.gridItem}
-                activeOpacity={0.8}
-                onPress={() => openModalFor(item.title.replace('\n', ' '))}
-              >
-                {item.badge && (
-                  <View style={[styles.gridBadge, { backgroundColor: item.badgeColor }]}>
-                    <Text style={[styles.gridBadgeText, { color: item.badgeText }]}>
-                      {item.badge}
-                    </Text>
-                  </View>
-                )}
-                <Text style={styles.gridIcon}>{item.icon}</Text>
-                <Text style={styles.gridLabel}>{item.title}</Text>
-              </TouchableOpacity>
-            ))}
+            {SERVICES_SMALL.map((item) => {
+              const showBadge =
+                item.id === 'nhan-ho' ? !usedPromos.promo_receive_15 : !!item.badge;
+              return (
+                <TouchableOpacity
+                  key={item.id}
+                  style={styles.gridItem}
+                  activeOpacity={0.8}
+                  onPress={() => openModalFor(item.title.replace('
+', ' '))}
+                >
+                  {showBadge && (
+                    <View style={[styles.gridBadge, { backgroundColor: item.badgeColor }]}>
+                      <Text style={[styles.gridBadgeText, { color: item.badgeText }]}>
+                        {item.badge}
+                      </Text>
+                    </View>
+                  )}
+                  <Text style={styles.gridIcon}>{item.icon}</Text>
+                  <Text style={styles.gridLabel}>{item.title}</Text>
+                </TouchableOpacity>
+              );
+            })}
           </View>
 
           {/* 6. BANNER SIÊU TỐC NINJA */}
@@ -529,43 +883,60 @@ export default function App() {
       {activeTab === 'orders' && (
         <ScrollView style={styles.container} contentContainerStyle={styles.scrollContent}>
           <Text style={styles.pageHeading}>Đơn hàng của bạn</Text>
-          {orders.map((ord) => (
-            <View key={ord.id} style={styles.orderCard}>
-              <View style={styles.orderCardTop}>
-                <Text style={styles.orderId}>
-                  {ord.id} • {ord.service}
-                </Text>
-                <Text style={styles.orderStatus}>{ord.status}</Text>
-              </View>
-              <Text style={styles.orderNote}>{ord.note}</Text>
-              <View style={styles.orderCardBottom}>
-                <Text style={styles.orderTime}>{ord.time}</Text>
-                <Text style={styles.orderTotal}>{ord.total.toLocaleString('vi-VN')}đ</Text>
-              </View>
+          {orders.length === 0 ? (
+            <View style={styles.orderCard}>
+              <Text style={styles.orderNote}>Bạn chưa có đơn hàng nào. Hãy chọn dịch vụ ở Trang chủ để đặt ngay!</Text>
             </View>
-          ))}
+          ) : (
+            orders.map((ord) => (
+              <View key={ord.id} style={styles.orderCard}>
+                <View style={styles.orderCardTop}>
+                  <Text style={styles.orderId}>
+                    {ord.id} • {ord.service}
+                  </Text>
+                  <Text style={styles.orderStatus}>{ord.status}</Text>
+                </View>
+                <Text style={styles.orderNote}>{ord.note}</Text>
+                <View style={styles.orderCardBottom}>
+                  <Text style={styles.orderTime}>{ord.time}</Text>
+                  <Text style={styles.orderTotal}>{ord.total.toLocaleString('vi-VN')}đ</Text>
+                </View>
+              </View>
+            ))
+          )}
         </ScrollView>
       )}
 
       {/* TAB THÔNG BÁO */}
       {activeTab === 'notifications' && (
         <ScrollView style={styles.container} contentContainerStyle={styles.scrollContent}>
-          <Text style={styles.pageHeading}>Thông báo & Ưu đãi</Text>
+          <Text style={styles.pageHeading}>Thông báo & Bảo mật</Text>
           <View style={styles.orderCard}>
-            <Text style={styles.orderId}>🎁 Mã giảm 25% Đặt đồ ăn</Text>
-            <Text style={styles.orderNote}>Áp dụng tự động cho đơn hàng từ 50.000đ hôm nay.</Text>
+            <Text style={styles.orderId}>✅ Xác thực OTP thành công</Text>
+            <Text style={styles.orderNote}>
+              Tài khoản {currentUser.phone} đã liên kết với mã thiết bị {currentUser.deviceId}.
+            </Text>
           </View>
         </ScrollView>
       )}
 
-      {/* TAB TÀI KHOẢN */}
+      {/* TAB TÀI KHOẢN & ĐĂNG XUẤT */}
       {activeTab === 'profile' && (
         <ScrollView style={styles.container} contentContainerStyle={styles.scrollContent}>
           <Text style={styles.pageHeading}>Tài khoản khách hàng</Text>
           <View style={styles.orderCard}>
-            <Text style={styles.orderId}>🥷 Nguyễn Văn Khách ({detectedProvince})</Text>
-            <Text style={styles.orderNote}>Ví Ninja Pay: 1.700.000đ • Hạng Thành viên Vàng</Text>
+            <Text style={styles.orderId}>🥷 {currentUser.name}</Text>
+            <Text style={styles.orderNote}>Số điện thoại OTP: {currentUser.phone}</Text>
+            <Text style={styles.orderNote}>Khu vực: {detectedProvince}</Text>
+            <Text style={styles.orderNote}>Mã thiết bị chống gian lận: {currentUser.deviceId}</Text>
           </View>
+
+          <TouchableOpacity
+            style={[styles.submitOrderBtn, { backgroundColor: '#1F2937' }]}
+            onPress={handleLogout}
+          >
+            <Text style={styles.submitOrderText}>Đăng xuất tài khoản</Text>
+          </TouchableOpacity>
         </ScrollView>
       )}
 
@@ -612,7 +983,16 @@ export default function App() {
                 <View>
                   <Text style={styles.modalTitle}>{activeModal}</Text>
                   {currentServiceConfig?.discountLabel && (
-                    <Text style={styles.modalSubtitle}>{currentServiceConfig.discountLabel}</Text>
+                    <Text
+                      style={[
+                        styles.modalSubtitle,
+                        isPromoAlreadyUsed && { color: '#DC2626' },
+                      ]}
+                    >
+                      {isPromoAlreadyUsed
+                        ? 'Đã sử dụng hết lượt ưu đãi 1 lần/người'
+                        : currentServiceConfig.discountLabel}
+                    </Text>
                   )}
                 </View>
               </View>
@@ -621,7 +1001,7 @@ export default function App() {
               </TouchableOpacity>
             </View>
 
-            {/* NHÓM 1: BIỂU MẪU ĐẶT DỊCH VỤ (Đặt đồ ăn, Mua hộ, Nhận hộ, Làm hộ, Đi chợ, Mua thuốc, Giao đồ, Siêu tốc) */}
+            {/* NHÓM 1: BIỂU MẪU ĐẶT DỊCH VỤ */}
             {currentServiceConfig && (
               <ScrollView showsVerticalScrollIndicator={false} style={{ maxHeight: 540 }}>
                 <Text style={styles.inputLabel}>{currentServiceConfig.mainLabel}</Text>
@@ -632,7 +1012,6 @@ export default function App() {
                   onChangeText={setItemNote}
                 />
 
-                {/* ĐIỂM LẤY HÀNG: TỰ NHẬN TỈNH & HIỂN THỊ XÃ/PHƯỜNG */}
                 <View style={styles.labelRowBetween}>
                   <Text style={styles.inputLabel}>
                     {currentServiceConfig.pickupLabel} ({detectedProvince}) *
@@ -683,7 +1062,6 @@ export default function App() {
                   </View>
                 )}
 
-                {/* ĐIỂM GIAO CHO BẠN: TỰ THU THẬP VỊ TRÍ CHÍNH XÁC */}
                 <View style={styles.labelRowBetween}>
                   <Text style={styles.inputLabel}>Điểm giao cho bạn (Vị trí chính xác) *</Text>
                   <TouchableOpacity onPress={detectUserLocationAndCommunes}>
@@ -704,7 +1082,6 @@ export default function App() {
                   />
                 </View>
 
-                {/* Ô TIỀN HÀNG ỨNG (CHỈ HIỆN Ở DỊCH VỤ CẦN ỨNG TIỀN) */}
                 {currentServiceConfig.showAdvance && (
                   <>
                     <Text style={styles.inputLabel}>{currentServiceConfig.advanceLabel}</Text>
@@ -717,7 +1094,6 @@ export default function App() {
                   </>
                 )}
 
-                {/* Ô GHI CHÚ ĐẶC THÙ CỦA TỪNG DỊCH VỤ */}
                 <Text style={styles.inputLabel}>{currentServiceConfig.extraLabel}</Text>
                 <TextInput
                   style={styles.modalInput}
@@ -726,7 +1102,6 @@ export default function App() {
                   onChangeText={setExtraNote}
                 />
 
-                {/* TỰ ĐỘNG TÍNH KM & KHUYẾN MÃI RIÊNG */}
                 <View style={styles.priceSummary}>
                   <Text style={styles.priceLine}>
                     {selectedPickupCommune
@@ -735,7 +1110,12 @@ export default function App() {
                   </Text>
                   {discountAmount > 0 && selectedPickupCommune && (
                     <Text style={styles.discountLine}>
-                      Ưu đãi {activeModal} (-{Math.round(discountRate * 100)}%): -{discountAmount.toLocaleString('vi-VN')}đ
+                      Ưu đãi 1 lần/người (-{Math.round(effectiveDiscountRate * 100)}%): -{discountAmount.toLocaleString('vi-VN')}đ
+                    </Text>
+                  )}
+                  {isPromoAlreadyUsed && promoKey && (
+                    <Text style={styles.usedPromoWarning}>
+                      * Tài khoản / thiết bị này đã sử dụng ưu đãi giảm giá trước đó (áp dụng giá chuẩn 5.000đ/km).
                     </Text>
                   )}
                   <Text style={styles.priceTotal}>
@@ -749,7 +1129,7 @@ export default function App() {
               </ScrollView>
             )}
 
-            {/* NHÓM 2: MỤC "TÀI XẾ GẦN" (HIỂN THỊ DANH SÁCH TÀI XẾ QUANH VỊ TRÍ GPS) */}
+            {/* NHÓM 2: MỤC "TÀI XẾ GẦN" */}
             {activeModal === 'Tài xế gần' && (
               <ScrollView showsVerticalScrollIndicator={false} style={{ maxHeight: 500 }}>
                 <Text style={styles.helperBanner}>
@@ -776,40 +1156,51 @@ export default function App() {
               </ScrollView>
             )}
 
-            {/* NHÓM 3: MỤC "ƯU ĐÃI" (DANH SÁCH MÃ GIẢM GIÁ & ÁP DỤNG NGAY) */}
+            {/* NHÓM 3: MỤC "ƯU ĐÃI" (HIỂN THỊ TRẠNG THÁI 1 NGƯỜI 1 LẦN) */}
             {activeModal === 'Ưu đãi' && (
               <ScrollView showsVerticalScrollIndicator={false} style={{ maxHeight: 500 }}>
                 <Text style={styles.helperBanner}>
-                  🏆 Điểm thưởng hiện có: 350 điểm Ninja
+                  🛡️ Áp dụng 1 lần duy nhất cho SĐT {currentUser.phone} & thiết bị {currentUser.deviceId}
                 </Text>
-                {VOUCHERS_LIST.map((v) => (
-                  <View key={v.code} style={styles.infoCard}>
-                    <View style={styles.labelRowBetween}>
-                      <Text style={styles.voucherCode}>{v.code}</Text>
-                      <Text style={styles.autoBadge}>{v.tag}</Text>
+                {VOUCHERS_LIST.map((v) => {
+                  const used = !!usedPromos[v.key];
+                  return (
+                    <View key={v.code} style={[styles.infoCard, used && { opacity: 0.6 }]}>
+                      <View style={styles.labelRowBetween}>
+                        <Text style={styles.voucherCode}>{v.code}</Text>
+                        <Text
+                          style={[
+                            styles.autoBadge,
+                            used && { backgroundColor: '#FEE2E2', color: '#DC2626' },
+                          ]}
+                        >
+                          {used ? 'Đã sử dụng' : 'Còn 1 lượt'}
+                        </Text>
+                      </View>
+                      <Text style={styles.infoCardTitle}>{v.title}</Text>
+                      <Text style={styles.infoCardSub}>{v.desc}</Text>
+                      {!used && (
+                        <TouchableOpacity
+                          style={[styles.miniActionBtn, { alignSelf: 'flex-end', marginTop: 8 }]}
+                          onPress={() => openModalFor(v.tag)}
+                        >
+                          <Text style={styles.miniActionText}>Dùng ngay →</Text>
+                        </TouchableOpacity>
+                      )}
                     </View>
-                    <Text style={styles.infoCardTitle}>{v.title}</Text>
-                    <Text style={styles.infoCardSub}>{v.desc}</Text>
-                    <TouchableOpacity
-                      style={[styles.miniActionBtn, { alignSelf: 'flex-end', marginTop: 8 }]}
-                      onPress={() =>
-                        openModalFor(v.tag === 'Tất cả' ? 'Đặt đồ ăn' : v.tag)
-                      }
-                    >
-                      <Text style={styles.miniActionText}>Dùng ngay →</Text>
-                    </TouchableOpacity>
-                  </View>
-                ))}
+                  );
+                })}
               </ScrollView>
             )}
 
-            {/* NHÓM 4: MỤC "MỞ BẢN ĐỒ KM" & "GIÁ CƯỚC KM" (BẢNG TRA CỨU CƯỚC THEO XÃ) */}
+            {/* NHÓM 4: MỤC "MỞ BẢN ĐỒ KM" & "GIÁ CƯỚC KM" */}
             {(activeModal === 'Mở bản đồ Km' || activeModal === 'Giá cước Km') && (
               <ScrollView showsVerticalScrollIndicator={false} style={{ maxHeight: 520 }}>
                 <View style={styles.rateHighlightBox}>
                   <Text style={styles.rateHighlightTitle}>Bảng giá Ninja Ship ({detectedProvince})</Text>
                   <Text style={styles.rateHighlightSub}>
-                    • Đồng giá chuẩn: 5.000đ / 1 km (tính tự động từ tâm xã đến tâm xã){'\n'}
+                    • Đồng giá chuẩn: 5.000đ / 1 km (tính tự động từ tâm xã đến tâm xã){'
+'}
                     • Không phụ thu giờ cao điểm • Tài xế ứng trước tiền hàng miễn phí
                   </Text>
                 </View>
@@ -888,6 +1279,110 @@ export default function App() {
 }
 
 const styles = StyleSheet.create({
+  authSafeArea: {
+    flex: 1,
+    backgroundColor: '#F5F6F8',
+  },
+  authContainer: {
+    padding: 20,
+    paddingTop: 32,
+  },
+  authLogoBox: {
+    alignItems: 'center',
+    marginBottom: 22,
+  },
+  authNinjaCircle: {
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    backgroundColor: '#18181B',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 10,
+  },
+  authBrandTitle: {
+    fontSize: 22,
+    fontWeight: '900',
+    color: '#D92D20',
+  },
+  authBrandSub: {
+    fontSize: 13,
+    color: '#4B5563',
+    marginTop: 4,
+  },
+  authCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 24,
+    padding: 20,
+    shadowColor: '#000',
+    shadowOpacity: 0.06,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 3,
+  },
+  authSwitchRow: {
+    flexDirection: 'row',
+    backgroundColor: '#F3F4F6',
+    borderRadius: 14,
+    padding: 4,
+    marginBottom: 16,
+  },
+  authSwitchTab: {
+    flex: 1,
+    paddingVertical: 10,
+    alignItems: 'center',
+    borderRadius: 11,
+  },
+  authSwitchTabActive: {
+    backgroundColor: '#FFFFFF',
+    shadowColor: '#000',
+    shadowOpacity: 0.08,
+    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 1 },
+    elevation: 2,
+  },
+  authSwitchText: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#6B7280',
+  },
+  authSwitchTextActive: {
+    color: '#111827',
+  },
+  otpVerifyBox: {
+    marginTop: 6,
+  },
+  otpInputField: {
+    textAlign: 'center',
+    fontSize: 20,
+    fontWeight: '900',
+    letterSpacing: 6,
+  },
+  otpHintText: {
+    fontSize: 12,
+    color: '#4B5563',
+    textAlign: 'center',
+    marginBottom: 8,
+  },
+  securityNoticeBox: {
+    backgroundColor: '#FEF2F2',
+    borderRadius: 14,
+    padding: 12,
+    marginTop: 16,
+    borderWidth: 1,
+    borderColor: '#FECACA',
+  },
+  securityNoticeTitle: {
+    fontSize: 13,
+    fontWeight: '800',
+    color: '#991B1B',
+    marginBottom: 4,
+  },
+  securityNoticeDesc: {
+    fontSize: 12,
+    color: '#7F1D1D',
+    lineHeight: 18,
+  },
   safeArea: {
     flex: 1,
     backgroundColor: '#F5F6F8',
@@ -958,7 +1453,7 @@ const styles = StyleSheet.create({
   },
   userName: {
     fontSize: 12,
-    fontWeight: '600',
+    fontWeight: '700',
     color: '#374151',
     lineHeight: 16,
   },
@@ -1041,7 +1536,7 @@ const styles = StyleSheet.create({
   },
   discountTextPink: {
     color: '#E11D48',
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '800',
   },
   discountBadgeYellow: {
@@ -1054,8 +1549,21 @@ const styles = StyleSheet.create({
   },
   discountTextYellow: {
     color: '#D97706',
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '800',
+  },
+  usedBadge: {
+    alignSelf: 'flex-start',
+    backgroundColor: '#F3F4F6',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 10,
+    marginTop: 4,
+  },
+  usedBadgeText: {
+    color: '#6B7280',
+    fontSize: 11,
+    fontWeight: '700',
   },
   bigCardEmoji: {
     fontSize: 38,
@@ -1254,7 +1762,7 @@ const styles = StyleSheet.create({
   orderNote: {
     fontSize: 14,
     color: '#374151',
-    marginBottom: 8,
+    marginBottom: 6,
   },
   orderCardBottom: {
     flexDirection: 'row',
@@ -1413,6 +1921,12 @@ const styles = StyleSheet.create({
     color: '#059669',
     marginBottom: 4,
   },
+  usedPromoWarning: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#B91C1C',
+    marginBottom: 4,
+  },
   priceTotal: {
     fontSize: 16,
     fontWeight: '800',
@@ -1492,17 +2006,3 @@ const styles = StyleSheet.create({
     backgroundColor: '#18181B',
     borderRadius: 14,
     padding: 14,
-    marginBottom: 12,
-  },
-  rateHighlightTitle: {
-    color: '#FACC15',
-    fontSize: 15,
-    fontWeight: '800',
-    marginBottom: 4,
-  },
-  rateHighlightSub: {
-    color: '#E5E7EB',
-    fontSize: 12,
-    lineHeight: 18,
-  },
-});
