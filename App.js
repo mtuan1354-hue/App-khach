@@ -14,11 +14,11 @@ import {
 } from 'react-native';
 
 const API_BASE = 'https://appkhach.mtuan1354.workers.dev';
-const SESSION_KEY = 'NINJA_SHIP_SESSION_FULL_V2';
-const ORDERS_CACHE_KEY = 'NINJA_SHIP_ORDERS_CACHE_V2';
-const WALLET_CACHE_KEY = 'NINJA_SHIP_WALLET_CACHE_V2';
-const PROFILE_PREFS_KEY = 'NINJA_SHIP_PREFS_CACHE_V2';
-const DEFAULT_OTP_DEMO = '123456';
+const SESSION_KEY = 'NINJA_SHIP_V9_SESSION';
+const ORDERS_KEY = 'NINJA_SHIP_V9_ORDERS';
+const WALLET_KEY = 'NINJA_SHIP_V9_WALLET';
+const PREFS_KEY = 'NINJA_SHIP_V9_PREFS';
+const DEMO_OTP = '123456';
 
 const DEFAULT_CONFIG = {
   appName: 'NINJA SHIP',
@@ -29,7 +29,6 @@ const DEFAULT_CONFIG = {
   promoBannerTitle: 'Giao nhanh 15 phút • 5.000đ/km',
   promoBannerSub: 'Tài xế Ninja ứng trước tiền hàng & giao tận tay điểm mua nhất.',
   supportPhone: '0900000000',
-  supportZalo: 'https://zalo.me',
   services: [
     {
       id: 'dat-do-an',
@@ -38,7 +37,7 @@ const DEFAULT_CONFIG = {
       badge: '-25% (1 lần)',
       discountRate: 0.25,
       active: true,
-      description: 'Đặt món ăn, trà sữa, cà phê và giao tận nơi nhanh chóng.',
+      description: 'Đặt đồ ăn, trà sữa, cà phê và giao tận nơi nhanh chóng.',
     },
     {
       id: 'mua-ho',
@@ -47,7 +46,7 @@ const DEFAULT_CONFIG = {
       badge: '-20% (1 lần)',
       discountRate: 0.2,
       active: true,
-      description: 'Tài xế mua hộ hàng hóa, phụ kiện, vật dụng theo danh sách.',
+      description: 'Tài xế mua hộ hàng hóa, phụ kiện theo danh sách.',
     },
     {
       id: 'nhan-ho',
@@ -56,7 +55,7 @@ const DEFAULT_CONFIG = {
       badge: '-15%',
       discountRate: 0.15,
       active: true,
-      description: 'Nhận hàng, giấy tờ, bưu kiện từ người gửi và giao tới bạn.',
+      description: 'Nhận hàng, giấy tờ, bưu kiện và giao tới tận tay.',
     },
     {
       id: 'lam-ho',
@@ -65,7 +64,7 @@ const DEFAULT_CONFIG = {
       badge: 'MỚI',
       discountRate: 0,
       active: true,
-      description: 'Thực hiện các công việc/thủ tục/giao nhận nhanh theo yêu cầu.',
+      description: 'Thực hiện công việc/thủ tục/giao nhận theo yêu cầu.',
     },
     {
       id: 'di-cho',
@@ -74,7 +73,7 @@ const DEFAULT_CONFIG = {
       badge: '-10%',
       discountRate: 0.1,
       active: true,
-      description: 'Đi chợ chọn thực phẩm tươi sống, rau củ, thịt cá theo ghi chú.',
+      description: 'Đi chợ chọn thực phẩm tươi sống theo ghi chú.',
     },
     {
       id: 'mua-thuoc',
@@ -83,7 +82,7 @@ const DEFAULT_CONFIG = {
       badge: '',
       discountRate: 0,
       active: true,
-      description: 'Mua thuốc, vật tư y tế tại nhà thuốc theo đơn hoặc yêu cầu.',
+      description: 'Mua thuốc và vật tư y tế tại nhà thuốc.',
     },
     {
       id: 'giao-do',
@@ -92,7 +91,7 @@ const DEFAULT_CONFIG = {
       badge: '',
       discountRate: 0,
       active: true,
-      description: 'Tính cước linh hoạt theo quãng đường Km thực tế.',
+      description: 'Tính cước linh hoạt theo quãng đường Km.',
     },
     {
       id: 'tai-xe',
@@ -101,7 +100,7 @@ const DEFAULT_CONFIG = {
       badge: 'LIVE',
       discountRate: 0,
       active: true,
-      description: 'Theo dõi các tài xế đang hoạt động gần vị trí của bạn.',
+      description: 'Xem các tài xế đang hoạt động trên hệ thống.',
     },
     {
       id: 'uu-dai',
@@ -110,7 +109,7 @@ const DEFAULT_CONFIG = {
       badge: 'HOT',
       discountRate: 0.15,
       active: true,
-      description: 'Xem các chương trình giảm cước và mã ưu đãi hiện hành.',
+      description: 'Áp dụng ưu đãi giảm cước theo từng dịch vụ.',
     },
     {
       id: 'gia-cuoc',
@@ -119,12 +118,12 @@ const DEFAULT_CONFIG = {
       badge: '',
       discountRate: 0,
       active: true,
-      description: 'Tra cứu bảng giá cước theo quãng đường Km và dịch vụ.',
+      description: 'Tra cứu bảng giá cước theo quãng đường Km.',
     },
   ],
 };
 
-function safeParseJson(raw, fallback) {
+function parseJsonSafe(raw, fallback) {
   if (!raw) return fallback;
   try {
     return JSON.parse(raw);
@@ -133,10 +132,10 @@ function safeParseJson(raw, fallback) {
   }
 }
 
-function readStorage(key, fallback) {
+function loadStore(key, fallback) {
   if (Platform.OS === 'web' && typeof window !== 'undefined' && window.localStorage) {
     try {
-      return safeParseJson(window.localStorage.getItem(key), fallback);
+      return parseJsonSafe(window.localStorage.getItem(key), fallback);
     } catch (e) {
       return fallback;
     }
@@ -144,2095 +143,138 @@ function readStorage(key, fallback) {
   return fallback;
 }
 
-function writeStorage(key, value) {
+function saveStore(key, val) {
   if (Platform.OS === 'web' && typeof window !== 'undefined' && window.localStorage) {
     try {
-      if (value === null || value === undefined) {
+      if (val === null || val === undefined) {
         window.localStorage.removeItem(key);
       } else {
-        window.localStorage.setItem(key, JSON.stringify(value));
+        window.localStorage.setItem(key, JSON.stringify(val));
       }
     } catch (e) {}
   }
 }
 
-function normalizePhone(raw) {
+function cleanPhone(raw) {
   return String(raw || '').replace(/[^0-9+]/g, '').trim();
 }
 
-function formatVnd(amount) {
-  const num = Number(amount);
-  if (!Number.isFinite(num)) return '0đ';
-  return `${Math.round(num).toLocaleString('vi-VN')}đ`;
+function formatMoney(val) {
+  const n = Number(val);
+  if (!Number.isFinite(n)) return '0đ';
+  return `${Math.round(n).toLocaleString('vi-VN')}đ`;
 }
 
-function haversineKm(lat1, lng1, lat2, lng2) {
-  const a1 = Number(lat1);
-  const o1 = Number(lng1);
-  const a2 = Number(lat2);
-  const o2 = Number(lng2);
-  if (!a1 || !o1 || !a2 || !o2) return null;
-  const R = 6371;
-  const dLat = ((a2 - a1) * Math.PI) / 180;
-  const dLng = ((o2 - o1) * Math.PI) / 180;
-  const s1 =
-    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-    Math.cos((a1 * Math.PI) / 180) *
-      Math.cos((a2 * Math.PI) / 180) *
-      Math.sin(dLng / 2) *
-      Math.sin(dLng / 2);
-  const c = 2 * Math.atan2(Math.sqrt(s1), Math.sqrt(1 - s1));
-  return Number((R * c).toFixed(1));
-}
-
-function generateOtpCode() {
+function randomOtp() {
   return String(Math.floor(100000 + Math.random() * 900000));
 }
 
-function getDeviceIdentifier() {
-  if (Platform.OS === 'web' && typeof navigator !== 'undefined') {
-    const ua = String(navigator.userAgent || 'web');
-    const plat = String(navigator.platform || 'browser');
-    return `WEB_${plat}_${ua.slice(0, 36).replace(/[^a-zA-Z0-9_-]/g, '_')}`;
-  }
-  return `${String(Platform.OS || 'mobile').toUpperCase()}_DEVICE`;
+function makeOrderCode() {
+  return `V9${String(Date.now()).slice(-6)}${Math.floor(10 + Math.random() * 89)}`;
 }
 
-function buildOrderId() {
-  const rand = Math.floor(100 + Math.random() * 900);
-  return `NS${String(Date.now()).slice(-6)}${rand}`;
-}
-
-function calculateFareBreakdown(configObj, serviceObj, kmRaw, advanceRaw) {
-  const km = Math.max(0.5, Number(kmRaw) || 1);
-  const ratePerKm = Math.max(500, Number(configObj && configObj.ratePerKm) || 5000);
-  const baseFare = Math.max(0, Number(configObj && configObj.baseFare) || 0);
-  const minFare = Math.max(0, Number(configObj && configObj.minFare) || 0);
+function calcFare(cfg, srv, kmInput, advInput) {
+  const km = Math.max(0.5, Number(kmInput) || 1);
+  const rate = Math.max(500, Number(cfg && cfg.ratePerKm) || 5000);
+  const base = Math.max(0, Number(cfg && cfg.baseFare) || 0);
+  const minFare = Math.max(0, Number(cfg && cfg.minFare) || 0);
   const discountRate =
-    serviceObj && Number(serviceObj.discountRate) > 0
-      ? Math.min(0.9, Number(serviceObj.discountRate))
-      : 0;
-  const advanceAmount = Math.max(0, Number(advanceRaw) || 0);
+    srv && Number(srv.discountRate) > 0 ? Math.min(0.9, Number(srv.discountRate)) : 0;
+  const advance = Math.max(0, Number(advInput) || 0);
 
-  const rawShippingFee = Math.max(minFare, Math.round(baseFare + km * ratePerKm));
-  const discountAmount = Math.round(rawShippingFee * discountRate);
-  const shippingFee = Math.max(0, rawShippingFee - discountAmount);
-  const totalPayable = Math.round(shippingFee + advanceAmount);
+  const rawFee = Math.max(minFare, Math.round(base + km * rate));
+  const discountAmount = Math.round(rawFee * discountRate);
+  const shippingFee = Math.max(0, rawFee - discountAmount);
+  const total = Math.round(shippingFee + advance);
 
   return {
     km,
-    ratePerKm,
-    baseFare,
+    rate,
     discountRate,
-    rawShippingFee,
+    rawFee,
     discountAmount,
     shippingFee,
-    advanceAmount,
-    totalPayable,
+    advance,
+    total,
   };
-}
-
-function buildServiceGuideList(services) {
-  return (services || []).map((srv, idx) => ({
-    index: idx + 1,
-    id: srv.id || `srv_${idx}`,
-    title: srv.title || 'Dịch vụ',
-    icon: srv.icon || '🛵',
-    badge: srv.badge || '',
-    discountRate: Number(srv.discountRate) || 0,
-    description:
-      srv.description ||
-      'Đặt dịch vụ giao nhận / mua hộ nhanh với cước tính theo Km thực tế.',
-  }));
-}
-
-function buildPricingTiers(ratePerKm) {
-  const rate = Math.max(500, Number(ratePerKm) || 5000);
-  const sampleDistances = [1, 2, 3, 5, 10, 15, 20];
-  return sampleDistances.map((km) => ({
-    km,
-    estimatedFee: Math.round(km * rate),
-    note:
-      km <= 3
-        ? 'Giao nội khu siêu tốc'
-        : km <= 10
-        ? 'Giao liên phường/quận'
-        : 'Giao đường dài / ngoại thành',
-  }));
-}
-
-function buildFaqItems(configObj) {
-  const rateText = formatVnd(configObj && configObj.ratePerKm ? configObj.ratePerKm : 5000);
-  const appTitle = (configObj && configObj.appName) || 'NINJA SHIP';
-  return [
-    {
-      q: `Cách đăng ký và xác thực OTP trên ${appTitle} như thế nào?`,
-      a: 'Nhập họ tên và số điện thoại, bấm "Gửi mã OTP" để nhận mã 6 số, kiểm tra hoặc điền mã OTP rồi bấm "Xác nhận OTP & Đăng ký tài khoản".',
-    },
-    {
-      q: 'Cước phí giao hàng được tính ra sao?',
-      a: `Cước cơ bản tính theo quãng đường Km với đơn giá hiện hành ${rateText}/km và tự động áp dụng mức giảm giá nếu dịch vụ có ưu đãi.`,
-    },
-    {
-      q: 'Tài xế có hỗ trợ ứng trước tiền hàng không?',
-      a: 'Có. Khi tạo đơn mua hộ, đặt đồ ăn hoặc đi chợ hộ, bạn có thể nhập số tiền ứng trước để tài xế hỗ trợ thanh toán trước tại điểm mua.',
-    },
-    {
-      q: 'Làm sao để cập nhật vị trí GPS chính xác hơn?',
-      a: 'Bấm nút "Cập nhật GPS ngay" hoặc bật quyền truy cập vị trí trên trình duyệt/thiết bị để hệ thống đồng bộ tọa độ của bạn.',
-    },
-    {
-      q: 'Khi cần hỗ trợ nhanh thì liên hệ ở đâu?',
-      a: `Bạn có thể gọi hotline ${configObj && configObj.supportPhone ? configObj.supportPhone : '0900000000'} hoặc mở mục Hỗ trợ trong ứng dụng.`,
-    },
-  ];
-}
-
-function filterDriversByQuery(drivers, queryText, coords) {
-  const q = String(queryText || '').trim().toLowerCase();
-  const list = Array.isArray(drivers) ? drivers : [];
-  return list
-    .map((d, idx) => {
-      const dist =
-        coords && coords.lat && coords.lng
-          ? haversineKm(coords.lat, coords.lng, d.lat, d.lng)
-          : null;
-      return {
-        ...d,
-        _idx: idx,
-        _distKm: dist,
-      };
-    })
-    .filter((d) => {
-      if (!q) return true;
-      const hay = `${d.name || ''} ${d.phone || ''} ${d.address || ''}`.toLowerCase();
-      return hay.includes(q);
-    })
-    .sort((a, b) => {
-      if (a._distKm !== null && b._distKm !== null) return a._distKm - b._distKm;
-      if (a._distKm !== null) return -1;
-      if (b._distKm !== null) return 1;
-      return a._idx - b._idx;
-    });
-}
-
-// ----------------------------------------------------------------------------
-// MODULE EXTENSION 01: OTP & ORDER DIAGNOSTIC / FORMATTING UTILITIES
-// ----------------------------------------------------------------------------
-function buildOtpAuditEntry_01(phoneVal, otpVal, verifiedFlag, modeLabel) {
-  const cleanP = normalizePhone(phoneVal);
-  const cleanO = String(otpVal || '').trim();
-  const timestamp = new Date().toLocaleTimeString('vi-VN');
-  return {
-    step: 1,
-    mode: modeLabel || 'otp_register',
-    phone: cleanP,
-    maskedPhone: cleanP.length > 4 ? `***${cleanP.slice(-4)}` : cleanP,
-    otpLength: cleanO.length,
-    verified: Boolean(verifiedFlag),
-    timestamp,
-  };
-}
-
-function validateOtpChallenge_01(phoneVal, sentFlag, expectedCode, actualCode) {
-  const p = normalizePhone(phoneVal);
-  if (!p || p.length < 8) {
-    return { valid: false, reason: 'Số điện thoại chưa hợp lệ (cần tối thiểu 8 số).' };
-  }
-  const code = String(actualCode || '').trim();
-  if (!code) {
-    return { valid: false, reason: 'Vui lòng nhập hoặc lấy mã OTP trước khi xác nhận.' };
-  }
-  if (code.length < 4 || code.length > 8) {
-    return { valid: false, reason: 'Mã OTP phải có từ 4 đến 8 ký tự số.' };
-  }
-  if (sentFlag && expectedCode && code !== expectedCode && code !== DEFAULT_OTP_DEMO) {
-    return {
-      valid: false,
-      reason: `Mã OTP không khớp. Hãy nhập mã ${expectedCode} hoặc ${DEFAULT_OTP_DEMO}.`,
-    };
-  }
-  return { valid: true, reason: 'OTP hợp lệ.' };
-}
-
-function formatOrderSummaryLine_01(orderObj) {
-  if (!orderObj) return '';
-  const idStr = orderObj.id || '---';
-  const srvStr = orderObj.service || 'Dịch vụ';
-  const addrStr = orderObj.dropoffAddress || 'Chưa rõ địa chỉ';
-  const totalStr = formatVnd(orderObj.total || 0);
-  const statusStr = orderObj.status || 'Đang xử lý';
-  return `#${idStr} • ${srvStr} • ${totalStr} • ${statusStr} (${addrStr})`;
-}
-
-// ----------------------------------------------------------------------------
-// MODULE EXTENSION 02: OTP & ORDER DIAGNOSTIC / FORMATTING UTILITIES
-// ----------------------------------------------------------------------------
-function buildOtpAuditEntry_02(phoneVal, otpVal, verifiedFlag, modeLabel) {
-  const cleanP = normalizePhone(phoneVal);
-  const cleanO = String(otpVal || '').trim();
-  const timestamp = new Date().toLocaleTimeString('vi-VN');
-  return {
-    step: 2,
-    mode: modeLabel || 'otp_register',
-    phone: cleanP,
-    maskedPhone: cleanP.length > 4 ? `***${cleanP.slice(-4)}` : cleanP,
-    otpLength: cleanO.length,
-    verified: Boolean(verifiedFlag),
-    timestamp,
-  };
-}
-
-function validateOtpChallenge_02(phoneVal, sentFlag, expectedCode, actualCode) {
-  const p = normalizePhone(phoneVal);
-  if (!p || p.length < 8) {
-    return { valid: false, reason: 'Số điện thoại chưa hợp lệ (cần tối thiểu 8 số).' };
-  }
-  const code = String(actualCode || '').trim();
-  if (!code) {
-    return { valid: false, reason: 'Vui lòng nhập hoặc lấy mã OTP trước khi xác nhận.' };
-  }
-  if (code.length < 4 || code.length > 8) {
-    return { valid: false, reason: 'Mã OTP phải có từ 4 đến 8 ký tự số.' };
-  }
-  if (sentFlag && expectedCode && code !== expectedCode && code !== DEFAULT_OTP_DEMO) {
-    return {
-      valid: false,
-      reason: `Mã OTP không khớp. Hãy nhập mã ${expectedCode} hoặc ${DEFAULT_OTP_DEMO}.`,
-    };
-  }
-  return { valid: true, reason: 'OTP hợp lệ.' };
-}
-
-function formatOrderSummaryLine_02(orderObj) {
-  if (!orderObj) return '';
-  const idStr = orderObj.id || '---';
-  const srvStr = orderObj.service || 'Dịch vụ';
-  const addrStr = orderObj.dropoffAddress || 'Chưa rõ địa chỉ';
-  const totalStr = formatVnd(orderObj.total || 0);
-  const statusStr = orderObj.status || 'Đang xử lý';
-  return `#${idStr} • ${srvStr} • ${totalStr} • ${statusStr} (${addrStr})`;
-}
-
-// ----------------------------------------------------------------------------
-// MODULE EXTENSION 03: OTP & ORDER DIAGNOSTIC / FORMATTING UTILITIES
-// ----------------------------------------------------------------------------
-function buildOtpAuditEntry_03(phoneVal, otpVal, verifiedFlag, modeLabel) {
-  const cleanP = normalizePhone(phoneVal);
-  const cleanO = String(otpVal || '').trim();
-  const timestamp = new Date().toLocaleTimeString('vi-VN');
-  return {
-    step: 3,
-    mode: modeLabel || 'otp_register',
-    phone: cleanP,
-    maskedPhone: cleanP.length > 4 ? `***${cleanP.slice(-4)}` : cleanP,
-    otpLength: cleanO.length,
-    verified: Boolean(verifiedFlag),
-    timestamp,
-  };
-}
-
-function validateOtpChallenge_03(phoneVal, sentFlag, expectedCode, actualCode) {
-  const p = normalizePhone(phoneVal);
-  if (!p || p.length < 8) {
-    return { valid: false, reason: 'Số điện thoại chưa hợp lệ (cần tối thiểu 8 số).' };
-  }
-  const code = String(actualCode || '').trim();
-  if (!code) {
-    return { valid: false, reason: 'Vui lòng nhập hoặc lấy mã OTP trước khi xác nhận.' };
-  }
-  if (code.length < 4 || code.length > 8) {
-    return { valid: false, reason: 'Mã OTP phải có từ 4 đến 8 ký tự số.' };
-  }
-  if (sentFlag && expectedCode && code !== expectedCode && code !== DEFAULT_OTP_DEMO) {
-    return {
-      valid: false,
-      reason: `Mã OTP không khớp. Hãy nhập mã ${expectedCode} hoặc ${DEFAULT_OTP_DEMO}.`,
-    };
-  }
-  return { valid: true, reason: 'OTP hợp lệ.' };
-}
-
-function formatOrderSummaryLine_03(orderObj) {
-  if (!orderObj) return '';
-  const idStr = orderObj.id || '---';
-  const srvStr = orderObj.service || 'Dịch vụ';
-  const addrStr = orderObj.dropoffAddress || 'Chưa rõ địa chỉ';
-  const totalStr = formatVnd(orderObj.total || 0);
-  const statusStr = orderObj.status || 'Đang xử lý';
-  return `#${idStr} • ${srvStr} • ${totalStr} • ${statusStr} (${addrStr})`;
-}
-
-// ----------------------------------------------------------------------------
-// MODULE EXTENSION 04: OTP & ORDER DIAGNOSTIC / FORMATTING UTILITIES
-// ----------------------------------------------------------------------------
-function buildOtpAuditEntry_04(phoneVal, otpVal, verifiedFlag, modeLabel) {
-  const cleanP = normalizePhone(phoneVal);
-  const cleanO = String(otpVal || '').trim();
-  const timestamp = new Date().toLocaleTimeString('vi-VN');
-  return {
-    step: 4,
-    mode: modeLabel || 'otp_register',
-    phone: cleanP,
-    maskedPhone: cleanP.length > 4 ? `***${cleanP.slice(-4)}` : cleanP,
-    otpLength: cleanO.length,
-    verified: Boolean(verifiedFlag),
-    timestamp,
-  };
-}
-
-function validateOtpChallenge_04(phoneVal, sentFlag, expectedCode, actualCode) {
-  const p = normalizePhone(phoneVal);
-  if (!p || p.length < 8) {
-    return { valid: false, reason: 'Số điện thoại chưa hợp lệ (cần tối thiểu 8 số).' };
-  }
-  const code = String(actualCode || '').trim();
-  if (!code) {
-    return { valid: false, reason: 'Vui lòng nhập hoặc lấy mã OTP trước khi xác nhận.' };
-  }
-  if (code.length < 4 || code.length > 8) {
-    return { valid: false, reason: 'Mã OTP phải có từ 4 đến 8 ký tự số.' };
-  }
-  if (sentFlag && expectedCode && code !== expectedCode && code !== DEFAULT_OTP_DEMO) {
-    return {
-      valid: false,
-      reason: `Mã OTP không khớp. Hãy nhập mã ${expectedCode} hoặc ${DEFAULT_OTP_DEMO}.`,
-    };
-  }
-  return { valid: true, reason: 'OTP hợp lệ.' };
-}
-
-function formatOrderSummaryLine_04(orderObj) {
-  if (!orderObj) return '';
-  const idStr = orderObj.id || '---';
-  const srvStr = orderObj.service || 'Dịch vụ';
-  const addrStr = orderObj.dropoffAddress || 'Chưa rõ địa chỉ';
-  const totalStr = formatVnd(orderObj.total || 0);
-  const statusStr = orderObj.status || 'Đang xử lý';
-  return `#${idStr} • ${srvStr} • ${totalStr} • ${statusStr} (${addrStr})`;
-}
-
-// ----------------------------------------------------------------------------
-// MODULE EXTENSION 05: OTP & ORDER DIAGNOSTIC / FORMATTING UTILITIES
-// ----------------------------------------------------------------------------
-function buildOtpAuditEntry_05(phoneVal, otpVal, verifiedFlag, modeLabel) {
-  const cleanP = normalizePhone(phoneVal);
-  const cleanO = String(otpVal || '').trim();
-  const timestamp = new Date().toLocaleTimeString('vi-VN');
-  return {
-    step: 5,
-    mode: modeLabel || 'otp_register',
-    phone: cleanP,
-    maskedPhone: cleanP.length > 4 ? `***${cleanP.slice(-4)}` : cleanP,
-    otpLength: cleanO.length,
-    verified: Boolean(verifiedFlag),
-    timestamp,
-  };
-}
-
-function validateOtpChallenge_05(phoneVal, sentFlag, expectedCode, actualCode) {
-  const p = normalizePhone(phoneVal);
-  if (!p || p.length < 8) {
-    return { valid: false, reason: 'Số điện thoại chưa hợp lệ (cần tối thiểu 8 số).' };
-  }
-  const code = String(actualCode || '').trim();
-  if (!code) {
-    return { valid: false, reason: 'Vui lòng nhập hoặc lấy mã OTP trước khi xác nhận.' };
-  }
-  if (code.length < 4 || code.length > 8) {
-    return { valid: false, reason: 'Mã OTP phải có từ 4 đến 8 ký tự số.' };
-  }
-  if (sentFlag && expectedCode && code !== expectedCode && code !== DEFAULT_OTP_DEMO) {
-    return {
-      valid: false,
-      reason: `Mã OTP không khớp. Hãy nhập mã ${expectedCode} hoặc ${DEFAULT_OTP_DEMO}.`,
-    };
-  }
-  return { valid: true, reason: 'OTP hợp lệ.' };
-}
-
-function formatOrderSummaryLine_05(orderObj) {
-  if (!orderObj) return '';
-  const idStr = orderObj.id || '---';
-  const srvStr = orderObj.service || 'Dịch vụ';
-  const addrStr = orderObj.dropoffAddress || 'Chưa rõ địa chỉ';
-  const totalStr = formatVnd(orderObj.total || 0);
-  const statusStr = orderObj.status || 'Đang xử lý';
-  return `#${idStr} • ${srvStr} • ${totalStr} • ${statusStr} (${addrStr})`;
-}
-
-// ----------------------------------------------------------------------------
-// MODULE EXTENSION 06: OTP & ORDER DIAGNOSTIC / FORMATTING UTILITIES
-// ----------------------------------------------------------------------------
-function buildOtpAuditEntry_06(phoneVal, otpVal, verifiedFlag, modeLabel) {
-  const cleanP = normalizePhone(phoneVal);
-  const cleanO = String(otpVal || '').trim();
-  const timestamp = new Date().toLocaleTimeString('vi-VN');
-  return {
-    step: 6,
-    mode: modeLabel || 'otp_register',
-    phone: cleanP,
-    maskedPhone: cleanP.length > 4 ? `***${cleanP.slice(-4)}` : cleanP,
-    otpLength: cleanO.length,
-    verified: Boolean(verifiedFlag),
-    timestamp,
-  };
-}
-
-function validateOtpChallenge_06(phoneVal, sentFlag, expectedCode, actualCode) {
-  const p = normalizePhone(phoneVal);
-  if (!p || p.length < 8) {
-    return { valid: false, reason: 'Số điện thoại chưa hợp lệ (cần tối thiểu 8 số).' };
-  }
-  const code = String(actualCode || '').trim();
-  if (!code) {
-    return { valid: false, reason: 'Vui lòng nhập hoặc lấy mã OTP trước khi xác nhận.' };
-  }
-  if (code.length < 4 || code.length > 8) {
-    return { valid: false, reason: 'Mã OTP phải có từ 4 đến 8 ký tự số.' };
-  }
-  if (sentFlag && expectedCode && code !== expectedCode && code !== DEFAULT_OTP_DEMO) {
-    return {
-      valid: false,
-      reason: `Mã OTP không khớp. Hãy nhập mã ${expectedCode} hoặc ${DEFAULT_OTP_DEMO}.`,
-    };
-  }
-  return { valid: true, reason: 'OTP hợp lệ.' };
-}
-
-function formatOrderSummaryLine_06(orderObj) {
-  if (!orderObj) return '';
-  const idStr = orderObj.id || '---';
-  const srvStr = orderObj.service || 'Dịch vụ';
-  const addrStr = orderObj.dropoffAddress || 'Chưa rõ địa chỉ';
-  const totalStr = formatVnd(orderObj.total || 0);
-  const statusStr = orderObj.status || 'Đang xử lý';
-  return `#${idStr} • ${srvStr} • ${totalStr} • ${statusStr} (${addrStr})`;
-}
-
-// ----------------------------------------------------------------------------
-// MODULE EXTENSION 07: OTP & ORDER DIAGNOSTIC / FORMATTING UTILITIES
-// ----------------------------------------------------------------------------
-function buildOtpAuditEntry_07(phoneVal, otpVal, verifiedFlag, modeLabel) {
-  const cleanP = normalizePhone(phoneVal);
-  const cleanO = String(otpVal || '').trim();
-  const timestamp = new Date().toLocaleTimeString('vi-VN');
-  return {
-    step: 7,
-    mode: modeLabel || 'otp_register',
-    phone: cleanP,
-    maskedPhone: cleanP.length > 4 ? `***${cleanP.slice(-4)}` : cleanP,
-    otpLength: cleanO.length,
-    verified: Boolean(verifiedFlag),
-    timestamp,
-  };
-}
-
-function validateOtpChallenge_07(phoneVal, sentFlag, expectedCode, actualCode) {
-  const p = normalizePhone(phoneVal);
-  if (!p || p.length < 8) {
-    return { valid: false, reason: 'Số điện thoại chưa hợp lệ (cần tối thiểu 8 số).' };
-  }
-  const code = String(actualCode || '').trim();
-  if (!code) {
-    return { valid: false, reason: 'Vui lòng nhập hoặc lấy mã OTP trước khi xác nhận.' };
-  }
-  if (code.length < 4 || code.length > 8) {
-    return { valid: false, reason: 'Mã OTP phải có từ 4 đến 8 ký tự số.' };
-  }
-  if (sentFlag && expectedCode && code !== expectedCode && code !== DEFAULT_OTP_DEMO) {
-    return {
-      valid: false,
-      reason: `Mã OTP không khớp. Hãy nhập mã ${expectedCode} hoặc ${DEFAULT_OTP_DEMO}.`,
-    };
-  }
-  return { valid: true, reason: 'OTP hợp lệ.' };
-}
-
-function formatOrderSummaryLine_07(orderObj) {
-  if (!orderObj) return '';
-  const idStr = orderObj.id || '---';
-  const srvStr = orderObj.service || 'Dịch vụ';
-  const addrStr = orderObj.dropoffAddress || 'Chưa rõ địa chỉ';
-  const totalStr = formatVnd(orderObj.total || 0);
-  const statusStr = orderObj.status || 'Đang xử lý';
-  return `#${idStr} • ${srvStr} • ${totalStr} • ${statusStr} (${addrStr})`;
-}
-
-// ----------------------------------------------------------------------------
-// MODULE EXTENSION 08: OTP & ORDER DIAGNOSTIC / FORMATTING UTILITIES
-// ----------------------------------------------------------------------------
-function buildOtpAuditEntry_08(phoneVal, otpVal, verifiedFlag, modeLabel) {
-  const cleanP = normalizePhone(phoneVal);
-  const cleanO = String(otpVal || '').trim();
-  const timestamp = new Date().toLocaleTimeString('vi-VN');
-  return {
-    step: 8,
-    mode: modeLabel || 'otp_register',
-    phone: cleanP,
-    maskedPhone: cleanP.length > 4 ? `***${cleanP.slice(-4)}` : cleanP,
-    otpLength: cleanO.length,
-    verified: Boolean(verifiedFlag),
-    timestamp,
-  };
-}
-
-function validateOtpChallenge_08(phoneVal, sentFlag, expectedCode, actualCode) {
-  const p = normalizePhone(phoneVal);
-  if (!p || p.length < 8) {
-    return { valid: false, reason: 'Số điện thoại chưa hợp lệ (cần tối thiểu 8 số).' };
-  }
-  const code = String(actualCode || '').trim();
-  if (!code) {
-    return { valid: false, reason: 'Vui lòng nhập hoặc lấy mã OTP trước khi xác nhận.' };
-  }
-  if (code.length < 4 || code.length > 8) {
-    return { valid: false, reason: 'Mã OTP phải có từ 4 đến 8 ký tự số.' };
-  }
-  if (sentFlag && expectedCode && code !== expectedCode && code !== DEFAULT_OTP_DEMO) {
-    return {
-      valid: false,
-      reason: `Mã OTP không khớp. Hãy nhập mã ${expectedCode} hoặc ${DEFAULT_OTP_DEMO}.`,
-    };
-  }
-  return { valid: true, reason: 'OTP hợp lệ.' };
-}
-
-function formatOrderSummaryLine_08(orderObj) {
-  if (!orderObj) return '';
-  const idStr = orderObj.id || '---';
-  const srvStr = orderObj.service || 'Dịch vụ';
-  const addrStr = orderObj.dropoffAddress || 'Chưa rõ địa chỉ';
-  const totalStr = formatVnd(orderObj.total || 0);
-  const statusStr = orderObj.status || 'Đang xử lý';
-  return `#${idStr} • ${srvStr} • ${totalStr} • ${statusStr} (${addrStr})`;
-}
-
-// ----------------------------------------------------------------------------
-// MODULE EXTENSION 09: OTP & ORDER DIAGNOSTIC / FORMATTING UTILITIES
-// ----------------------------------------------------------------------------
-function buildOtpAuditEntry_09(phoneVal, otpVal, verifiedFlag, modeLabel) {
-  const cleanP = normalizePhone(phoneVal);
-  const cleanO = String(otpVal || '').trim();
-  const timestamp = new Date().toLocaleTimeString('vi-VN');
-  return {
-    step: 9,
-    mode: modeLabel || 'otp_register',
-    phone: cleanP,
-    maskedPhone: cleanP.length > 4 ? `***${cleanP.slice(-4)}` : cleanP,
-    otpLength: cleanO.length,
-    verified: Boolean(verifiedFlag),
-    timestamp,
-  };
-}
-
-function validateOtpChallenge_09(phoneVal, sentFlag, expectedCode, actualCode) {
-  const p = normalizePhone(phoneVal);
-  if (!p || p.length < 8) {
-    return { valid: false, reason: 'Số điện thoại chưa hợp lệ (cần tối thiểu 8 số).' };
-  }
-  const code = String(actualCode || '').trim();
-  if (!code) {
-    return { valid: false, reason: 'Vui lòng nhập hoặc lấy mã OTP trước khi xác nhận.' };
-  }
-  if (code.length < 4 || code.length > 8) {
-    return { valid: false, reason: 'Mã OTP phải có từ 4 đến 8 ký tự số.' };
-  }
-  if (sentFlag && expectedCode && code !== expectedCode && code !== DEFAULT_OTP_DEMO) {
-    return {
-      valid: false,
-      reason: `Mã OTP không khớp. Hãy nhập mã ${expectedCode} hoặc ${DEFAULT_OTP_DEMO}.`,
-    };
-  }
-  return { valid: true, reason: 'OTP hợp lệ.' };
-}
-
-function formatOrderSummaryLine_09(orderObj) {
-  if (!orderObj) return '';
-  const idStr = orderObj.id || '---';
-  const srvStr = orderObj.service || 'Dịch vụ';
-  const addrStr = orderObj.dropoffAddress || 'Chưa rõ địa chỉ';
-  const totalStr = formatVnd(orderObj.total || 0);
-  const statusStr = orderObj.status || 'Đang xử lý';
-  return `#${idStr} • ${srvStr} • ${totalStr} • ${statusStr} (${addrStr})`;
-}
-
-// ----------------------------------------------------------------------------
-// MODULE EXTENSION 10: OTP & ORDER DIAGNOSTIC / FORMATTING UTILITIES
-// ----------------------------------------------------------------------------
-function buildOtpAuditEntry_10(phoneVal, otpVal, verifiedFlag, modeLabel) {
-  const cleanP = normalizePhone(phoneVal);
-  const cleanO = String(otpVal || '').trim();
-  const timestamp = new Date().toLocaleTimeString('vi-VN');
-  return {
-    step: 10,
-    mode: modeLabel || 'otp_register',
-    phone: cleanP,
-    maskedPhone: cleanP.length > 4 ? `***${cleanP.slice(-4)}` : cleanP,
-    otpLength: cleanO.length,
-    verified: Boolean(verifiedFlag),
-    timestamp,
-  };
-}
-
-function validateOtpChallenge_10(phoneVal, sentFlag, expectedCode, actualCode) {
-  const p = normalizePhone(phoneVal);
-  if (!p || p.length < 8) {
-    return { valid: false, reason: 'Số điện thoại chưa hợp lệ (cần tối thiểu 8 số).' };
-  }
-  const code = String(actualCode || '').trim();
-  if (!code) {
-    return { valid: false, reason: 'Vui lòng nhập hoặc lấy mã OTP trước khi xác nhận.' };
-  }
-  if (code.length < 4 || code.length > 8) {
-    return { valid: false, reason: 'Mã OTP phải có từ 4 đến 8 ký tự số.' };
-  }
-  if (sentFlag && expectedCode && code !== expectedCode && code !== DEFAULT_OTP_DEMO) {
-    return {
-      valid: false,
-      reason: `Mã OTP không khớp. Hãy nhập mã ${expectedCode} hoặc ${DEFAULT_OTP_DEMO}.`,
-    };
-  }
-  return { valid: true, reason: 'OTP hợp lệ.' };
-}
-
-function formatOrderSummaryLine_10(orderObj) {
-  if (!orderObj) return '';
-  const idStr = orderObj.id || '---';
-  const srvStr = orderObj.service || 'Dịch vụ';
-  const addrStr = orderObj.dropoffAddress || 'Chưa rõ địa chỉ';
-  const totalStr = formatVnd(orderObj.total || 0);
-  const statusStr = orderObj.status || 'Đang xử lý';
-  return `#${idStr} • ${srvStr} • ${totalStr} • ${statusStr} (${addrStr})`;
-}
-
-// ----------------------------------------------------------------------------
-// MODULE EXTENSION 11: OTP & ORDER DIAGNOSTIC / FORMATTING UTILITIES
-// ----------------------------------------------------------------------------
-function buildOtpAuditEntry_11(phoneVal, otpVal, verifiedFlag, modeLabel) {
-  const cleanP = normalizePhone(phoneVal);
-  const cleanO = String(otpVal || '').trim();
-  const timestamp = new Date().toLocaleTimeString('vi-VN');
-  return {
-    step: 11,
-    mode: modeLabel || 'otp_register',
-    phone: cleanP,
-    maskedPhone: cleanP.length > 4 ? `***${cleanP.slice(-4)}` : cleanP,
-    otpLength: cleanO.length,
-    verified: Boolean(verifiedFlag),
-    timestamp,
-  };
-}
-
-function validateOtpChallenge_11(phoneVal, sentFlag, expectedCode, actualCode) {
-  const p = normalizePhone(phoneVal);
-  if (!p || p.length < 8) {
-    return { valid: false, reason: 'Số điện thoại chưa hợp lệ (cần tối thiểu 8 số).' };
-  }
-  const code = String(actualCode || '').trim();
-  if (!code) {
-    return { valid: false, reason: 'Vui lòng nhập hoặc lấy mã OTP trước khi xác nhận.' };
-  }
-  if (code.length < 4 || code.length > 8) {
-    return { valid: false, reason: 'Mã OTP phải có từ 4 đến 8 ký tự số.' };
-  }
-  if (sentFlag && expectedCode && code !== expectedCode && code !== DEFAULT_OTP_DEMO) {
-    return {
-      valid: false,
-      reason: `Mã OTP không khớp. Hãy nhập mã ${expectedCode} hoặc ${DEFAULT_OTP_DEMO}.`,
-    };
-  }
-  return { valid: true, reason: 'OTP hợp lệ.' };
-}
-
-function formatOrderSummaryLine_11(orderObj) {
-  if (!orderObj) return '';
-  const idStr = orderObj.id || '---';
-  const srvStr = orderObj.service || 'Dịch vụ';
-  const addrStr = orderObj.dropoffAddress || 'Chưa rõ địa chỉ';
-  const totalStr = formatVnd(orderObj.total || 0);
-  const statusStr = orderObj.status || 'Đang xử lý';
-  return `#${idStr} • ${srvStr} • ${totalStr} • ${statusStr} (${addrStr})`;
-}
-
-// ----------------------------------------------------------------------------
-// MODULE EXTENSION 12: OTP & ORDER DIAGNOSTIC / FORMATTING UTILITIES
-// ----------------------------------------------------------------------------
-function buildOtpAuditEntry_12(phoneVal, otpVal, verifiedFlag, modeLabel) {
-  const cleanP = normalizePhone(phoneVal);
-  const cleanO = String(otpVal || '').trim();
-  const timestamp = new Date().toLocaleTimeString('vi-VN');
-  return {
-    step: 12,
-    mode: modeLabel || 'otp_register',
-    phone: cleanP,
-    maskedPhone: cleanP.length > 4 ? `***${cleanP.slice(-4)}` : cleanP,
-    otpLength: cleanO.length,
-    verified: Boolean(verifiedFlag),
-    timestamp,
-  };
-}
-
-function validateOtpChallenge_12(phoneVal, sentFlag, expectedCode, actualCode) {
-  const p = normalizePhone(phoneVal);
-  if (!p || p.length < 8) {
-    return { valid: false, reason: 'Số điện thoại chưa hợp lệ (cần tối thiểu 8 số).' };
-  }
-  const code = String(actualCode || '').trim();
-  if (!code) {
-    return { valid: false, reason: 'Vui lòng nhập hoặc lấy mã OTP trước khi xác nhận.' };
-  }
-  if (code.length < 4 || code.length > 8) {
-    return { valid: false, reason: 'Mã OTP phải có từ 4 đến 8 ký tự số.' };
-  }
-  if (sentFlag && expectedCode && code !== expectedCode && code !== DEFAULT_OTP_DEMO) {
-    return {
-      valid: false,
-      reason: `Mã OTP không khớp. Hãy nhập mã ${expectedCode} hoặc ${DEFAULT_OTP_DEMO}.`,
-    };
-  }
-  return { valid: true, reason: 'OTP hợp lệ.' };
-}
-
-function formatOrderSummaryLine_12(orderObj) {
-  if (!orderObj) return '';
-  const idStr = orderObj.id || '---';
-  const srvStr = orderObj.service || 'Dịch vụ';
-  const addrStr = orderObj.dropoffAddress || 'Chưa rõ địa chỉ';
-  const totalStr = formatVnd(orderObj.total || 0);
-  const statusStr = orderObj.status || 'Đang xử lý';
-  return `#${idStr} • ${srvStr} • ${totalStr} • ${statusStr} (${addrStr})`;
-}
-
-// ----------------------------------------------------------------------------
-// MODULE EXTENSION 13: OTP & ORDER DIAGNOSTIC / FORMATTING UTILITIES
-// ----------------------------------------------------------------------------
-function buildOtpAuditEntry_13(phoneVal, otpVal, verifiedFlag, modeLabel) {
-  const cleanP = normalizePhone(phoneVal);
-  const cleanO = String(otpVal || '').trim();
-  const timestamp = new Date().toLocaleTimeString('vi-VN');
-  return {
-    step: 13,
-    mode: modeLabel || 'otp_register',
-    phone: cleanP,
-    maskedPhone: cleanP.length > 4 ? `***${cleanP.slice(-4)}` : cleanP,
-    otpLength: cleanO.length,
-    verified: Boolean(verifiedFlag),
-    timestamp,
-  };
-}
-
-function validateOtpChallenge_13(phoneVal, sentFlag, expectedCode, actualCode) {
-  const p = normalizePhone(phoneVal);
-  if (!p || p.length < 8) {
-    return { valid: false, reason: 'Số điện thoại chưa hợp lệ (cần tối thiểu 8 số).' };
-  }
-  const code = String(actualCode || '').trim();
-  if (!code) {
-    return { valid: false, reason: 'Vui lòng nhập hoặc lấy mã OTP trước khi xác nhận.' };
-  }
-  if (code.length < 4 || code.length > 8) {
-    return { valid: false, reason: 'Mã OTP phải có từ 4 đến 8 ký tự số.' };
-  }
-  if (sentFlag && expectedCode && code !== expectedCode && code !== DEFAULT_OTP_DEMO) {
-    return {
-      valid: false,
-      reason: `Mã OTP không khớp. Hãy nhập mã ${expectedCode} hoặc ${DEFAULT_OTP_DEMO}.`,
-    };
-  }
-  return { valid: true, reason: 'OTP hợp lệ.' };
-}
-
-function formatOrderSummaryLine_13(orderObj) {
-  if (!orderObj) return '';
-  const idStr = orderObj.id || '---';
-  const srvStr = orderObj.service || 'Dịch vụ';
-  const addrStr = orderObj.dropoffAddress || 'Chưa rõ địa chỉ';
-  const totalStr = formatVnd(orderObj.total || 0);
-  const statusStr = orderObj.status || 'Đang xử lý';
-  return `#${idStr} • ${srvStr} • ${totalStr} • ${statusStr} (${addrStr})`;
-}
-
-// ----------------------------------------------------------------------------
-// MODULE EXTENSION 14: OTP & ORDER DIAGNOSTIC / FORMATTING UTILITIES
-// ----------------------------------------------------------------------------
-function buildOtpAuditEntry_14(phoneVal, otpVal, verifiedFlag, modeLabel) {
-  const cleanP = normalizePhone(phoneVal);
-  const cleanO = String(otpVal || '').trim();
-  const timestamp = new Date().toLocaleTimeString('vi-VN');
-  return {
-    step: 14,
-    mode: modeLabel || 'otp_register',
-    phone: cleanP,
-    maskedPhone: cleanP.length > 4 ? `***${cleanP.slice(-4)}` : cleanP,
-    otpLength: cleanO.length,
-    verified: Boolean(verifiedFlag),
-    timestamp,
-  };
-}
-
-function validateOtpChallenge_14(phoneVal, sentFlag, expectedCode, actualCode) {
-  const p = normalizePhone(phoneVal);
-  if (!p || p.length < 8) {
-    return { valid: false, reason: 'Số điện thoại chưa hợp lệ (cần tối thiểu 8 số).' };
-  }
-  const code = String(actualCode || '').trim();
-  if (!code) {
-    return { valid: false, reason: 'Vui lòng nhập hoặc lấy mã OTP trước khi xác nhận.' };
-  }
-  if (code.length < 4 || code.length > 8) {
-    return { valid: false, reason: 'Mã OTP phải có từ 4 đến 8 ký tự số.' };
-  }
-  if (sentFlag && expectedCode && code !== expectedCode && code !== DEFAULT_OTP_DEMO) {
-    return {
-      valid: false,
-      reason: `Mã OTP không khớp. Hãy nhập mã ${expectedCode} hoặc ${DEFAULT_OTP_DEMO}.`,
-    };
-  }
-  return { valid: true, reason: 'OTP hợp lệ.' };
-}
-
-function formatOrderSummaryLine_14(orderObj) {
-  if (!orderObj) return '';
-  const idStr = orderObj.id || '---';
-  const srvStr = orderObj.service || 'Dịch vụ';
-  const addrStr = orderObj.dropoffAddress || 'Chưa rõ địa chỉ';
-  const totalStr = formatVnd(orderObj.total || 0);
-  const statusStr = orderObj.status || 'Đang xử lý';
-  return `#${idStr} • ${srvStr} • ${totalStr} • ${statusStr} (${addrStr})`;
-}
-
-// ----------------------------------------------------------------------------
-// MODULE EXTENSION 15: OTP & ORDER DIAGNOSTIC / FORMATTING UTILITIES
-// ----------------------------------------------------------------------------
-function buildOtpAuditEntry_15(phoneVal, otpVal, verifiedFlag, modeLabel) {
-  const cleanP = normalizePhone(phoneVal);
-  const cleanO = String(otpVal || '').trim();
-  const timestamp = new Date().toLocaleTimeString('vi-VN');
-  return {
-    step: 15,
-    mode: modeLabel || 'otp_register',
-    phone: cleanP,
-    maskedPhone: cleanP.length > 4 ? `***${cleanP.slice(-4)}` : cleanP,
-    otpLength: cleanO.length,
-    verified: Boolean(verifiedFlag),
-    timestamp,
-  };
-}
-
-function validateOtpChallenge_15(phoneVal, sentFlag, expectedCode, actualCode) {
-  const p = normalizePhone(phoneVal);
-  if (!p || p.length < 8) {
-    return { valid: false, reason: 'Số điện thoại chưa hợp lệ (cần tối thiểu 8 số).' };
-  }
-  const code = String(actualCode || '').trim();
-  if (!code) {
-    return { valid: false, reason: 'Vui lòng nhập hoặc lấy mã OTP trước khi xác nhận.' };
-  }
-  if (code.length < 4 || code.length > 8) {
-    return { valid: false, reason: 'Mã OTP phải có từ 4 đến 8 ký tự số.' };
-  }
-  if (sentFlag && expectedCode && code !== expectedCode && code !== DEFAULT_OTP_DEMO) {
-    return {
-      valid: false,
-      reason: `Mã OTP không khớp. Hãy nhập mã ${expectedCode} hoặc ${DEFAULT_OTP_DEMO}.`,
-    };
-  }
-  return { valid: true, reason: 'OTP hợp lệ.' };
-}
-
-function formatOrderSummaryLine_15(orderObj) {
-  if (!orderObj) return '';
-  const idStr = orderObj.id || '---';
-  const srvStr = orderObj.service || 'Dịch vụ';
-  const addrStr = orderObj.dropoffAddress || 'Chưa rõ địa chỉ';
-  const totalStr = formatVnd(orderObj.total || 0);
-  const statusStr = orderObj.status || 'Đang xử lý';
-  return `#${idStr} • ${srvStr} • ${totalStr} • ${statusStr} (${addrStr})`;
-}
-
-// ----------------------------------------------------------------------------
-// MODULE EXTENSION 16: OTP & ORDER DIAGNOSTIC / FORMATTING UTILITIES
-// ----------------------------------------------------------------------------
-function buildOtpAuditEntry_16(phoneVal, otpVal, verifiedFlag, modeLabel) {
-  const cleanP = normalizePhone(phoneVal);
-  const cleanO = String(otpVal || '').trim();
-  const timestamp = new Date().toLocaleTimeString('vi-VN');
-  return {
-    step: 16,
-    mode: modeLabel || 'otp_register',
-    phone: cleanP,
-    maskedPhone: cleanP.length > 4 ? `***${cleanP.slice(-4)}` : cleanP,
-    otpLength: cleanO.length,
-    verified: Boolean(verifiedFlag),
-    timestamp,
-  };
-}
-
-function validateOtpChallenge_16(phoneVal, sentFlag, expectedCode, actualCode) {
-  const p = normalizePhone(phoneVal);
-  if (!p || p.length < 8) {
-    return { valid: false, reason: 'Số điện thoại chưa hợp lệ (cần tối thiểu 8 số).' };
-  }
-  const code = String(actualCode || '').trim();
-  if (!code) {
-    return { valid: false, reason: 'Vui lòng nhập hoặc lấy mã OTP trước khi xác nhận.' };
-  }
-  if (code.length < 4 || code.length > 8) {
-    return { valid: false, reason: 'Mã OTP phải có từ 4 đến 8 ký tự số.' };
-  }
-  if (sentFlag && expectedCode && code !== expectedCode && code !== DEFAULT_OTP_DEMO) {
-    return {
-      valid: false,
-      reason: `Mã OTP không khớp. Hãy nhập mã ${expectedCode} hoặc ${DEFAULT_OTP_DEMO}.`,
-    };
-  }
-  return { valid: true, reason: 'OTP hợp lệ.' };
-}
-
-function formatOrderSummaryLine_16(orderObj) {
-  if (!orderObj) return '';
-  const idStr = orderObj.id || '---';
-  const srvStr = orderObj.service || 'Dịch vụ';
-  const addrStr = orderObj.dropoffAddress || 'Chưa rõ địa chỉ';
-  const totalStr = formatVnd(orderObj.total || 0);
-  const statusStr = orderObj.status || 'Đang xử lý';
-  return `#${idStr} • ${srvStr} • ${totalStr} • ${statusStr} (${addrStr})`;
-}
-
-// ----------------------------------------------------------------------------
-// MODULE EXTENSION 17: OTP & ORDER DIAGNOSTIC / FORMATTING UTILITIES
-// ----------------------------------------------------------------------------
-function buildOtpAuditEntry_17(phoneVal, otpVal, verifiedFlag, modeLabel) {
-  const cleanP = normalizePhone(phoneVal);
-  const cleanO = String(otpVal || '').trim();
-  const timestamp = new Date().toLocaleTimeString('vi-VN');
-  return {
-    step: 17,
-    mode: modeLabel || 'otp_register',
-    phone: cleanP,
-    maskedPhone: cleanP.length > 4 ? `***${cleanP.slice(-4)}` : cleanP,
-    otpLength: cleanO.length,
-    verified: Boolean(verifiedFlag),
-    timestamp,
-  };
-}
-
-function validateOtpChallenge_17(phoneVal, sentFlag, expectedCode, actualCode) {
-  const p = normalizePhone(phoneVal);
-  if (!p || p.length < 8) {
-    return { valid: false, reason: 'Số điện thoại chưa hợp lệ (cần tối thiểu 8 số).' };
-  }
-  const code = String(actualCode || '').trim();
-  if (!code) {
-    return { valid: false, reason: 'Vui lòng nhập hoặc lấy mã OTP trước khi xác nhận.' };
-  }
-  if (code.length < 4 || code.length > 8) {
-    return { valid: false, reason: 'Mã OTP phải có từ 4 đến 8 ký tự số.' };
-  }
-  if (sentFlag && expectedCode && code !== expectedCode && code !== DEFAULT_OTP_DEMO) {
-    return {
-      valid: false,
-      reason: `Mã OTP không khớp. Hãy nhập mã ${expectedCode} hoặc ${DEFAULT_OTP_DEMO}.`,
-    };
-  }
-  return { valid: true, reason: 'OTP hợp lệ.' };
-}
-
-function formatOrderSummaryLine_17(orderObj) {
-  if (!orderObj) return '';
-  const idStr = orderObj.id || '---';
-  const srvStr = orderObj.service || 'Dịch vụ';
-  const addrStr = orderObj.dropoffAddress || 'Chưa rõ địa chỉ';
-  const totalStr = formatVnd(orderObj.total || 0);
-  const statusStr = orderObj.status || 'Đang xử lý';
-  return `#${idStr} • ${srvStr} • ${totalStr} • ${statusStr} (${addrStr})`;
-}
-
-// ----------------------------------------------------------------------------
-// MODULE EXTENSION 18: OTP & ORDER DIAGNOSTIC / FORMATTING UTILITIES
-// ----------------------------------------------------------------------------
-function buildOtpAuditEntry_18(phoneVal, otpVal, verifiedFlag, modeLabel) {
-  const cleanP = normalizePhone(phoneVal);
-  const cleanO = String(otpVal || '').trim();
-  const timestamp = new Date().toLocaleTimeString('vi-VN');
-  return {
-    step: 18,
-    mode: modeLabel || 'otp_register',
-    phone: cleanP,
-    maskedPhone: cleanP.length > 4 ? `***${cleanP.slice(-4)}` : cleanP,
-    otpLength: cleanO.length,
-    verified: Boolean(verifiedFlag),
-    timestamp,
-  };
-}
-
-function validateOtpChallenge_18(phoneVal, sentFlag, expectedCode, actualCode) {
-  const p = normalizePhone(phoneVal);
-  if (!p || p.length < 8) {
-    return { valid: false, reason: 'Số điện thoại chưa hợp lệ (cần tối thiểu 8 số).' };
-  }
-  const code = String(actualCode || '').trim();
-  if (!code) {
-    return { valid: false, reason: 'Vui lòng nhập hoặc lấy mã OTP trước khi xác nhận.' };
-  }
-  if (code.length < 4 || code.length > 8) {
-    return { valid: false, reason: 'Mã OTP phải có từ 4 đến 8 ký tự số.' };
-  }
-  if (sentFlag && expectedCode && code !== expectedCode && code !== DEFAULT_OTP_DEMO) {
-    return {
-      valid: false,
-      reason: `Mã OTP không khớp. Hãy nhập mã ${expectedCode} hoặc ${DEFAULT_OTP_DEMO}.`,
-    };
-  }
-  return { valid: true, reason: 'OTP hợp lệ.' };
-}
-
-function formatOrderSummaryLine_18(orderObj) {
-  if (!orderObj) return '';
-  const idStr = orderObj.id || '---';
-  const srvStr = orderObj.service || 'Dịch vụ';
-  const addrStr = orderObj.dropoffAddress || 'Chưa rõ địa chỉ';
-  const totalStr = formatVnd(orderObj.total || 0);
-  const statusStr = orderObj.status || 'Đang xử lý';
-  return `#${idStr} • ${srvStr} • ${totalStr} • ${statusStr} (${addrStr})`;
-}
-
-// ----------------------------------------------------------------------------
-// MODULE EXTENSION 19: OTP & ORDER DIAGNOSTIC / FORMATTING UTILITIES
-// ----------------------------------------------------------------------------
-function buildOtpAuditEntry_19(phoneVal, otpVal, verifiedFlag, modeLabel) {
-  const cleanP = normalizePhone(phoneVal);
-  const cleanO = String(otpVal || '').trim();
-  const timestamp = new Date().toLocaleTimeString('vi-VN');
-  return {
-    step: 19,
-    mode: modeLabel || 'otp_register',
-    phone: cleanP,
-    maskedPhone: cleanP.length > 4 ? `***${cleanP.slice(-4)}` : cleanP,
-    otpLength: cleanO.length,
-    verified: Boolean(verifiedFlag),
-    timestamp,
-  };
-}
-
-function validateOtpChallenge_19(phoneVal, sentFlag, expectedCode, actualCode) {
-  const p = normalizePhone(phoneVal);
-  if (!p || p.length < 8) {
-    return { valid: false, reason: 'Số điện thoại chưa hợp lệ (cần tối thiểu 8 số).' };
-  }
-  const code = String(actualCode || '').trim();
-  if (!code) {
-    return { valid: false, reason: 'Vui lòng nhập hoặc lấy mã OTP trước khi xác nhận.' };
-  }
-  if (code.length < 4 || code.length > 8) {
-    return { valid: false, reason: 'Mã OTP phải có từ 4 đến 8 ký tự số.' };
-  }
-  if (sentFlag && expectedCode && code !== expectedCode && code !== DEFAULT_OTP_DEMO) {
-    return {
-      valid: false,
-      reason: `Mã OTP không khớp. Hãy nhập mã ${expectedCode} hoặc ${DEFAULT_OTP_DEMO}.`,
-    };
-  }
-  return { valid: true, reason: 'OTP hợp lệ.' };
-}
-
-function formatOrderSummaryLine_19(orderObj) {
-  if (!orderObj) return '';
-  const idStr = orderObj.id || '---';
-  const srvStr = orderObj.service || 'Dịch vụ';
-  const addrStr = orderObj.dropoffAddress || 'Chưa rõ địa chỉ';
-  const totalStr = formatVnd(orderObj.total || 0);
-  const statusStr = orderObj.status || 'Đang xử lý';
-  return `#${idStr} • ${srvStr} • ${totalStr} • ${statusStr} (${addrStr})`;
-}
-
-// ----------------------------------------------------------------------------
-// MODULE EXTENSION 20: OTP & ORDER DIAGNOSTIC / FORMATTING UTILITIES
-// ----------------------------------------------------------------------------
-function buildOtpAuditEntry_20(phoneVal, otpVal, verifiedFlag, modeLabel) {
-  const cleanP = normalizePhone(phoneVal);
-  const cleanO = String(otpVal || '').trim();
-  const timestamp = new Date().toLocaleTimeString('vi-VN');
-  return {
-    step: 20,
-    mode: modeLabel || 'otp_register',
-    phone: cleanP,
-    maskedPhone: cleanP.length > 4 ? `***${cleanP.slice(-4)}` : cleanP,
-    otpLength: cleanO.length,
-    verified: Boolean(verifiedFlag),
-    timestamp,
-  };
-}
-
-function validateOtpChallenge_20(phoneVal, sentFlag, expectedCode, actualCode) {
-  const p = normalizePhone(phoneVal);
-  if (!p || p.length < 8) {
-    return { valid: false, reason: 'Số điện thoại chưa hợp lệ (cần tối thiểu 8 số).' };
-  }
-  const code = String(actualCode || '').trim();
-  if (!code) {
-    return { valid: false, reason: 'Vui lòng nhập hoặc lấy mã OTP trước khi xác nhận.' };
-  }
-  if (code.length < 4 || code.length > 8) {
-    return { valid: false, reason: 'Mã OTP phải có từ 4 đến 8 ký tự số.' };
-  }
-  if (sentFlag && expectedCode && code !== expectedCode && code !== DEFAULT_OTP_DEMO) {
-    return {
-      valid: false,
-      reason: `Mã OTP không khớp. Hãy nhập mã ${expectedCode} hoặc ${DEFAULT_OTP_DEMO}.`,
-    };
-  }
-  return { valid: true, reason: 'OTP hợp lệ.' };
-}
-
-function formatOrderSummaryLine_20(orderObj) {
-  if (!orderObj) return '';
-  const idStr = orderObj.id || '---';
-  const srvStr = orderObj.service || 'Dịch vụ';
-  const addrStr = orderObj.dropoffAddress || 'Chưa rõ địa chỉ';
-  const totalStr = formatVnd(orderObj.total || 0);
-  const statusStr = orderObj.status || 'Đang xử lý';
-  return `#${idStr} • ${srvStr} • ${totalStr} • ${statusStr} (${addrStr})`;
-}
-
-// ----------------------------------------------------------------------------
-// MODULE EXTENSION 21: OTP & ORDER DIAGNOSTIC / FORMATTING UTILITIES
-// ----------------------------------------------------------------------------
-function buildOtpAuditEntry_21(phoneVal, otpVal, verifiedFlag, modeLabel) {
-  const cleanP = normalizePhone(phoneVal);
-  const cleanO = String(otpVal || '').trim();
-  const timestamp = new Date().toLocaleTimeString('vi-VN');
-  return {
-    step: 21,
-    mode: modeLabel || 'otp_register',
-    phone: cleanP,
-    maskedPhone: cleanP.length > 4 ? `***${cleanP.slice(-4)}` : cleanP,
-    otpLength: cleanO.length,
-    verified: Boolean(verifiedFlag),
-    timestamp,
-  };
-}
-
-function validateOtpChallenge_21(phoneVal, sentFlag, expectedCode, actualCode) {
-  const p = normalizePhone(phoneVal);
-  if (!p || p.length < 8) {
-    return { valid: false, reason: 'Số điện thoại chưa hợp lệ (cần tối thiểu 8 số).' };
-  }
-  const code = String(actualCode || '').trim();
-  if (!code) {
-    return { valid: false, reason: 'Vui lòng nhập hoặc lấy mã OTP trước khi xác nhận.' };
-  }
-  if (code.length < 4 || code.length > 8) {
-    return { valid: false, reason: 'Mã OTP phải có từ 4 đến 8 ký tự số.' };
-  }
-  if (sentFlag && expectedCode && code !== expectedCode && code !== DEFAULT_OTP_DEMO) {
-    return {
-      valid: false,
-      reason: `Mã OTP không khớp. Hãy nhập mã ${expectedCode} hoặc ${DEFAULT_OTP_DEMO}.`,
-    };
-  }
-  return { valid: true, reason: 'OTP hợp lệ.' };
-}
-
-function formatOrderSummaryLine_21(orderObj) {
-  if (!orderObj) return '';
-  const idStr = orderObj.id || '---';
-  const srvStr = orderObj.service || 'Dịch vụ';
-  const addrStr = orderObj.dropoffAddress || 'Chưa rõ địa chỉ';
-  const totalStr = formatVnd(orderObj.total || 0);
-  const statusStr = orderObj.status || 'Đang xử lý';
-  return `#${idStr} • ${srvStr} • ${totalStr} • ${statusStr} (${addrStr})`;
-}
-
-// ----------------------------------------------------------------------------
-// MODULE EXTENSION 22: OTP & ORDER DIAGNOSTIC / FORMATTING UTILITIES
-// ----------------------------------------------------------------------------
-function buildOtpAuditEntry_22(phoneVal, otpVal, verifiedFlag, modeLabel) {
-  const cleanP = normalizePhone(phoneVal);
-  const cleanO = String(otpVal || '').trim();
-  const timestamp = new Date().toLocaleTimeString('vi-VN');
-  return {
-    step: 22,
-    mode: modeLabel || 'otp_register',
-    phone: cleanP,
-    maskedPhone: cleanP.length > 4 ? `***${cleanP.slice(-4)}` : cleanP,
-    otpLength: cleanO.length,
-    verified: Boolean(verifiedFlag),
-    timestamp,
-  };
-}
-
-function validateOtpChallenge_22(phoneVal, sentFlag, expectedCode, actualCode) {
-  const p = normalizePhone(phoneVal);
-  if (!p || p.length < 8) {
-    return { valid: false, reason: 'Số điện thoại chưa hợp lệ (cần tối thiểu 8 số).' };
-  }
-  const code = String(actualCode || '').trim();
-  if (!code) {
-    return { valid: false, reason: 'Vui lòng nhập hoặc lấy mã OTP trước khi xác nhận.' };
-  }
-  if (code.length < 4 || code.length > 8) {
-    return { valid: false, reason: 'Mã OTP phải có từ 4 đến 8 ký tự số.' };
-  }
-  if (sentFlag && expectedCode && code !== expectedCode && code !== DEFAULT_OTP_DEMO) {
-    return {
-      valid: false,
-      reason: `Mã OTP không khớp. Hãy nhập mã ${expectedCode} hoặc ${DEFAULT_OTP_DEMO}.`,
-    };
-  }
-  return { valid: true, reason: 'OTP hợp lệ.' };
-}
-
-function formatOrderSummaryLine_22(orderObj) {
-  if (!orderObj) return '';
-  const idStr = orderObj.id || '---';
-  const srvStr = orderObj.service || 'Dịch vụ';
-  const addrStr = orderObj.dropoffAddress || 'Chưa rõ địa chỉ';
-  const totalStr = formatVnd(orderObj.total || 0);
-  const statusStr = orderObj.status || 'Đang xử lý';
-  return `#${idStr} • ${srvStr} • ${totalStr} • ${statusStr} (${addrStr})`;
-}
-
-// ----------------------------------------------------------------------------
-// MODULE EXTENSION 23: OTP & ORDER DIAGNOSTIC / FORMATTING UTILITIES
-// ----------------------------------------------------------------------------
-function buildOtpAuditEntry_23(phoneVal, otpVal, verifiedFlag, modeLabel) {
-  const cleanP = normalizePhone(phoneVal);
-  const cleanO = String(otpVal || '').trim();
-  const timestamp = new Date().toLocaleTimeString('vi-VN');
-  return {
-    step: 23,
-    mode: modeLabel || 'otp_register',
-    phone: cleanP,
-    maskedPhone: cleanP.length > 4 ? `***${cleanP.slice(-4)}` : cleanP,
-    otpLength: cleanO.length,
-    verified: Boolean(verifiedFlag),
-    timestamp,
-  };
-}
-
-function validateOtpChallenge_23(phoneVal, sentFlag, expectedCode, actualCode) {
-  const p = normalizePhone(phoneVal);
-  if (!p || p.length < 8) {
-    return { valid: false, reason: 'Số điện thoại chưa hợp lệ (cần tối thiểu 8 số).' };
-  }
-  const code = String(actualCode || '').trim();
-  if (!code) {
-    return { valid: false, reason: 'Vui lòng nhập hoặc lấy mã OTP trước khi xác nhận.' };
-  }
-  if (code.length < 4 || code.length > 8) {
-    return { valid: false, reason: 'Mã OTP phải có từ 4 đến 8 ký tự số.' };
-  }
-  if (sentFlag && expectedCode && code !== expectedCode && code !== DEFAULT_OTP_DEMO) {
-    return {
-      valid: false,
-      reason: `Mã OTP không khớp. Hãy nhập mã ${expectedCode} hoặc ${DEFAULT_OTP_DEMO}.`,
-    };
-  }
-  return { valid: true, reason: 'OTP hợp lệ.' };
-}
-
-function formatOrderSummaryLine_23(orderObj) {
-  if (!orderObj) return '';
-  const idStr = orderObj.id || '---';
-  const srvStr = orderObj.service || 'Dịch vụ';
-  const addrStr = orderObj.dropoffAddress || 'Chưa rõ địa chỉ';
-  const totalStr = formatVnd(orderObj.total || 0);
-  const statusStr = orderObj.status || 'Đang xử lý';
-  return `#${idStr} • ${srvStr} • ${totalStr} • ${statusStr} (${addrStr})`;
-}
-
-// ----------------------------------------------------------------------------
-// MODULE EXTENSION 24: OTP & ORDER DIAGNOSTIC / FORMATTING UTILITIES
-// ----------------------------------------------------------------------------
-function buildOtpAuditEntry_24(phoneVal, otpVal, verifiedFlag, modeLabel) {
-  const cleanP = normalizePhone(phoneVal);
-  const cleanO = String(otpVal || '').trim();
-  const timestamp = new Date().toLocaleTimeString('vi-VN');
-  return {
-    step: 24,
-    mode: modeLabel || 'otp_register',
-    phone: cleanP,
-    maskedPhone: cleanP.length > 4 ? `***${cleanP.slice(-4)}` : cleanP,
-    otpLength: cleanO.length,
-    verified: Boolean(verifiedFlag),
-    timestamp,
-  };
-}
-
-function validateOtpChallenge_24(phoneVal, sentFlag, expectedCode, actualCode) {
-  const p = normalizePhone(phoneVal);
-  if (!p || p.length < 8) {
-    return { valid: false, reason: 'Số điện thoại chưa hợp lệ (cần tối thiểu 8 số).' };
-  }
-  const code = String(actualCode || '').trim();
-  if (!code) {
-    return { valid: false, reason: 'Vui lòng nhập hoặc lấy mã OTP trước khi xác nhận.' };
-  }
-  if (code.length < 4 || code.length > 8) {
-    return { valid: false, reason: 'Mã OTP phải có từ 4 đến 8 ký tự số.' };
-  }
-  if (sentFlag && expectedCode && code !== expectedCode && code !== DEFAULT_OTP_DEMO) {
-    return {
-      valid: false,
-      reason: `Mã OTP không khớp. Hãy nhập mã ${expectedCode} hoặc ${DEFAULT_OTP_DEMO}.`,
-    };
-  }
-  return { valid: true, reason: 'OTP hợp lệ.' };
-}
-
-function formatOrderSummaryLine_24(orderObj) {
-  if (!orderObj) return '';
-  const idStr = orderObj.id || '---';
-  const srvStr = orderObj.service || 'Dịch vụ';
-  const addrStr = orderObj.dropoffAddress || 'Chưa rõ địa chỉ';
-  const totalStr = formatVnd(orderObj.total || 0);
-  const statusStr = orderObj.status || 'Đang xử lý';
-  return `#${idStr} • ${srvStr} • ${totalStr} • ${statusStr} (${addrStr})`;
-}
-
-// ----------------------------------------------------------------------------
-// MODULE EXTENSION 25: OTP & ORDER DIAGNOSTIC / FORMATTING UTILITIES
-// ----------------------------------------------------------------------------
-function buildOtpAuditEntry_25(phoneVal, otpVal, verifiedFlag, modeLabel) {
-  const cleanP = normalizePhone(phoneVal);
-  const cleanO = String(otpVal || '').trim();
-  const timestamp = new Date().toLocaleTimeString('vi-VN');
-  return {
-    step: 25,
-    mode: modeLabel || 'otp_register',
-    phone: cleanP,
-    maskedPhone: cleanP.length > 4 ? `***${cleanP.slice(-4)}` : cleanP,
-    otpLength: cleanO.length,
-    verified: Boolean(verifiedFlag),
-    timestamp,
-  };
-}
-
-function validateOtpChallenge_25(phoneVal, sentFlag, expectedCode, actualCode) {
-  const p = normalizePhone(phoneVal);
-  if (!p || p.length < 8) {
-    return { valid: false, reason: 'Số điện thoại chưa hợp lệ (cần tối thiểu 8 số).' };
-  }
-  const code = String(actualCode || '').trim();
-  if (!code) {
-    return { valid: false, reason: 'Vui lòng nhập hoặc lấy mã OTP trước khi xác nhận.' };
-  }
-  if (code.length < 4 || code.length > 8) {
-    return { valid: false, reason: 'Mã OTP phải có từ 4 đến 8 ký tự số.' };
-  }
-  if (sentFlag && expectedCode && code !== expectedCode && code !== DEFAULT_OTP_DEMO) {
-    return {
-      valid: false,
-      reason: `Mã OTP không khớp. Hãy nhập mã ${expectedCode} hoặc ${DEFAULT_OTP_DEMO}.`,
-    };
-  }
-  return { valid: true, reason: 'OTP hợp lệ.' };
-}
-
-function formatOrderSummaryLine_25(orderObj) {
-  if (!orderObj) return '';
-  const idStr = orderObj.id || '---';
-  const srvStr = orderObj.service || 'Dịch vụ';
-  const addrStr = orderObj.dropoffAddress || 'Chưa rõ địa chỉ';
-  const totalStr = formatVnd(orderObj.total || 0);
-  const statusStr = orderObj.status || 'Đang xử lý';
-  return `#${idStr} • ${srvStr} • ${totalStr} • ${statusStr} (${addrStr})`;
-}
-
-// ----------------------------------------------------------------------------
-// MODULE EXTENSION 26: OTP & ORDER DIAGNOSTIC / FORMATTING UTILITIES
-// ----------------------------------------------------------------------------
-function buildOtpAuditEntry_26(phoneVal, otpVal, verifiedFlag, modeLabel) {
-  const cleanP = normalizePhone(phoneVal);
-  const cleanO = String(otpVal || '').trim();
-  const timestamp = new Date().toLocaleTimeString('vi-VN');
-  return {
-    step: 26,
-    mode: modeLabel || 'otp_register',
-    phone: cleanP,
-    maskedPhone: cleanP.length > 4 ? `***${cleanP.slice(-4)}` : cleanP,
-    otpLength: cleanO.length,
-    verified: Boolean(verifiedFlag),
-    timestamp,
-  };
-}
-
-function validateOtpChallenge_26(phoneVal, sentFlag, expectedCode, actualCode) {
-  const p = normalizePhone(phoneVal);
-  if (!p || p.length < 8) {
-    return { valid: false, reason: 'Số điện thoại chưa hợp lệ (cần tối thiểu 8 số).' };
-  }
-  const code = String(actualCode || '').trim();
-  if (!code) {
-    return { valid: false, reason: 'Vui lòng nhập hoặc lấy mã OTP trước khi xác nhận.' };
-  }
-  if (code.length < 4 || code.length > 8) {
-    return { valid: false, reason: 'Mã OTP phải có từ 4 đến 8 ký tự số.' };
-  }
-  if (sentFlag && expectedCode && code !== expectedCode && code !== DEFAULT_OTP_DEMO) {
-    return {
-      valid: false,
-      reason: `Mã OTP không khớp. Hãy nhập mã ${expectedCode} hoặc ${DEFAULT_OTP_DEMO}.`,
-    };
-  }
-  return { valid: true, reason: 'OTP hợp lệ.' };
-}
-
-function formatOrderSummaryLine_26(orderObj) {
-  if (!orderObj) return '';
-  const idStr = orderObj.id || '---';
-  const srvStr = orderObj.service || 'Dịch vụ';
-  const addrStr = orderObj.dropoffAddress || 'Chưa rõ địa chỉ';
-  const totalStr = formatVnd(orderObj.total || 0);
-  const statusStr = orderObj.status || 'Đang xử lý';
-  return `#${idStr} • ${srvStr} • ${totalStr} • ${statusStr} (${addrStr})`;
-}
-
-// ----------------------------------------------------------------------------
-// MODULE EXTENSION 27: OTP & ORDER DIAGNOSTIC / FORMATTING UTILITIES
-// ----------------------------------------------------------------------------
-function buildOtpAuditEntry_27(phoneVal, otpVal, verifiedFlag, modeLabel) {
-  const cleanP = normalizePhone(phoneVal);
-  const cleanO = String(otpVal || '').trim();
-  const timestamp = new Date().toLocaleTimeString('vi-VN');
-  return {
-    step: 27,
-    mode: modeLabel || 'otp_register',
-    phone: cleanP,
-    maskedPhone: cleanP.length > 4 ? `***${cleanP.slice(-4)}` : cleanP,
-    otpLength: cleanO.length,
-    verified: Boolean(verifiedFlag),
-    timestamp,
-  };
-}
-
-function validateOtpChallenge_27(phoneVal, sentFlag, expectedCode, actualCode) {
-  const p = normalizePhone(phoneVal);
-  if (!p || p.length < 8) {
-    return { valid: false, reason: 'Số điện thoại chưa hợp lệ (cần tối thiểu 8 số).' };
-  }
-  const code = String(actualCode || '').trim();
-  if (!code) {
-    return { valid: false, reason: 'Vui lòng nhập hoặc lấy mã OTP trước khi xác nhận.' };
-  }
-  if (code.length < 4 || code.length > 8) {
-    return { valid: false, reason: 'Mã OTP phải có từ 4 đến 8 ký tự số.' };
-  }
-  if (sentFlag && expectedCode && code !== expectedCode && code !== DEFAULT_OTP_DEMO) {
-    return {
-      valid: false,
-      reason: `Mã OTP không khớp. Hãy nhập mã ${expectedCode} hoặc ${DEFAULT_OTP_DEMO}.`,
-    };
-  }
-  return { valid: true, reason: 'OTP hợp lệ.' };
-}
-
-function formatOrderSummaryLine_27(orderObj) {
-  if (!orderObj) return '';
-  const idStr = orderObj.id || '---';
-  const srvStr = orderObj.service || 'Dịch vụ';
-  const addrStr = orderObj.dropoffAddress || 'Chưa rõ địa chỉ';
-  const totalStr = formatVnd(orderObj.total || 0);
-  const statusStr = orderObj.status || 'Đang xử lý';
-  return `#${idStr} • ${srvStr} • ${totalStr} • ${statusStr} (${addrStr})`;
-}
-
-// ----------------------------------------------------------------------------
-// MODULE EXTENSION 28: OTP & ORDER DIAGNOSTIC / FORMATTING UTILITIES
-// ----------------------------------------------------------------------------
-function buildOtpAuditEntry_28(phoneVal, otpVal, verifiedFlag, modeLabel) {
-  const cleanP = normalizePhone(phoneVal);
-  const cleanO = String(otpVal || '').trim();
-  const timestamp = new Date().toLocaleTimeString('vi-VN');
-  return {
-    step: 28,
-    mode: modeLabel || 'otp_register',
-    phone: cleanP,
-    maskedPhone: cleanP.length > 4 ? `***${cleanP.slice(-4)}` : cleanP,
-    otpLength: cleanO.length,
-    verified: Boolean(verifiedFlag),
-    timestamp,
-  };
-}
-
-function validateOtpChallenge_28(phoneVal, sentFlag, expectedCode, actualCode) {
-  const p = normalizePhone(phoneVal);
-  if (!p || p.length < 8) {
-    return { valid: false, reason: 'Số điện thoại chưa hợp lệ (cần tối thiểu 8 số).' };
-  }
-  const code = String(actualCode || '').trim();
-  if (!code) {
-    return { valid: false, reason: 'Vui lòng nhập hoặc lấy mã OTP trước khi xác nhận.' };
-  }
-  if (code.length < 4 || code.length > 8) {
-    return { valid: false, reason: 'Mã OTP phải có từ 4 đến 8 ký tự số.' };
-  }
-  if (sentFlag && expectedCode && code !== expectedCode && code !== DEFAULT_OTP_DEMO) {
-    return {
-      valid: false,
-      reason: `Mã OTP không khớp. Hãy nhập mã ${expectedCode} hoặc ${DEFAULT_OTP_DEMO}.`,
-    };
-  }
-  return { valid: true, reason: 'OTP hợp lệ.' };
-}
-
-function formatOrderSummaryLine_28(orderObj) {
-  if (!orderObj) return '';
-  const idStr = orderObj.id || '---';
-  const srvStr = orderObj.service || 'Dịch vụ';
-  const addrStr = orderObj.dropoffAddress || 'Chưa rõ địa chỉ';
-  const totalStr = formatVnd(orderObj.total || 0);
-  const statusStr = orderObj.status || 'Đang xử lý';
-  return `#${idStr} • ${srvStr} • ${totalStr} • ${statusStr} (${addrStr})`;
-}
-
-// ----------------------------------------------------------------------------
-// MODULE EXTENSION 29: OTP & ORDER DIAGNOSTIC / FORMATTING UTILITIES
-// ----------------------------------------------------------------------------
-function buildOtpAuditEntry_29(phoneVal, otpVal, verifiedFlag, modeLabel) {
-  const cleanP = normalizePhone(phoneVal);
-  const cleanO = String(otpVal || '').trim();
-  const timestamp = new Date().toLocaleTimeString('vi-VN');
-  return {
-    step: 29,
-    mode: modeLabel || 'otp_register',
-    phone: cleanP,
-    maskedPhone: cleanP.length > 4 ? `***${cleanP.slice(-4)}` : cleanP,
-    otpLength: cleanO.length,
-    verified: Boolean(verifiedFlag),
-    timestamp,
-  };
-}
-
-function validateOtpChallenge_29(phoneVal, sentFlag, expectedCode, actualCode) {
-  const p = normalizePhone(phoneVal);
-  if (!p || p.length < 8) {
-    return { valid: false, reason: 'Số điện thoại chưa hợp lệ (cần tối thiểu 8 số).' };
-  }
-  const code = String(actualCode || '').trim();
-  if (!code) {
-    return { valid: false, reason: 'Vui lòng nhập hoặc lấy mã OTP trước khi xác nhận.' };
-  }
-  if (code.length < 4 || code.length > 8) {
-    return { valid: false, reason: 'Mã OTP phải có từ 4 đến 8 ký tự số.' };
-  }
-  if (sentFlag && expectedCode && code !== expectedCode && code !== DEFAULT_OTP_DEMO) {
-    return {
-      valid: false,
-      reason: `Mã OTP không khớp. Hãy nhập mã ${expectedCode} hoặc ${DEFAULT_OTP_DEMO}.`,
-    };
-  }
-  return { valid: true, reason: 'OTP hợp lệ.' };
-}
-
-function formatOrderSummaryLine_29(orderObj) {
-  if (!orderObj) return '';
-  const idStr = orderObj.id || '---';
-  const srvStr = orderObj.service || 'Dịch vụ';
-  const addrStr = orderObj.dropoffAddress || 'Chưa rõ địa chỉ';
-  const totalStr = formatVnd(orderObj.total || 0);
-  const statusStr = orderObj.status || 'Đang xử lý';
-  return `#${idStr} • ${srvStr} • ${totalStr} • ${statusStr} (${addrStr})`;
-}
-
-// ----------------------------------------------------------------------------
-// MODULE EXTENSION 30: OTP & ORDER DIAGNOSTIC / FORMATTING UTILITIES
-// ----------------------------------------------------------------------------
-function buildOtpAuditEntry_30(phoneVal, otpVal, verifiedFlag, modeLabel) {
-  const cleanP = normalizePhone(phoneVal);
-  const cleanO = String(otpVal || '').trim();
-  const timestamp = new Date().toLocaleTimeString('vi-VN');
-  return {
-    step: 30,
-    mode: modeLabel || 'otp_register',
-    phone: cleanP,
-    maskedPhone: cleanP.length > 4 ? `***${cleanP.slice(-4)}` : cleanP,
-    otpLength: cleanO.length,
-    verified: Boolean(verifiedFlag),
-    timestamp,
-  };
-}
-
-function validateOtpChallenge_30(phoneVal, sentFlag, expectedCode, actualCode) {
-  const p = normalizePhone(phoneVal);
-  if (!p || p.length < 8) {
-    return { valid: false, reason: 'Số điện thoại chưa hợp lệ (cần tối thiểu 8 số).' };
-  }
-  const code = String(actualCode || '').trim();
-  if (!code) {
-    return { valid: false, reason: 'Vui lòng nhập hoặc lấy mã OTP trước khi xác nhận.' };
-  }
-  if (code.length < 4 || code.length > 8) {
-    return { valid: false, reason: 'Mã OTP phải có từ 4 đến 8 ký tự số.' };
-  }
-  if (sentFlag && expectedCode && code !== expectedCode && code !== DEFAULT_OTP_DEMO) {
-    return {
-      valid: false,
-      reason: `Mã OTP không khớp. Hãy nhập mã ${expectedCode} hoặc ${DEFAULT_OTP_DEMO}.`,
-    };
-  }
-  return { valid: true, reason: 'OTP hợp lệ.' };
-}
-
-function formatOrderSummaryLine_30(orderObj) {
-  if (!orderObj) return '';
-  const idStr = orderObj.id || '---';
-  const srvStr = orderObj.service || 'Dịch vụ';
-  const addrStr = orderObj.dropoffAddress || 'Chưa rõ địa chỉ';
-  const totalStr = formatVnd(orderObj.total || 0);
-  const statusStr = orderObj.status || 'Đang xử lý';
-  return `#${idStr} • ${srvStr} • ${totalStr} • ${statusStr} (${addrStr})`;
-}
-
-// ----------------------------------------------------------------------------
-// MODULE EXTENSION 31: OTP & ORDER DIAGNOSTIC / FORMATTING UTILITIES
-// ----------------------------------------------------------------------------
-function buildOtpAuditEntry_31(phoneVal, otpVal, verifiedFlag, modeLabel) {
-  const cleanP = normalizePhone(phoneVal);
-  const cleanO = String(otpVal || '').trim();
-  const timestamp = new Date().toLocaleTimeString('vi-VN');
-  return {
-    step: 31,
-    mode: modeLabel || 'otp_register',
-    phone: cleanP,
-    maskedPhone: cleanP.length > 4 ? `***${cleanP.slice(-4)}` : cleanP,
-    otpLength: cleanO.length,
-    verified: Boolean(verifiedFlag),
-    timestamp,
-  };
-}
-
-function validateOtpChallenge_31(phoneVal, sentFlag, expectedCode, actualCode) {
-  const p = normalizePhone(phoneVal);
-  if (!p || p.length < 8) {
-    return { valid: false, reason: 'Số điện thoại chưa hợp lệ (cần tối thiểu 8 số).' };
-  }
-  const code = String(actualCode || '').trim();
-  if (!code) {
-    return { valid: false, reason: 'Vui lòng nhập hoặc lấy mã OTP trước khi xác nhận.' };
-  }
-  if (code.length < 4 || code.length > 8) {
-    return { valid: false, reason: 'Mã OTP phải có từ 4 đến 8 ký tự số.' };
-  }
-  if (sentFlag && expectedCode && code !== expectedCode && code !== DEFAULT_OTP_DEMO) {
-    return {
-      valid: false,
-      reason: `Mã OTP không khớp. Hãy nhập mã ${expectedCode} hoặc ${DEFAULT_OTP_DEMO}.`,
-    };
-  }
-  return { valid: true, reason: 'OTP hợp lệ.' };
-}
-
-function formatOrderSummaryLine_31(orderObj) {
-  if (!orderObj) return '';
-  const idStr = orderObj.id || '---';
-  const srvStr = orderObj.service || 'Dịch vụ';
-  const addrStr = orderObj.dropoffAddress || 'Chưa rõ địa chỉ';
-  const totalStr = formatVnd(orderObj.total || 0);
-  const statusStr = orderObj.status || 'Đang xử lý';
-  return `#${idStr} • ${srvStr} • ${totalStr} • ${statusStr} (${addrStr})`;
-}
-
-// ----------------------------------------------------------------------------
-// MODULE EXTENSION 32: OTP & ORDER DIAGNOSTIC / FORMATTING UTILITIES
-// ----------------------------------------------------------------------------
-function buildOtpAuditEntry_32(phoneVal, otpVal, verifiedFlag, modeLabel) {
-  const cleanP = normalizePhone(phoneVal);
-  const cleanO = String(otpVal || '').trim();
-  const timestamp = new Date().toLocaleTimeString('vi-VN');
-  return {
-    step: 32,
-    mode: modeLabel || 'otp_register',
-    phone: cleanP,
-    maskedPhone: cleanP.length > 4 ? `***${cleanP.slice(-4)}` : cleanP,
-    otpLength: cleanO.length,
-    verified: Boolean(verifiedFlag),
-    timestamp,
-  };
-}
-
-function validateOtpChallenge_32(phoneVal, sentFlag, expectedCode, actualCode) {
-  const p = normalizePhone(phoneVal);
-  if (!p || p.length < 8) {
-    return { valid: false, reason: 'Số điện thoại chưa hợp lệ (cần tối thiểu 8 số).' };
-  }
-  const code = String(actualCode || '').trim();
-  if (!code) {
-    return { valid: false, reason: 'Vui lòng nhập hoặc lấy mã OTP trước khi xác nhận.' };
-  }
-  if (code.length < 4 || code.length > 8) {
-    return { valid: false, reason: 'Mã OTP phải có từ 4 đến 8 ký tự số.' };
-  }
-  if (sentFlag && expectedCode && code !== expectedCode && code !== DEFAULT_OTP_DEMO) {
-    return {
-      valid: false,
-      reason: `Mã OTP không khớp. Hãy nhập mã ${expectedCode} hoặc ${DEFAULT_OTP_DEMO}.`,
-    };
-  }
-  return { valid: true, reason: 'OTP hợp lệ.' };
-}
-
-function formatOrderSummaryLine_32(orderObj) {
-  if (!orderObj) return '';
-  const idStr = orderObj.id || '---';
-  const srvStr = orderObj.service || 'Dịch vụ';
-  const addrStr = orderObj.dropoffAddress || 'Chưa rõ địa chỉ';
-  const totalStr = formatVnd(orderObj.total || 0);
-  const statusStr = orderObj.status || 'Đang xử lý';
-  return `#${idStr} • ${srvStr} • ${totalStr} • ${statusStr} (${addrStr})`;
-}
-
-// ----------------------------------------------------------------------------
-// MODULE EXTENSION 33: OTP & ORDER DIAGNOSTIC / FORMATTING UTILITIES
-// ----------------------------------------------------------------------------
-function buildOtpAuditEntry_33(phoneVal, otpVal, verifiedFlag, modeLabel) {
-  const cleanP = normalizePhone(phoneVal);
-  const cleanO = String(otpVal || '').trim();
-  const timestamp = new Date().toLocaleTimeString('vi-VN');
-  return {
-    step: 33,
-    mode: modeLabel || 'otp_register',
-    phone: cleanP,
-    maskedPhone: cleanP.length > 4 ? `***${cleanP.slice(-4)}` : cleanP,
-    otpLength: cleanO.length,
-    verified: Boolean(verifiedFlag),
-    timestamp,
-  };
-}
-
-function validateOtpChallenge_33(phoneVal, sentFlag, expectedCode, actualCode) {
-  const p = normalizePhone(phoneVal);
-  if (!p || p.length < 8) {
-    return { valid: false, reason: 'Số điện thoại chưa hợp lệ (cần tối thiểu 8 số).' };
-  }
-  const code = String(actualCode || '').trim();
-  if (!code) {
-    return { valid: false, reason: 'Vui lòng nhập hoặc lấy mã OTP trước khi xác nhận.' };
-  }
-  if (code.length < 4 || code.length > 8) {
-    return { valid: false, reason: 'Mã OTP phải có từ 4 đến 8 ký tự số.' };
-  }
-  if (sentFlag && expectedCode && code !== expectedCode && code !== DEFAULT_OTP_DEMO) {
-    return {
-      valid: false,
-      reason: `Mã OTP không khớp. Hãy nhập mã ${expectedCode} hoặc ${DEFAULT_OTP_DEMO}.`,
-    };
-  }
-  return { valid: true, reason: 'OTP hợp lệ.' };
-}
-
-function formatOrderSummaryLine_33(orderObj) {
-  if (!orderObj) return '';
-  const idStr = orderObj.id || '---';
-  const srvStr = orderObj.service || 'Dịch vụ';
-  const addrStr = orderObj.dropoffAddress || 'Chưa rõ địa chỉ';
-  const totalStr = formatVnd(orderObj.total || 0);
-  const statusStr = orderObj.status || 'Đang xử lý';
-  return `#${idStr} • ${srvStr} • ${totalStr} • ${statusStr} (${addrStr})`;
-}
-
-// ----------------------------------------------------------------------------
-// MODULE EXTENSION 34: OTP & ORDER DIAGNOSTIC / FORMATTING UTILITIES
-// ----------------------------------------------------------------------------
-function buildOtpAuditEntry_34(phoneVal, otpVal, verifiedFlag, modeLabel) {
-  const cleanP = normalizePhone(phoneVal);
-  const cleanO = String(otpVal || '').trim();
-  const timestamp = new Date().toLocaleTimeString('vi-VN');
-  return {
-    step: 34,
-    mode: modeLabel || 'otp_register',
-    phone: cleanP,
-    maskedPhone: cleanP.length > 4 ? `***${cleanP.slice(-4)}` : cleanP,
-    otpLength: cleanO.length,
-    verified: Boolean(verifiedFlag),
-    timestamp,
-  };
-}
-
-function validateOtpChallenge_34(phoneVal, sentFlag, expectedCode, actualCode) {
-  const p = normalizePhone(phoneVal);
-  if (!p || p.length < 8) {
-    return { valid: false, reason: 'Số điện thoại chưa hợp lệ (cần tối thiểu 8 số).' };
-  }
-  const code = String(actualCode || '').trim();
-  if (!code) {
-    return { valid: false, reason: 'Vui lòng nhập hoặc lấy mã OTP trước khi xác nhận.' };
-  }
-  if (code.length < 4 || code.length > 8) {
-    return { valid: false, reason: 'Mã OTP phải có từ 4 đến 8 ký tự số.' };
-  }
-  if (sentFlag && expectedCode && code !== expectedCode && code !== DEFAULT_OTP_DEMO) {
-    return {
-      valid: false,
-      reason: `Mã OTP không khớp. Hãy nhập mã ${expectedCode} hoặc ${DEFAULT_OTP_DEMO}.`,
-    };
-  }
-  return { valid: true, reason: 'OTP hợp lệ.' };
-}
-
-function formatOrderSummaryLine_34(orderObj) {
-  if (!orderObj) return '';
-  const idStr = orderObj.id || '---';
-  const srvStr = orderObj.service || 'Dịch vụ';
-  const addrStr = orderObj.dropoffAddress || 'Chưa rõ địa chỉ';
-  const totalStr = formatVnd(orderObj.total || 0);
-  const statusStr = orderObj.status || 'Đang xử lý';
-  return `#${idStr} • ${srvStr} • ${totalStr} • ${statusStr} (${addrStr})`;
-}
-
-// ----------------------------------------------------------------------------
-// MODULE EXTENSION 35: OTP & ORDER DIAGNOSTIC / FORMATTING UTILITIES
-// ----------------------------------------------------------------------------
-function buildOtpAuditEntry_35(phoneVal, otpVal, verifiedFlag, modeLabel) {
-  const cleanP = normalizePhone(phoneVal);
-  const cleanO = String(otpVal || '').trim();
-  const timestamp = new Date().toLocaleTimeString('vi-VN');
-  return {
-    step: 35,
-    mode: modeLabel || 'otp_register',
-    phone: cleanP,
-    maskedPhone: cleanP.length > 4 ? `***${cleanP.slice(-4)}` : cleanP,
-    otpLength: cleanO.length,
-    verified: Boolean(verifiedFlag),
-    timestamp,
-  };
-}
-
-function validateOtpChallenge_35(phoneVal, sentFlag, expectedCode, actualCode) {
-  const p = normalizePhone(phoneVal);
-  if (!p || p.length < 8) {
-    return { valid: false, reason: 'Số điện thoại chưa hợp lệ (cần tối thiểu 8 số).' };
-  }
-  const code = String(actualCode || '').trim();
-  if (!code) {
-    return { valid: false, reason: 'Vui lòng nhập hoặc lấy mã OTP trước khi xác nhận.' };
-  }
-  if (code.length < 4 || code.length > 8) {
-    return { valid: false, reason: 'Mã OTP phải có từ 4 đến 8 ký tự số.' };
-  }
-  if (sentFlag && expectedCode && code !== expectedCode && code !== DEFAULT_OTP_DEMO) {
-    return {
-      valid: false,
-      reason: `Mã OTP không khớp. Hãy nhập mã ${expectedCode} hoặc ${DEFAULT_OTP_DEMO}.`,
-    };
-  }
-  return { valid: true, reason: 'OTP hợp lệ.' };
-}
-
-function formatOrderSummaryLine_35(orderObj) {
-  if (!orderObj) return '';
-  const idStr = orderObj.id || '---';
-  const srvStr = orderObj.service || 'Dịch vụ';
-  const addrStr = orderObj.dropoffAddress || 'Chưa rõ địa chỉ';
-  const totalStr = formatVnd(orderObj.total || 0);
-  const statusStr = orderObj.status || 'Đang xử lý';
-  return `#${idStr} • ${srvStr} • ${totalStr} • ${statusStr} (${addrStr})`;
-}
-
-// ----------------------------------------------------------------------------
-// MODULE EXTENSION 36: OTP & ORDER DIAGNOSTIC / FORMATTING UTILITIES
-// ----------------------------------------------------------------------------
-function buildOtpAuditEntry_36(phoneVal, otpVal, verifiedFlag, modeLabel) {
-  const cleanP = normalizePhone(phoneVal);
-  const cleanO = String(otpVal || '').trim();
-  const timestamp = new Date().toLocaleTimeString('vi-VN');
-  return {
-    step: 36,
-    mode: modeLabel || 'otp_register',
-    phone: cleanP,
-    maskedPhone: cleanP.length > 4 ? `***${cleanP.slice(-4)}` : cleanP,
-    otpLength: cleanO.length,
-    verified: Boolean(verifiedFlag),
-    timestamp,
-  };
-}
-
-function validateOtpChallenge_36(phoneVal, sentFlag, expectedCode, actualCode) {
-  const p = normalizePhone(phoneVal);
-  if (!p || p.length < 8) {
-    return { valid: false, reason: 'Số điện thoại chưa hợp lệ (cần tối thiểu 8 số).' };
-  }
-  const code = String(actualCode || '').trim();
-  if (!code) {
-    return { valid: false, reason: 'Vui lòng nhập hoặc lấy mã OTP trước khi xác nhận.' };
-  }
-  if (code.length < 4 || code.length > 8) {
-    return { valid: false, reason: 'Mã OTP phải có từ 4 đến 8 ký tự số.' };
-  }
-  if (sentFlag && expectedCode && code !== expectedCode && code !== DEFAULT_OTP_DEMO) {
-    return {
-      valid: false,
-      reason: `Mã OTP không khớp. Hãy nhập mã ${expectedCode} hoặc ${DEFAULT_OTP_DEMO}.`,
-    };
-  }
-  return { valid: true, reason: 'OTP hợp lệ.' };
-}
-
-function formatOrderSummaryLine_36(orderObj) {
-  if (!orderObj) return '';
-  const idStr = orderObj.id || '---';
-  const srvStr = orderObj.service || 'Dịch vụ';
-  const addrStr = orderObj.dropoffAddress || 'Chưa rõ địa chỉ';
-  const totalStr = formatVnd(orderObj.total || 0);
-  const statusStr = orderObj.status || 'Đang xử lý';
-  return `#${idStr} • ${srvStr} • ${totalStr} • ${statusStr} (${addrStr})`;
-}
-
-// ----------------------------------------------------------------------------
-// MODULE EXTENSION 37: OTP & ORDER DIAGNOSTIC / FORMATTING UTILITIES
-// ----------------------------------------------------------------------------
-function buildOtpAuditEntry_37(phoneVal, otpVal, verifiedFlag, modeLabel) {
-  const cleanP = normalizePhone(phoneVal);
-  const cleanO = String(otpVal || '').trim();
-  const timestamp = new Date().toLocaleTimeString('vi-VN');
-  return {
-    step: 37,
-    mode: modeLabel || 'otp_register',
-    phone: cleanP,
-    maskedPhone: cleanP.length > 4 ? `***${cleanP.slice(-4)}` : cleanP,
-    otpLength: cleanO.length,
-    verified: Boolean(verifiedFlag),
-    timestamp,
-  };
-}
-
-function validateOtpChallenge_37(phoneVal, sentFlag, expectedCode, actualCode) {
-  const p = normalizePhone(phoneVal);
-  if (!p || p.length < 8) {
-    return { valid: false, reason: 'Số điện thoại chưa hợp lệ (cần tối thiểu 8 số).' };
-  }
-  const code = String(actualCode || '').trim();
-  if (!code) {
-    return { valid: false, reason: 'Vui lòng nhập hoặc lấy mã OTP trước khi xác nhận.' };
-  }
-  if (code.length < 4 || code.length > 8) {
-    return { valid: false, reason: 'Mã OTP phải có từ 4 đến 8 ký tự số.' };
-  }
-  if (sentFlag && expectedCode && code !== expectedCode && code !== DEFAULT_OTP_DEMO) {
-    return {
-      valid: false,
-      reason: `Mã OTP không khớp. Hãy nhập mã ${expectedCode} hoặc ${DEFAULT_OTP_DEMO}.`,
-    };
-  }
-  return { valid: true, reason: 'OTP hợp lệ.' };
-}
-
-function formatOrderSummaryLine_37(orderObj) {
-  if (!orderObj) return '';
-  const idStr = orderObj.id || '---';
-  const srvStr = orderObj.service || 'Dịch vụ';
-  const addrStr = orderObj.dropoffAddress || 'Chưa rõ địa chỉ';
-  const totalStr = formatVnd(orderObj.total || 0);
-  const statusStr = orderObj.status || 'Đang xử lý';
-  return `#${idStr} • ${srvStr} • ${totalStr} • ${statusStr} (${addrStr})`;
 }
 
 export default function App() {
   const [config, setConfig] = useState(DEFAULT_CONFIG);
-  const [user, setUser] = useState(() => readStorage(SESSION_KEY, null));
-  const [orders, setOrders] = useState(() => readStorage(ORDERS_CACHE_KEY, []));
-  const [wallet, setWallet] = useState(() =>
-    readStorage(WALLET_CACHE_KEY, {
-      balance: 0,
-      transactions: [],
-    })
-  );
+  const [user, setUser] = useState(() => loadStore(SESSION_KEY, null));
+  const [orders, setOrders] = useState(() => loadStore(ORDERS_KEY, []));
+  const [wallet, setWallet] = useState(() => loadStore(WALLET_KEY, { balance: 0, logs: [] }));
   const [prefs, setPrefs] = useState(() =>
-    readStorage(PROFILE_PREFS_KEY, {
-      autoGps: true,
-      soundAlert: true,
-      preferredRole: 'customer',
-    })
+    loadStore(PREFS_KEY, { autoGps: true, soundAlert: true })
   );
 
-  // Tab điều hướng chính
-  const [activeTab, setActiveTab] = useState('home'); // home | order | drivers | history | account
+  // Điều hướng tab
+  const [tab, setTab] = useState('home'); // home | order | drivers | history | account
 
-  // Trạng thái form OTP & Đăng ký / Đăng nhập
-  const [authMode, setAuthMode] = useState('register'); // register | login
-  const [fullName, setFullName] = useState('');
-  const [phoneInput, setPhoneInput] = useState('');
-  const [roleInput, setRoleInput] = useState('customer');
-  const [otpCode, setOtpCode] = useState('');
-  const [serverOtpCode, setServerOtpCode] = useState('');
+  // Form OTP & tài khoản
+  const [authTab, setAuthTab] = useState('register'); // register | login
+  const [name, setName] = useState('');
+  const [phone, setPhone] = useState('');
+  const [otp, setOtp] = useState('');
+  const [issuedOtp, setIssuedOtp] = useState('');
   const [otpSent, setOtpSent] = useState(false);
-  const [otpVerified, setOtpVerified] = useState(false);
-  const [countdown, setCountdown] = useState(0);
-  const [otpLogs, setOtpLogs] = useState([]);
+  const [otpConfirmed, setOtpConfirmed] = useState(false);
+  const [secondsLeft, setSecondsLeft] = useState(0);
 
-  // Trạng thái GPS
-  const [gpsAddress, setGpsAddress] = useState('Chưa cập nhật GPS');
+  // GPS
+  const [gpsText, setGpsText] = useState('Chưa cập nhật GPS');
   const [coords, setCoords] = useState({ lat: 0, lng: 0 });
-  const [gpsSyncing, setGpsSyncing] = useState(false);
+  const [gpsBusy, setGpsBusy] = useState(false);
 
-  // Trạng thái đặt đơn
+  // Đặt đơn
   const [selectedServiceId, setSelectedServiceId] = useState('dat-do-an');
-  const [pickupAddress, setPickupAddress] = useState('');
-  const [dropoffAddress, setDropoffAddress] = useState('');
-  const [distanceKm, setDistanceKm] = useState('3');
-  const [advanceAmount, setAdvanceAmount] = useState('0');
-  const [orderNote, setOrderNote] = useState('');
-  const [paymentMethod, setPaymentMethod] = useState('Tiền mặt khi nhận');
+  const [pickup, setPickup] = useState('');
+  const [dropoff, setDropoff] = useState('');
+  const [kmStr, setKmStr] = useState('3');
+  const [advanceStr, setAdvanceStr] = useState('0');
+  const [note, setNote] = useState('');
 
-  // Trạng thái tài xế & tìm kiếm
+  // Tài xế & ví
   const [drivers, setDrivers] = useState([]);
-  const [driverSearch, setDriverSearch] = useState('');
-  const [selectedDriver, setSelectedDriver] = useState(null);
+  const [driverFilter, setDriverFilter] = useState('');
+  const [topupStr, setTopupStr] = useState('100000');
 
-  // Trạng thái ví & nạp/rút mô phỏng
-  const [topupAmount, setTopupAmount] = useState('100000');
-  const [bankNote, setBankNote] = useState('');
+  // Trạng thái chung
+  const [busy, setBusy] = useState(false);
+  const [msgOk, setMsgOk] = useState('');
+  const [msgErr, setMsgErr] = useState('');
+  const [fareModalVisible, setFareModalVisible] = useState(false);
 
-  // Trạng thái loading & thông báo
-  const [loading, setLoading] = useState(false);
-  const [statusBanner, setStatusBanner] = useState('');
-  const [errorBanner, setErrorBanner] = useState('');
-  const [showFareModal, setShowFareModal] = useState(false);
+  const timerRef = useRef(null);
 
-  const countdownTimerRef = useRef(null);
-
-  const activeServices = useMemo(() => {
-    const list = Array.isArray(config && config.services) ? config.services : DEFAULT_CONFIG.services;
-    return list.filter((s) => s && s.active !== false);
+  const services = useMemo(() => {
+    const arr = Array.isArray(config && config.services) ? config.services : DEFAULT_CONFIG.services;
+    return arr.filter((s) => s && s.active !== false);
   }, [config]);
 
-  const selectedServiceObj = useMemo(() => {
-    const found = activeServices.find((s) => s.id === selectedServiceId);
-    return found || activeServices[0] || DEFAULT_CONFIG.services[0];
-  }, [activeServices, selectedServiceId]);
+  const currentService = useMemo(() => {
+    return services.find((s) => s.id === selectedServiceId) || services[0] || DEFAULT_CONFIG.services[0];
+  }, [services, selectedServiceId]);
 
-  const fareCalc = useMemo(() => {
-    return calculateFareBreakdown(config, selectedServiceObj, distanceKm, advanceAmount);
-  }, [config, selectedServiceObj, distanceKm, advanceAmount]);
+  const fare = useMemo(() => {
+    return calcFare(config, currentService, kmStr, advanceStr);
+  }, [config, currentService, kmStr, advanceStr]);
 
-  const filteredDrivers = useMemo(() => {
-    return filterDriversByQuery(drivers, driverSearch, coords);
-  }, [drivers, driverSearch, coords]);
+  const visibleDrivers = useMemo(() => {
+    const q = String(driverFilter || '').trim().toLowerCase();
+    const list = Array.isArray(drivers) ? drivers : [];
+    if (!q) return list;
+    return list.filter((d) =>
+      `${d.name || ''} ${d.phone || ''} ${d.address || ''}`.toLowerCase().includes(q)
+    );
+  }, [drivers, driverFilter]);
 
-  const pricingTiers = useMemo(() => {
-    return buildPricingTiers(config && config.ratePerKm);
-  }, [config]);
-
-  const serviceGuideList = useMemo(() => {
-    return buildServiceGuideList(activeServices);
-  }, [activeServices]);
-
-  const faqList = useMemo(() => {
-    return buildFaqItems(config);
-  }, [config]);
-
-  function pushOtpAudit(entry) {
-    setOtpLogs((prev) => [entry, ...prev].slice(0, 15));
+  function resetAlerts() {
+    setMsgOk('');
+    setMsgErr('');
   }
 
-  function clearMessages() {
-    setStatusBanner('');
-    setErrorBanner('');
-  }
-
-  async function fetchRemoteConfig() {
+  async function pullConfig() {
     try {
       const res = await fetch(`${API_BASE}/api/config`, { cache: 'no-store' });
       const data = await res.json();
@@ -2247,12 +289,10 @@ export default function App() {
               : prev.services || DEFAULT_CONFIG.services,
         }));
       }
-    } catch (e) {
-      // Giữ cấu hình hiện tại nếu mất kết nối tạm thời
-    }
+    } catch (e) {}
   }
 
-  async function fetchRemoteDrivers() {
+  async function pullDrivers() {
     try {
       const res = await fetch(`${API_BASE}/api/drivers`, { cache: 'no-store' });
       const data = await res.json();
@@ -2262,510 +302,423 @@ export default function App() {
     } catch (e) {}
   }
 
-  async function pushLocationUpdate(targetUser, latVal, lngVal, addrLabel) {
-    const activeU = targetUser || user;
-    if (!activeU || !activeU.phone) return;
-    setGpsSyncing(true);
+  async function syncGpsToServer(targetUser, lat, lng, addr) {
+    const active = targetUser || user;
+    if (!active || !active.phone) return;
+    setGpsBusy(true);
     try {
       await fetch(`${API_BASE}/api/location`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          phone: activeU.phone,
-          name: activeU.name || 'Khách hàng',
-          role: activeU.role || 'customer',
-          address: addrLabel || `${latVal}, ${lngVal}`,
-          lat: latVal,
-          lng: lngVal,
+          phone: active.phone,
+          name: active.name || 'Khách hàng',
+          role: 'customer',
+          address: addr || `${lat}, ${lng}`,
+          lat,
+          lng,
         }),
       });
     } catch (e) {} finally {
-      setGpsSyncing(false);
+      setGpsBusy(false);
     }
   }
 
-  function refreshDeviceGps(targetUser) {
+  function updateGps(targetUser) {
     if (Platform.OS === 'web' && typeof navigator !== 'undefined' && navigator.geolocation) {
-      setGpsSyncing(true);
+      setGpsBusy(true);
       navigator.geolocation.getCurrentPosition(
         (pos) => {
           const lat = Number(pos.coords.latitude.toFixed(6));
           const lng = Number(pos.coords.longitude.toFixed(6));
-          const addr = `Vị trí GPS (${lat}, ${lng})`;
+          const addr = `GPS: ${lat}, ${lng}`;
           setCoords({ lat, lng });
-          setGpsAddress(addr);
-          pushLocationUpdate(targetUser, lat, lng, addr);
+          setGpsText(addr);
+          syncGpsToServer(targetUser, lat, lng, addr);
         },
         () => {
-          setGpsSyncing(false);
+          setGpsBusy(false);
         },
-        { enableHighAccuracy: true, timeout: 9000 }
+        { enableHighAccuracy: true, timeout: 8000 }
       );
     }
   }
 
   useEffect(() => {
-    fetchRemoteConfig();
-    fetchRemoteDrivers();
-    const savedUser = readStorage(SESSION_KEY, null);
-    if (savedUser && savedUser.phone) {
-      setFullName(savedUser.name || '');
-      setPhoneInput(savedUser.phone || '');
-      if (prefs.autoGps) {
-        refreshDeviceGps(savedUser);
-      }
+    pullConfig();
+    pullDrivers();
+    const saved = loadStore(SESSION_KEY, null);
+    if (saved && saved.phone) {
+      setName(saved.name || '');
+      setPhone(saved.phone || '');
+      if (prefs.autoGps) updateGps(saved);
     }
   }, []);
 
   useEffect(() => {
-    if (countdown <= 0) {
-      if (countdownTimerRef.current) clearInterval(countdownTimerRef.current);
+    if (secondsLeft <= 0) {
+      if (timerRef.current) clearInterval(timerRef.current);
       return;
     }
-    countdownTimerRef.current = setInterval(() => {
-      setCountdown((sec) => (sec > 1 ? sec - 1 : 0));
+    timerRef.current = setInterval(() => {
+      setSecondsLeft((s) => (s > 1 ? s - 1 : 0));
     }, 1000);
     return () => {
-      if (countdownTimerRef.current) clearInterval(countdownTimerRef.current);
+      if (timerRef.current) clearInterval(timerRef.current);
     };
-  }, [countdown]);
+  }, [secondsLeft]);
 
-  function handleRequestOtp() {
-    clearMessages();
-    const cleanPhone = normalizePhone(phoneInput);
-    if (cleanPhone.length < 8) {
-      setErrorBanner('Vui lòng nhập số điện thoại hợp lệ (ít nhất 8 chữ số) trước khi gửi OTP.');
-      pushOtpAudit(buildOtpAuditEntry_01(cleanPhone, otpCode, false, 'send_otp_failed'));
+  function onSendOtp() {
+    resetAlerts();
+    const p = cleanPhone(phone);
+    if (p.length < 8) {
+      setMsgErr('Vui lòng nhập số điện thoại (ít nhất 8 chữ số) trước khi lấy mã OTP.');
       return;
     }
-
-    const generated = generateOtpCode();
-    setServerOtpCode(generated);
-    setOtpCode(generated);
+    const code = randomOtp();
+    setIssuedOtp(code);
+    setOtp(code);
     setOtpSent(true);
-    setOtpVerified(false);
-    setCountdown(60);
-    setStatusBanner(
-      `Đã gửi mã OTP ${generated} cho số ${cleanPhone} (tự điền sẵn mã để xác nhận nhanh, hoặc nhập mã 6 số).`
-    );
-    pushOtpAudit(buildOtpAuditEntry_01(cleanPhone, generated, false, 'otp_sent'));
+    setOtpConfirmed(false);
+    setSecondsLeft(60);
+    setMsgOk(`Đã gửi mã OTP ${code} tới ${p} (đã điền sẵn mã, bấm Xác nhận OTP & Đăng ký).`);
   }
 
-  function handleVerifyOtpCode() {
-    clearMessages();
-    const check = validateOtpChallenge_01(phoneInput, otpSent, serverOtpCode, otpCode);
-    if (!check.valid) {
-      setErrorBanner(check.reason);
-      setOtpVerified(false);
-      pushOtpAudit(buildOtpAuditEntry_02(phoneInput, otpCode, false, 'verify_otp_failed'));
+  function onCheckOtp() {
+    resetAlerts();
+    const p = cleanPhone(phone);
+    if (p.length < 8) {
+      setMsgErr('Vui lòng nhập số điện thoại hợp lệ.');
       return;
     }
-
-    setOtpVerified(true);
-    setStatusBanner('Mã OTP đã được xác thực thành công! Bấm "Xác nhận OTP & Đăng ký tài khoản" để hoàn tất.');
-    pushOtpAudit(buildOtpAuditEntry_02(phoneInput, otpCode, true, 'verify_otp_success'));
+    const typed = String(otp || '').trim();
+    if (!typed) {
+      setMsgErr('Vui lòng bấm "Gửi mã OTP" hoặc nhập mã OTP.');
+      return;
+    }
+    if (otpSent && issuedOtp && typed !== issuedOtp && typed !== DEMO_OTP) {
+      setMsgErr(`Mã OTP chưa khớp. Mã hiện tại là ${issuedOtp} (hoặc nhập ${DEMO_OTP}).`);
+      return;
+    }
+    setOtpConfirmed(true);
+    setMsgOk('Mã OTP hợp lệ! Bấm "Xác nhận OTP & Đăng ký" để tạo/vào tài khoản.');
   }
 
-  async function executeAccountRegistration(cleanPhone, cleanName, codeUsed, modeLabel) {
-    setLoading(true);
-    clearMessages();
-    setStatusBanner('Đang đồng bộ tài khoản lên hệ thống Ninja Ship...');
-
+  async function sendRegisterApi(p, n, codeUsed) {
+    setBusy(true);
+    resetAlerts();
+    setMsgOk('Đang gửi tài khoản lên máy chủ...');
     try {
-      const payload = {
-        phone: cleanPhone,
-        name: cleanName,
-        role: roleInput === 'driver' ? 'driver' : 'customer',
-        address:
-          dropoffAddress.trim() ||
-          pickupAddress.trim() ||
-          (gpsAddress && gpsAddress !== 'Chưa cập nhật GPS'
-            ? gpsAddress
-            : 'Đang hoạt động trên Web'),
-        lat: coords.lat || 0,
-        lng: coords.lng || 0,
-        deviceId: getDeviceIdentifier(),
-        otp: codeUsed || DEFAULT_OTP_DEMO,
-        otpVerified: true,
-        authMode: modeLabel || authMode,
-      };
+      const devId =
+        Platform.OS === 'web' && typeof navigator !== 'undefined'
+          ? `WEB_${navigator.userAgent.slice(0, 32)}`
+          : `${Platform.OS}_app`;
 
       const res = await fetch(`${API_BASE}/api/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
+        body: JSON.stringify({
+          phone: p,
+          name: n,
+          role: 'customer',
+          address: dropoff.trim() || (gpsText !== 'Chưa cập nhật GPS' ? gpsText : 'Đang hoạt động trên Web'),
+          lat: coords.lat || 0,
+          lng: coords.lng || 0,
+          deviceId: devId,
+          otp: codeUsed || DEMO_OTP,
+          otpVerified: true,
+        }),
       });
-
       const data = await res.json();
       if (res.ok && data && data.ok) {
-        const accountObj = data.user || {
-          phone: cleanPhone,
-          name: cleanName,
-          role: payload.role,
-          address: payload.address,
-        };
-        setUser(accountObj);
-        writeStorage(SESSION_KEY, accountObj);
-        setOtpVerified(true);
-        setStatusBanner(
+        const logged = data.user || { phone: p, name: n, role: 'customer' };
+        setUser(logged);
+        saveStore(SESSION_KEY, logged);
+        setOtpConfirmed(true);
+        setMsgOk(
           data.isNew
-            ? `Đăng ký tài khoản mới thành công: ${accountObj.name} (${accountObj.phone})`
-            : `Đăng nhập thành công: ${accountObj.name} (${accountObj.phone})`
+            ? `Đăng ký thành công: ${logged.name} (${logged.phone})`
+            : `Đăng nhập thành công: ${logged.name} (${logged.phone})`
         );
-        pushOtpAudit(buildOtpAuditEntry_03(cleanPhone, codeUsed, true, 'register_api_ok'));
-        if (prefs.autoGps) {
-          refreshDeviceGps(accountObj);
-        }
-        fetchRemoteDrivers();
+        if (prefs.autoGps) updateGps(logged);
+        pullDrivers();
       } else {
-        const msg = (data && data.error) || `Không thể đăng ký tài khoản (lỗi ${res.status}).`;
-        setErrorBanner(msg);
-        pushOtpAudit(buildOtpAuditEntry_03(cleanPhone, codeUsed, false, 'register_api_error'));
+        setMsgErr((data && data.error) || `Đăng ký thất bại (lỗi ${res.status}).`);
       }
     } catch (e) {
-      setErrorBanner('Không kết nối được tới máy chủ Worker. Vui lòng kiểm tra lại kết nối.');
-      pushOtpAudit(buildOtpAuditEntry_04(cleanPhone, codeUsed, false, 'register_network_error'));
+      setMsgErr('Không kết nối được tới máy chủ Worker.');
     } finally {
-      setLoading(false);
+      setBusy(false);
     }
   }
 
-  async function handleConfirmOtpAndSubmit() {
-    clearMessages();
-    const cleanPhone = normalizePhone(phoneInput);
-    const cleanName =
-      String(fullName || '').trim() || `Khách hàng ${cleanPhone.slice(-4) || 'mới'}`;
-
-    if (cleanPhone.length < 8) {
-      setErrorBanner('Vui lòng nhập số điện thoại hợp lệ (ít nhất 8 chữ số).');
+  async function onConfirmOtpAndRegister() {
+    resetAlerts();
+    const p = cleanPhone(phone);
+    const n = String(name || '').trim() || `Khách ${p.slice(-4) || 'mới'}`;
+    if (p.length < 8) {
+      setMsgErr('Vui lòng nhập số điện thoại hợp lệ.');
       return;
     }
-
-    const typedCode = String(otpCode || '').trim();
-    const fallbackCode = serverOtpCode || DEFAULT_OTP_DEMO;
-    const effectiveCode = typedCode || fallbackCode;
-
-    if (
-      typedCode &&
-      otpSent &&
-      serverOtpCode &&
-      typedCode !== serverOtpCode &&
-      typedCode !== DEFAULT_OTP_DEMO
-    ) {
-      setErrorBanner(`Mã OTP chưa đúng. Vui lòng nhập ${serverOtpCode} hoặc ${DEFAULT_OTP_DEMO}.`);
-      pushOtpAudit(buildOtpAuditEntry_05(cleanPhone, typedCode, false, 'otp_mismatch_on_submit'));
+    const typed = String(otp || '').trim();
+    const code = typed || issuedOtp || DEMO_OTP;
+    if (typed && otpSent && issuedOtp && typed !== issuedOtp && typed !== DEMO_OTP) {
+      setMsgErr(`Sai mã OTP. Hãy nhập ${issuedOtp} hoặc ${DEMO_OTP}.`);
       return;
     }
-
-    await executeAccountRegistration(cleanPhone, cleanName, effectiveCode, authMode);
+    await sendRegisterApi(p, n, code);
   }
 
-  async function handleDirectPhoneLogin() {
-    clearMessages();
-    const cleanPhone = normalizePhone(phoneInput);
-    if (cleanPhone.length < 8) {
-      setErrorBanner('Vui lòng nhập số điện thoại để đăng nhập.');
+  async function onQuickLogin() {
+    resetAlerts();
+    const p = cleanPhone(phone);
+    if (p.length < 8) {
+      setMsgErr('Nhập số điện thoại để đăng nhập nhanh.');
       return;
     }
-    const cleanName = String(fullName || '').trim() || `Thành viên ${cleanPhone.slice(-4)}`;
-    setOtpCode(DEFAULT_OTP_DEMO);
-    setOtpVerified(true);
-    await executeAccountRegistration(cleanPhone, cleanName, DEFAULT_OTP_DEMO, 'direct_login');
+    const n = String(name || '').trim() || `Khách ${p.slice(-4)}`;
+    setOtp(DEMO_OTP);
+    setOtpConfirmed(true);
+    await sendRegisterApi(p, n, DEMO_OTP);
   }
 
-  function handleSignOut() {
-    writeStorage(SESSION_KEY, null);
+  function onLogout() {
+    saveStore(SESSION_KEY, null);
     setUser(null);
     setOtpSent(false);
-    setOtpVerified(false);
-    setOtpCode('');
-    setServerOtpCode('');
-    setCountdown(0);
-    setActiveTab('home');
-    clearMessages();
-    setStatusBanner('Đã đăng xuất tài khoản. Bạn có thể đăng ký tài khoản mới hoặc đăng nhập lại.');
+    setOtpConfirmed(false);
+    setOtp('');
+    setIssuedOtp('');
+    setSecondsLeft(0);
+    setTab('home');
+    resetAlerts();
+    setMsgOk('Đã đăng xuất. Bạn có thể đăng ký tài khoản mới hoặc đăng nhập lại.');
   }
 
-  async function handleSubmitOrder() {
-    clearMessages();
+  async function onCreateOrder() {
+    resetAlerts();
     if (!user || !user.phone) {
-      setErrorBanner('Vui lòng đăng ký hoặc đăng nhập trước khi đặt đơn.');
+      setMsgErr('Vui lòng đăng ký / đăng nhập trước khi đặt đơn.');
       return;
     }
-    if (!dropoffAddress.trim()) {
-      setErrorBanner('Vui lòng nhập địa chỉ giao hàng.');
+    if (!dropoff.trim()) {
+      setMsgErr('Vui lòng nhập địa chỉ giao hàng.');
       return;
     }
 
-    setLoading(true);
-    setStatusBanner('Đang gửi đơn hàng lên hệ thống...');
-
+    setBusy(true);
+    setMsgOk('Đang gửi đơn hàng...');
     try {
-      const orderRecord = {
-        id: buildOrderId(),
-        service: selectedServiceObj ? selectedServiceObj.title : 'Đặt đồ ăn',
-        serviceId: selectedServiceObj ? selectedServiceObj.id : 'dat-do-an',
-        customerName: user.name || 'Khách hàng',
+      const ord = {
+        id: makeOrderCode(),
+        service: currentService ? currentService.title : 'Đặt đồ ăn',
+        customerName: user.name,
         customerPhone: user.phone,
-        pickupAddress: pickupAddress.trim() || gpsAddress || 'Điểm mua gần nhất',
-        dropoffAddress: dropoffAddress.trim(),
-        distanceKm: fareCalc.km,
-        advanceAmount: fareCalc.advanceAmount,
-        discountRate: fareCalc.discountRate,
-        paymentMethod,
-        note: orderNote.trim() || 'Giao nhanh trong ngày',
-        total: fareCalc.totalPayable,
-        status: 'Đã tiếp nhận',
+        pickupAddress: pickup.trim() || gpsText || 'Điểm mua gần nhất',
+        dropoffAddress: dropoff.trim(),
+        note: note.trim() || 'Giao nhanh',
+        total: fare.total,
+        status: 'Đã gửi',
         createdAt: new Date().toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' }),
       };
 
       const res = await fetch(`${API_BASE}/api/orders`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(orderRecord),
+        body: JSON.stringify(ord),
       });
       const data = await res.json();
-
       if (res.ok && data && data.ok) {
-        const nextOrders = [orderRecord, ...orders].slice(0, 50);
-        setOrders(nextOrders);
-        writeStorage(ORDERS_CACHE_KEY, nextOrders);
-        setDropoffAddress('');
-        setOrderNote('');
-        setAdvanceAmount('0');
-        setActiveTab('history');
-        setStatusBanner(
-          `Đặt đơn #${orderRecord.id} thành công • Tổng cước/thanh toán: ${formatVnd(orderRecord.total)}`
-        );
+        const nextList = [ord, ...orders].slice(0, 50);
+        setOrders(nextList);
+        saveStore(ORDERS_KEY, nextList);
+        setDropoff('');
+        setNote('');
+        setAdvanceStr('0');
+        setTab('history');
+        setMsgOk(`Đã tạo đơn #${ord.id} • Tổng: ${formatMoney(ord.total)}`);
       } else {
-        setErrorBanner((data && data.error) || 'Không thể tạo đơn hàng lúc này.');
+        setMsgErr('Không thể gửi đơn hàng.');
       }
     } catch (e) {
-      setErrorBanner('Lỗi mạng khi gửi đơn hàng tới Worker.');
+      setMsgErr('Lỗi kết nối khi đặt đơn.');
     } finally {
-      setLoading(false);
+      setBusy(false);
     }
   }
 
-  function handleWalletTopup() {
-    clearMessages();
-    const amt = Math.max(1000, Number(String(topupAmount || '').replace(/\D/g, '')) || 0);
-    if (!amt) {
-      setErrorBanner('Vui lòng nhập số tiền hợp lệ.');
-      return;
-    }
-    const nextWallet = {
+  function onTopupWallet() {
+    resetAlerts();
+    const amt = Math.max(1000, Number(String(topupStr || '').replace(/\D/g, '')) || 0);
+    const nextW = {
       balance: (Number(wallet.balance) || 0) + amt,
-      transactions: [
+      logs: [
         {
-          id: `TX${String(Date.now()).slice(-6)}`,
-          type: 'Nạp tiền',
+          id: `NAP${String(Date.now()).slice(-6)}`,
           amount: amt,
-          note: bankNote.trim() || 'Nạp số dư ví ứng dụng',
           time: new Date().toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' }),
         },
-        ...(wallet.transactions || []),
-      ].slice(0, 30),
+        ...(wallet.logs || []),
+      ].slice(0, 20),
     };
-    setWallet(nextWallet);
-    writeStorage(WALLET_CACHE_KEY, nextWallet);
-    setBankNote('');
-    setStatusBanner(`Đã ghi nhận nạp ${formatVnd(amt)} vào số dư hiển thị trên thiết bị.`);
+    setWallet(nextW);
+    saveStore(WALLET_KEY, nextW);
+    setMsgOk(`Đã cộng ${formatMoney(amt)} vào số dư ví trên thiết bị.`);
   }
 
-  function updatePreference(key, val) {
-    const next = { ...prefs, [key]: val };
-    setPrefs(next);
-    writeStorage(PROFILE_PREFS_KEY, next);
-  }
+  const sampleKmList = [1, 2, 3, 5, 10, 15, 20];
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
-        {/* HEADER */}
-        <View style={styles.headerBox}>
-          <View style={styles.headerTopRow}>
+    <SafeAreaView style={styles.safe}>
+      <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
+        <View style={styles.header}>
+          <View style={styles.rowBetween}>
             <View style={styles.flex1}>
-              <Text style={styles.brandTitle}>
-                {config.appLogo || '🥷'} {config.appName || 'NINJA SHIP'}
+              <Text style={styles.appTitle}>
+                {config.appLogo || '🥷'} {config.appName || 'NINJA SHIP'} • V9
               </Text>
-              <Text style={styles.bannerTitle}>
-                {config.promoBannerTitle || 'Giao nhanh 15 phút • 5.000đ/km'}
-              </Text>
-              <Text style={styles.bannerSub}>
-                {config.promoBannerSub ||
-                  'Tài xế Ninja ứng trước tiền hàng & giao tận tay điểm mua nhất.'}
-              </Text>
+              <Text style={styles.banner}>{config.promoBannerTitle}</Text>
+              <Text style={styles.subBanner}>{config.promoBannerSub}</Text>
             </View>
             <TouchableOpacity
-              style={styles.refreshBtn}
+              style={styles.reloadBtn}
               onPress={() => {
-                fetchRemoteConfig();
-                fetchRemoteDrivers();
-                if (user) refreshDeviceGps(user);
+                pullConfig();
+                pullDrivers();
+                if (user) updateGps(user);
               }}
             >
-              <Text style={styles.refreshBtnText}>Làm mới</Text>
+              <Text style={styles.reloadBtnText}>Làm mới</Text>
             </TouchableOpacity>
           </View>
 
-          <View style={styles.statsStrip}>
-            <Text style={styles.statBadge}>Giá: {formatVnd(config.ratePerKm)}/km</Text>
-            <Text style={styles.statBadge}>Tài xế: {drivers.length}</Text>
-            <Text style={styles.statBadge}>Đơn đã lưu: {orders.length}</Text>
-            <Text style={styles.statBadge}>{gpsSyncing ? 'GPS: Đang đồng bộ...' : gpsAddress}</Text>
+          <View style={styles.metaRow}>
+            <Text style={styles.metaPill}>Giá: {formatMoney(config.ratePerKm)}/km</Text>
+            <Text style={styles.metaPill}>Tài xế: {drivers.length}</Text>
+            <Text style={styles.metaPill}>{gpsBusy ? 'GPS: Đang lấy...' : gpsText}</Text>
           </View>
         </View>
 
-        {/* BANNERS THÔNG BÁO / LỖI */}
-        {!!errorBanner && (
-          <View style={styles.errorBox}>
-            <Text style={styles.errorText}>{errorBanner}</Text>
+        {!!msgErr && (
+          <View style={styles.errBox}>
+            <Text style={styles.errText}>{msgErr}</Text>
           </View>
         )}
-        {!!statusBanner && (
-          <View style={styles.successBox}>
-            <Text style={styles.successText}>{statusBanner}</Text>
+        {!!msgOk && (
+          <View style={styles.okBox}>
+            <Text style={styles.okText}>{msgOk}</Text>
           </View>
         )}
 
-        {/* KHU VỰC ĐĂNG KÝ / ĐĂNG NHẬP OTP NẾU CHƯA CÓ PHIÊN */}
         {!user ? (
           <View style={styles.card}>
-            <Text style={styles.sectionTitle}>Đăng ký tài khoản mới &amp; Xác thực OTP</Text>
+            <Text style={styles.h2}>Đăng ký / Đăng nhập &amp; Xác thực OTP</Text>
             <Text style={styles.muted}>
-              Điền thông tin bên dưới, bấm "Gửi mã OTP" để nhận mã xác thực 6 số và bấm "Xác nhận OTP &amp; Đăng ký tài khoản".
+              Nhập họ tên và số điện thoại, bấm "Gửi mã OTP", kiểm tra/xác nhận mã và bấm "Xác nhận OTP &amp; Đăng ký".
             </Text>
 
-            <View style={styles.modeSwitchRow}>
+            <View style={styles.modeRow}>
               <TouchableOpacity
-                style={[styles.modeBtn, authMode === 'register' && styles.modeBtnActive]}
+                style={[styles.modeBtn, authTab === 'register' && styles.modeBtnOn]}
                 onPress={() => {
-                  setAuthMode('register');
-                  clearMessages();
+                  setAuthTab('register');
+                  resetAlerts();
                 }}
               >
-                <Text
-                  style={[styles.modeBtnText, authMode === 'register' && styles.modeBtnTextActive]}
-                >
-                  Đăng ký tài khoản mới
+                <Text style={[styles.modeTxt, authTab === 'register' && styles.modeTxtOn]}>
+                  Đăng ký mới
                 </Text>
               </TouchableOpacity>
               <TouchableOpacity
-                style={[styles.modeBtn, authMode === 'login' && styles.modeBtnActive]}
+                style={[styles.modeBtn, authTab === 'login' && styles.modeBtnOn]}
                 onPress={() => {
-                  setAuthMode('login');
-                  clearMessages();
+                  setAuthTab('login');
+                  resetAlerts();
                 }}
               >
-                <Text
-                  style={[styles.modeBtnText, authMode === 'login' && styles.modeBtnTextActive]}
-                >
-                  Đăng nhập SĐT / OTP
+                <Text style={[styles.modeTxt, authTab === 'login' && styles.modeTxtOn]}>
+                  Đăng nhập OTP
                 </Text>
               </TouchableOpacity>
             </View>
 
-            <Text style={styles.fieldLabel}>Họ và tên</Text>
+            <Text style={styles.label}>Họ và tên</Text>
             <TextInput
               style={styles.input}
-              placeholder="Nhập họ và tên (VD: Trần Minh Tuấn)"
+              placeholder="Nhập họ tên"
               placeholderTextColor="#64748b"
-              value={fullName}
-              onChangeText={setFullName}
+              value={name}
+              onChangeText={setName}
             />
 
-            <Text style={styles.fieldLabel}>Số điện thoại</Text>
+            <Text style={styles.label}>Số điện thoại</Text>
             <TextInput
               style={styles.input}
-              placeholder="Nhập số điện thoại (VD: 0912345678)"
+              placeholder="Nhập số điện thoại"
               placeholderTextColor="#64748b"
               keyboardType="phone-pad"
-              value={phoneInput}
+              value={phone}
               onChangeText={(v) => {
-                setPhoneInput(v);
-                if (otpVerified) setOtpVerified(false);
+                setPhone(v);
+                if (otpConfirmed) setOtpConfirmed(false);
               }}
             />
 
-            <Text style={styles.fieldLabel}>Mã OTP xác thực</Text>
-            <View style={styles.inlineRow}>
+            <Text style={styles.label}>Mã OTP</Text>
+            <View style={styles.rowGap}>
               <TextInput
                 style={[styles.input, styles.flex1]}
-                placeholder="Nhập mã OTP 6 số"
+                placeholder="Mã OTP (6 số)"
                 placeholderTextColor="#64748b"
                 keyboardType="number-pad"
                 maxLength={6}
-                value={otpCode}
+                value={otp}
                 onChangeText={(v) => {
-                  setOtpCode(v);
-                  if (otpVerified) setOtpVerified(false);
+                  setOtp(v);
+                  if (otpConfirmed) setOtpConfirmed(false);
                 }}
               />
               <TouchableOpacity
-                style={[styles.secondaryBtn, countdown > 0 && styles.disabledBtn]}
-                onPress={handleRequestOtp}
-                disabled={loading || countdown > 0}
+                style={[styles.secBtn, secondsLeft > 0 && styles.disabled]}
+                onPress={onSendOtp}
+                disabled={busy || secondsLeft > 0}
               >
-                <Text style={styles.secondaryBtnText}>
-                  {countdown > 0 ? `Gửi lại (${countdown}s)` : otpSent ? 'Gửi lại OTP' : 'Gửi mã OTP'}
+                <Text style={styles.secBtnTxt}>
+                  {secondsLeft > 0 ? `Gửi lại (${secondsLeft}s)` : otpSent ? 'Gửi lại OTP' : 'Gửi mã OTP'}
                 </Text>
               </TouchableOpacity>
             </View>
 
-            <View style={styles.inlineRow}>
-              <TouchableOpacity
-                style={[styles.outlineBtn, styles.flex1]}
-                onPress={handleVerifyOtpCode}
-                disabled={loading}
-              >
-                <Text style={styles.outlineBtnText}>
-                  {otpVerified ? 'Đã xác nhận mã OTP' : 'Xác nhận mã OTP'}
+            <View style={styles.rowGap}>
+              <TouchableOpacity style={[styles.outBtn, styles.flex1]} onPress={onCheckOtp} disabled={busy}>
+                <Text style={styles.outBtnTxt}>
+                  {otpConfirmed ? '✓ Đã xác nhận OTP' : 'Xác nhận mã OTP'}
                 </Text>
               </TouchableOpacity>
-
-              <TouchableOpacity
-                style={[styles.outlineBtn, styles.flex1]}
-                onPress={handleDirectPhoneLogin}
-                disabled={loading}
-              >
-                <Text style={styles.outlineBtnText}>Đăng nhập nhanh SĐT</Text>
+              <TouchableOpacity style={[styles.outBtn, styles.flex1]} onPress={onQuickLogin} disabled={busy}>
+                <Text style={styles.outBtnTxt}>Đăng nhập nhanh SĐT</Text>
               </TouchableOpacity>
             </View>
 
             <TouchableOpacity
-              style={[styles.primaryBtn, loading && styles.disabledBtn]}
-              onPress={handleConfirmOtpAndSubmit}
-              disabled={loading}
+              style={[styles.priBtn, busy && styles.disabled]}
+              onPress={onConfirmOtpAndRegister}
+              disabled={busy}
             >
-              {loading ? (
+              {busy ? (
                 <ActivityIndicator color="#052e16" />
               ) : (
-                <Text style={styles.primaryBtnText}>
-                  {authMode === 'register'
+                <Text style={styles.priBtnTxt}>
+                  {authTab === 'register'
                     ? 'Xác nhận OTP & Đăng ký tài khoản'
                     : 'Xác nhận OTP & Đăng nhập'}
                 </Text>
               )}
             </TouchableOpacity>
-
-            {/* BẢNG GIÁ THAM KHẢO NGAY TRÊN MÀN HÌNH ĐĂNG KÝ */}
-            <View style={styles.subCard}>
-              <Text style={styles.subCardTitle}>Bảng cước tham khảo ({formatVnd(config.ratePerKm)}/km)</Text>
-              {pricingTiers.slice(0, 4).map((tier) => (
-                <View key={tier.km} style={styles.tierRow}>
-                  <Text style={styles.muted}>
-                    {tier.km} Km ({tier.note})
-                  </Text>
-                  <Text style={styles.boldLight}>{formatVnd(tier.estimatedFee)}</Text>
-                </View>
-              ))}
-            </View>
           </View>
         ) : (
           <>
-            {/* THANH ĐIỀU HƯỚNG KHI ĐÃ ĐĂNG NHẬP / ĐĂNG KÝ */}
-            <View style={styles.navBar}>
+            <View style={styles.tabs}>
               {[
                 { id: 'home', label: 'Trang chủ' },
                 { id: 'order', label: 'Đặt đơn' },
@@ -2773,358 +726,236 @@ export default function App() {
                 { id: 'history', label: 'Đơn hàng' },
                 { id: 'account', label: 'Tài khoản' },
               ].map((t) => {
-                const isAct = activeTab === t.id;
+                const active = tab === t.id;
                 return (
                   <TouchableOpacity
                     key={t.id}
-                    style={[styles.navTab, isAct && styles.navTabActive]}
-                    onPress={() => setActiveTab(t.id)}
+                    style={[styles.tabBtn, active && styles.tabBtnOn]}
+                    onPress={() => setTab(t.id)}
                   >
-                    <Text style={[styles.navTabText, isAct && styles.navTabTextActive]}>
-                      {t.label}
-                    </Text>
+                    <Text style={[styles.tabTxt, active && styles.tabTxtOn]}>{t.label}</Text>
                   </TouchableOpacity>
                 );
               })}
             </View>
 
-            {/* TAB 1: TRANG CHỦ */}
-            {activeTab === 'home' && (
+            {tab === 'home' && (
               <View style={styles.card}>
-                <View style={styles.userHeaderRow}>
+                <View style={styles.rowBetween}>
                   <View style={styles.flex1}>
-                    <Text style={styles.sectionTitle}>Xin chào, {user.name}</Text>
-                    <Text style={styles.muted}>
-                      SĐT: {user.phone} • {gpsAddress}
-                    </Text>
+                    <Text style={styles.h2}>Xin chào, {user.name}</Text>
+                    <Text style={styles.muted}>SĐT: {user.phone} • {gpsText}</Text>
                   </View>
-                  <TouchableOpacity style={styles.smallBtn} onPress={() => refreshDeviceGps(user)}>
-                    <Text style={styles.smallBtnText}>Cập nhật GPS</Text>
+                  <TouchableOpacity style={styles.miniBtn} onPress={() => updateGps(user)}>
+                    <Text style={styles.miniBtnTxt}>Cập nhật GPS</Text>
                   </TouchableOpacity>
                 </View>
 
-                <Text style={styles.fieldLabel}>Danh mục dịch vụ</Text>
-                <View style={styles.gridWrap}>
-                  {activeServices.map((srv) => {
-                    const isSelected = selectedServiceId === srv.id;
+                <Text style={styles.label}>Dịch vụ Ninja Ship</Text>
+                <View style={styles.grid}>
+                  {services.map((s) => {
+                    const sel = s.id === selectedServiceId;
                     return (
                       <TouchableOpacity
-                        key={srv.id}
-                        style={[styles.serviceTile, isSelected && styles.serviceTileActive]}
+                        key={s.id}
+                        style={[styles.tile, sel && styles.tileOn]}
                         onPress={() => {
-                          setSelectedServiceId(srv.id);
-                          setActiveTab('order');
+                          setSelectedServiceId(s.id);
+                          setTab('order');
                         }}
                       >
-                        <Text style={styles.serviceIcon}>{srv.icon || '🛵'}</Text>
-                        <Text style={styles.serviceTitle} numberOfLines={1}>
-                          {srv.title}
+                        <Text style={styles.tileIcon}>{s.icon || '🛵'}</Text>
+                        <Text style={styles.tileTitle} numberOfLines={1}>
+                          {s.title}
                         </Text>
-                        {!!srv.badge && <Text style={styles.serviceBadge}>{srv.badge}</Text>}
+                        {!!s.badge && <Text style={styles.tileBadge}>{s.badge}</Text>}
                       </TouchableOpacity>
                     );
                   })}
-                </View>
-
-                <View style={styles.subCard}>
-                  <Text style={styles.subCardTitle}>Tài xế gần đây ({filteredDrivers.length})</Text>
-                  {filteredDrivers.length === 0 ? (
-                    <Text style={styles.muted}>Chưa có tài xế nào trực tuyến trên hệ thống.</Text>
-                  ) : (
-                    filteredDrivers.slice(0, 3).map((drv, idx) => (
-                      <View key={`${drv.phone || idx}`} style={styles.listRow}>
-                        <View style={styles.flex1}>
-                          <Text style={styles.boldLight}>
-                            {idx + 1}. {drv.name || 'Tài xế Ninja'} ({drv.phone || ''})
-                          </Text>
-                          <Text style={styles.muted}>
-                            {drv.address || `${drv.lat || ''}, ${drv.lng || ''}`}
-                            {drv._distKm !== null ? ` • Cách ~${drv._distKm} km` : ''}
-                          </Text>
-                        </View>
-                      </View>
-                    ))
-                  )}
                 </View>
               </View>
             )}
 
-            {/* TAB 2: ĐẶT ĐƠN */}
-            {activeTab === 'order' && (
+            {tab === 'order' && (
               <View style={styles.card}>
-                <Text style={styles.sectionTitle}>
-                  Đặt đơn: {selectedServiceObj ? `${selectedServiceObj.icon} ${selectedServiceObj.title}` : 'Giao nhanh'}
+                <Text style={styles.h2}>
+                  Đặt đơn: {currentService ? `${currentService.icon} ${currentService.title}` : 'Giao nhanh'}
                 </Text>
-                <Text style={styles.muted}>
-                  {selectedServiceObj && selectedServiceObj.description}
-                </Text>
+                <Text style={styles.muted}>{currentService && currentService.description}</Text>
 
-                <Text style={styles.fieldLabel}>Chọn loại dịch vụ</Text>
-                <View style={styles.chipsRow}>
-                  {activeServices.map((srv) => {
-                    const active = srv.id === selectedServiceId;
-                    return (
-                      <TouchableOpacity
-                        key={srv.id}
-                        style={[styles.chip, active && styles.chipActive]}
-                        onPress={() => setSelectedServiceId(srv.id)}
-                      >
-                        <Text style={[styles.chipText, active && styles.chipTextActive]}>
-                          {srv.icon} {srv.title}
-                        </Text>
-                      </TouchableOpacity>
-                    );
-                  })}
-                </View>
-
-                <Text style={styles.fieldLabel}>Điểm lấy hàng / điểm mua</Text>
+                <Text style={styles.label}>Điểm lấy / điểm mua</Text>
                 <TextInput
                   style={styles.input}
-                  placeholder="Nhập địa chỉ lấy hàng hoặc để trống nếu lấy theo GPS"
+                  placeholder="Nhập điểm lấy hàng hoặc để trống"
                   placeholderTextColor="#64748b"
-                  value={pickupAddress}
-                  onChangeText={setPickupAddress}
+                  value={pickup}
+                  onChangeText={setPickup}
                 />
 
-                <Text style={styles.fieldLabel}>Địa chỉ giao hàng</Text>
+                <Text style={styles.label}>Địa chỉ giao hàng</Text>
                 <TextInput
                   style={styles.input}
-                  placeholder="Nhập địa chỉ giao tới"
+                  placeholder="Nhập địa chỉ giao hàng"
                   placeholderTextColor="#64748b"
-                  value={dropoffAddress}
-                  onChangeText={setDropoffAddress}
+                  value={dropoff}
+                  onChangeText={setDropoff}
                 />
 
-                <View style={styles.inlineRow}>
+                <View style={styles.rowGap}>
                   <View style={styles.flex1}>
-                    <Text style={styles.fieldLabel}>Quãng đường (Km)</Text>
+                    <Text style={styles.label}>Số Km</Text>
                     <TextInput
                       style={styles.input}
                       placeholder="3"
                       placeholderTextColor="#64748b"
                       keyboardType="numeric"
-                      value={distanceKm}
-                      onChangeText={setDistanceKm}
+                      value={kmStr}
+                      onChangeText={setKmStr}
                     />
                   </View>
                   <View style={styles.flex1}>
-                    <Text style={styles.fieldLabel}>Tiền ứng trước (VNĐ)</Text>
+                    <Text style={styles.label}>Tiền ứng trước (đ)</Text>
                     <TextInput
                       style={styles.input}
                       placeholder="0"
                       placeholderTextColor="#64748b"
                       keyboardType="numeric"
-                      value={advanceAmount}
-                      onChangeText={setAdvanceAmount}
+                      value={advanceStr}
+                      onChangeText={setAdvanceStr}
                     />
                   </View>
                 </View>
 
-                <Text style={styles.fieldLabel}>Ghi chú cho tài xế</Text>
+                <Text style={styles.label}>Ghi chú</Text>
                 <TextInput
                   style={styles.input}
-                  placeholder="Ví dụ: Ít đá, gọi trước khi giao..."
+                  placeholder="Ghi chú cho tài xế"
                   placeholderTextColor="#64748b"
-                  value={orderNote}
-                  onChangeText={setOrderNote}
+                  value={note}
+                  onChangeText={setNote}
                 />
 
-                <View style={styles.subCard}>
-                  <View style={styles.tierRow}>
-                    <Text style={styles.muted}>Phí giao ({fareCalc.km} km × {formatVnd(fareCalc.ratePerKm)}):</Text>
-                    <Text style={styles.boldLight}>{formatVnd(fareCalc.rawShippingFee)}</Text>
+                <View style={styles.box}>
+                  <View style={styles.rowBetween}>
+                    <Text style={styles.muted}>Phí giao ({fare.km} km × {formatMoney(fare.rate)}):</Text>
+                    <Text style={styles.bold}>{formatMoney(fare.rawFee)}</Text>
                   </View>
-                  {fareCalc.discountAmount > 0 && (
-                    <View style={styles.tierRow}>
-                      <Text style={styles.successText}>
-                        Ưu đãi ({Math.round(fareCalc.discountRate * 100)}%):
-                      </Text>
-                      <Text style={styles.successText}>-{formatVnd(fareCalc.discountAmount)}</Text>
+                  {fare.discountAmount > 0 && (
+                    <View style={styles.rowBetween}>
+                      <Text style={styles.okText}>Giảm ưu đãi ({Math.round(fare.discountRate * 100)}%):</Text>
+                      <Text style={styles.okText}>-{formatMoney(fare.discountAmount)}</Text>
                     </View>
                   )}
-                  {fareCalc.advanceAmount > 0 && (
-                    <View style={styles.tierRow}>
-                      <Text style={styles.muted}>Tiền hàng ứng trước:</Text>
-                      <Text style={styles.boldLight}>{formatVnd(fareCalc.advanceAmount)}</Text>
-                    </View>
-                  )}
-                  <View style={[styles.tierRow, styles.totalDivider]}>
-                    <Text style={styles.boldLight}>Tổng thanh toán dự kiến:</Text>
-                    <Text style={styles.totalHighlight}>{formatVnd(fareCalc.totalPayable)}</Text>
+                  <View style={[styles.rowBetween, styles.divider]}>
+                    <Text style={styles.bold}>Tổng thanh toán:</Text>
+                    <Text style={styles.money}>{formatMoney(fare.total)}</Text>
                   </View>
                 </View>
 
-                <View style={styles.inlineRow}>
-                  <TouchableOpacity
-                    style={[styles.outlineBtn, styles.flex1]}
-                    onPress={() => setShowFareModal(true)}
-                  >
-                    <Text style={styles.outlineBtnText}>Xem bảng cước Km</Text>
+                <View style={styles.rowGap}>
+                  <TouchableOpacity style={[styles.outBtn, styles.flex1]} onPress={() => setFareModalVisible(true)}>
+                    <Text style={styles.outBtnTxt}>Bảng giá Km</Text>
                   </TouchableOpacity>
                   <TouchableOpacity
-                    style={[styles.primaryBtn, styles.flex1, styles.noTopMargin, loading && styles.disabledBtn]}
-                    onPress={handleSubmitOrder}
-                    disabled={loading}
+                    style={[styles.priBtn, styles.flex1, styles.noMt, busy && styles.disabled]}
+                    onPress={onCreateOrder}
+                    disabled={busy}
                   >
-                    {loading ? (
+                    {busy ? (
                       <ActivityIndicator color="#052e16" />
                     ) : (
-                      <Text style={styles.primaryBtnText}>Gửi đơn hàng</Text>
+                      <Text style={styles.priBtnTxt}>Đặt đơn ngay</Text>
                     )}
                   </TouchableOpacity>
                 </View>
               </View>
             )}
 
-            {/* TAB 3: TÀI XẾ */}
-            {activeTab === 'drivers' && (
+            {tab === 'drivers' && (
               <View style={styles.card}>
-                <Text style={styles.sectionTitle}>Danh sách tài xế ({filteredDrivers.length})</Text>
+                <Text style={styles.h2}>Tài xế hoạt động ({visibleDrivers.length})</Text>
                 <TextInput
                   style={styles.input}
-                  placeholder="Tìm theo tên tài xế, SĐT hoặc khu vực..."
+                  placeholder="Tìm tài xế theo tên hoặc SĐT..."
                   placeholderTextColor="#64748b"
-                  value={driverSearch}
-                  onChangeText={setDriverSearch}
+                  value={driverFilter}
+                  onChangeText={setDriverFilter}
                 />
-
-                {filteredDrivers.length === 0 ? (
-                  <Text style={[styles.muted, styles.mt12]}>
-                    Hiện chưa có tài xế nào trên hệ thống. Bấm "Làm mới" để tải lại.
-                  </Text>
+                {visibleDrivers.length === 0 ? (
+                  <Text style={[styles.muted, styles.mt10]}>Chưa có tài xế nào trực tuyến.</Text>
                 ) : (
-                  filteredDrivers.map((drv, i) => {
-                    const isPicked = selectedDriver && selectedDriver.phone === drv.phone;
-                    return (
-                      <TouchableOpacity
-                        key={`${drv.phone || i}`}
-                        style={[styles.driverCard, isPicked && styles.driverCardSelected]}
-                        onPress={() => setSelectedDriver(drv)}
-                      >
-                        <Text style={styles.boldLight}>
-                          {i + 1}. {drv.name || 'Tài xế Ninja'} • {drv.phone || 'Chưa có SĐT'}
-                        </Text>
-                        <Text style={styles.muted}>
-                          Vị trí: {drv.address || `${drv.lat || ''}, ${drv.lng || ''}`}
-                        </Text>
-                        <Text style={styles.muted}>
-                          Cập nhật: {drv.updatedAt || 'Vừa xong'}
-                          {drv._distKm !== null ? ` • Khoảng cách: ~${drv._distKm} km` : ''}
-                        </Text>
-                      </TouchableOpacity>
-                    );
-                  })
-                )}
-              </View>
-            )}
-
-            {/* TAB 4: ĐƠN HÀNG ĐÃ ĐẶT */}
-            {activeTab === 'history' && (
-              <View style={styles.card}>
-                <Text style={styles.sectionTitle}>Đơn hàng của bạn ({orders.length})</Text>
-                {orders.length === 0 ? (
-                  <Text style={styles.muted}>Bạn chưa tạo đơn hàng nào trên thiết bị này.</Text>
-                ) : (
-                  orders.map((ord, idx) => (
-                    <View key={`${ord.id || idx}`} style={styles.orderCard}>
-                      <View style={styles.tierRow}>
-                        <Text style={styles.boldLight}>
-                          #{ord.id} • {ord.service}
-                        </Text>
-                        <Text style={styles.statusPill}>{ord.status || 'Đã tiếp nhận'}</Text>
-                      </View>
-                      <Text style={styles.muted}>Giao tới: {ord.dropoffAddress}</Text>
-                      <Text style={styles.muted}>
-                        Ghi chú: {ord.note || 'Không có'} • {ord.createdAt || ''}
+                  visibleDrivers.map((d, idx) => (
+                    <View key={`${d.phone || idx}`} style={styles.box}>
+                      <Text style={styles.bold}>
+                        {idx + 1}. {d.name || 'Tài xế Ninja'} ({d.phone || ''})
                       </Text>
-                      <Text style={styles.totalHighlight}>{formatVnd(ord.total)}</Text>
+                      <Text style={styles.muted}>Vị trí: {d.address || `${d.lat || ''}, ${d.lng || ''}`}</Text>
+                      <Text style={styles.muted}>Cập nhật: {d.updatedAt || 'Vừa xong'}</Text>
                     </View>
                   ))
                 )}
               </View>
             )}
 
-            {/* TAB 5: TÀI KHOẢN & CÀI ĐẶT */}
-            {activeTab === 'account' && (
+            {tab === 'history' && (
               <View style={styles.card}>
-                <Text style={styles.sectionTitle}>Thông tin tài khoản</Text>
-                <Text style={styles.muted}>Họ tên: {user.name}</Text>
-                <Text style={styles.muted}>Số điện thoại: {user.phone}</Text>
-                <Text style={styles.muted}>Vai trò: {user.role || 'customer'}</Text>
-                <Text style={styles.muted}>Vị trí hiện tại: {gpsAddress}</Text>
+                <Text style={styles.h2}>Lịch sử đơn hàng ({orders.length})</Text>
+                {orders.length === 0 ? (
+                  <Text style={styles.muted}>Chưa có đơn hàng nào.</Text>
+                ) : (
+                  orders.map((o, idx) => (
+                    <View key={`${o.id || idx}`} style={styles.box}>
+                      <View style={styles.rowBetween}>
+                        <Text style={styles.bold}>#{o.id} • {o.service}</Text>
+                        <Text style={styles.pill}>{o.status || 'Đã gửi'}</Text>
+                      </View>
+                      <Text style={styles.muted}>Giao tới: {o.dropoffAddress}</Text>
+                      <Text style={styles.muted}>{o.createdAt || ''}</Text>
+                      <Text style={styles.money}>{formatMoney(o.total)}</Text>
+                    </View>
+                  ))
+                )}
+              </View>
+            )}
 
-                <View style={styles.subCard}>
-                  <Text style={styles.subCardTitle}>Số dư &amp; nạp tiền nhanh</Text>
-                  <Text style={styles.totalHighlight}>Số dư hiện tại: {formatVnd(wallet.balance)}</Text>
+            {tab === 'account' && (
+              <View style={styles.card}>
+                <Text style={styles.h2}>Tài khoản V9</Text>
+                <Text style={styles.muted}>Tên: {user.name}</Text>
+                <Text style={styles.muted}>SĐT: {user.phone}</Text>
+                <Text style={styles.muted}>GPS: {gpsText}</Text>
+
+                <View style={styles.box}>
+                  <Text style={styles.bold}>Số dư hiển thị: {formatMoney(wallet.balance)}</Text>
                   <TextInput
                     style={[styles.input, styles.mt8]}
-                    placeholder="Số tiền nạp (VD: 100000)"
+                    placeholder="Số tiền nạp"
                     placeholderTextColor="#64748b"
                     keyboardType="numeric"
-                    value={topupAmount}
-                    onChangeText={setTopupAmount}
+                    value={topupStr}
+                    onChangeText={setTopupStr}
                   />
-                  <TextInput
-                    style={[styles.input, styles.mt8]}
-                    placeholder="Nội dung ghi chú"
-                    placeholderTextColor="#64748b"
-                    value={bankNote}
-                    onChangeText={setBankNote}
-                  />
-                  <TouchableOpacity style={styles.secondaryBtn} onPress={handleWalletTopup}>
-                    <Text style={styles.secondaryBtnText}>Cập nhật số dư</Text>
+                  <TouchableOpacity style={styles.secBtn} onPress={onTopupWallet}>
+                    <Text style={styles.secBtnTxt}>Cập nhật số dư</Text>
                   </TouchableOpacity>
                 </View>
 
-                <View style={styles.subCard}>
-                  <Text style={styles.subCardTitle}>Tùy chọn ứng dụng</Text>
-                  <View style={styles.switchRow}>
-                    <Text style={styles.boldLight}>Tự động cập nhật vị trí GPS</Text>
+                <View style={styles.box}>
+                  <View style={styles.rowBetween}>
+                    <Text style={styles.bold}>Tự động cập nhật GPS</Text>
                     <Switch
                       value={Boolean(prefs.autoGps)}
-                      onValueChange={(v) => updatePreference('autoGps', v)}
-                    />
-                  </View>
-                  <View style={styles.switchRow}>
-                    <Text style={styles.boldLight}>Bật thông báo âm thanh/nhắc nhở</Text>
-                    <Switch
-                      value={Boolean(prefs.soundAlert)}
-                      onValueChange={(v) => updatePreference('soundAlert', v)}
+                      onValueChange={(v) => {
+                        const next = { ...prefs, autoGps: v };
+                        setPrefs(next);
+                        saveStore(PREFS_KEY, next);
+                      }}
                     />
                   </View>
                 </View>
 
-                <View style={styles.subCard}>
-                  <Text style={styles.subCardTitle}>Hướng dẫn &amp; câu hỏi thường gặp</Text>
-                  {faqList.map((item, idx) => (
-                    <View key={idx} style={styles.faqItem}>
-                      <Text style={styles.boldLight}>
-                        {idx + 1}. {item.q}
-                      </Text>
-                      <Text style={styles.muted}>{item.a}</Text>
-                    </View>
-                  ))}
-                  {!!serviceGuideList.length && (
-                    <Text style={[styles.muted, styles.mt8]}>
-                      Tổng số dịch vụ cấu hình: {serviceGuideList.length} mục.
-                    </Text>
-                  )}
-                </View>
-
-                {otpLogs.length > 0 && (
-                  <View style={styles.subCard}>
-                    <Text style={styles.subCardTitle}>Nhật ký xác thực OTP gần nhất</Text>
-                    {otpLogs.slice(0, 5).map((log, i) => (
-                      <Text key={i} style={styles.muted}>
-                        [{log.timestamp}] {log.mode} • {log.maskedPhone} •{' '}
-                        {log.verified ? 'Đã xác thực' : 'Chưa xác thực'}
-                      </Text>
-                    ))}
-                  </View>
-                )}
-
-                <TouchableOpacity style={styles.dangerBtn} onPress={handleSignOut}>
-                  <Text style={styles.dangerBtnText}>Đăng xuất / Đổi tài khoản</Text>
+                <TouchableOpacity style={styles.outBtn} onPress={onLogout}>
+                  <Text style={styles.outBtnTxt}>Đăng xuất / Đổi tài khoản</Text>
                 </TouchableOpacity>
               </View>
             )}
@@ -3132,35 +963,23 @@ export default function App() {
         )}
       </ScrollView>
 
-      {/* MODAL BẢNG CƯỚC KM */}
       <Modal
-        visible={showFareModal}
+        visible={fareModalVisible}
         transparent
         animationType="fade"
-        onRequestClose={() => setShowFareModal(false)}
+        onRequestClose={() => setFareModalVisible(false)}
       >
-        <View style={styles.modalBackdrop}>
-          <View style={styles.modalBox}>
-            <Text style={styles.sectionTitle}>Bảng cước theo quãng đường Km</Text>
-            <Text style={styles.muted}>
-              Đơn giá hiện tại: {formatVnd(config.ratePerKm)}/km
-            </Text>
-            <ScrollView style={styles.modalScroll}>
-              {pricingTiers.map((row) => (
-                <View key={row.km} style={styles.tierRow}>
-                  <View style={styles.flex1}>
-                    <Text style={styles.boldLight}>{row.km} Km</Text>
-                    <Text style={styles.muted}>{row.note}</Text>
-                  </View>
-                  <Text style={styles.totalHighlight}>{formatVnd(row.estimatedFee)}</Text>
-                </View>
-              ))}
-            </ScrollView>
-            <TouchableOpacity
-              style={styles.primaryBtn}
-              onPress={() => setShowFareModal(false)}
-            >
-              <Text style={styles.primaryBtnText}>Đóng bảng cước</Text>
+        <View style={styles.modalBg}>
+          <View style={styles.modalCard}>
+            <Text style={styles.h2}>Bảng cước Km ({formatMoney(config.ratePerKm)}/km)</Text>
+            {sampleKmList.map((k) => (
+              <View key={k} style={styles.rowBetween}>
+                <Text style={styles.muted}>{k} Km</Text>
+                <Text style={styles.bold}>{formatMoney(k * (Number(config.ratePerKm) || 5000))}</Text>
+              </View>
+            ))}
+            <TouchableOpacity style={styles.priBtn} onPress={() => setFareModalVisible(false)}>
+              <Text style={styles.priBtnTxt}>Đóng</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -3170,440 +989,61 @@ export default function App() {
 }
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: '#0f172a',
-  },
-  scrollContent: {
-    padding: 16,
-    maxWidth: 760,
-    width: '100%',
-    alignSelf: 'center',
-    paddingBottom: 36,
-  },
-  flex1: {
-    flex: 1,
-  },
-  mt8: {
-    marginTop: 8,
-  },
-  mt12: {
-    marginTop: 12,
-  },
-  noTopMargin: {
-    marginTop: 0,
-  },
-  headerBox: {
-    backgroundColor: '#1e293b',
-    borderColor: '#334155',
-    borderWidth: 1,
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 12,
-  },
-  headerTopRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    justifyContent: 'space-between',
-    gap: 10,
-  },
-  brandTitle: {
-    color: '#f8fafc',
-    fontSize: 22,
-    fontWeight: '800',
-  },
-  bannerTitle: {
-    color: '#38bdf8',
-    fontSize: 15,
-    fontWeight: '700',
-    marginTop: 4,
-  },
-  bannerSub: {
-    color: '#cbd5e1',
-    fontSize: 13,
-    marginTop: 2,
-  },
-  refreshBtn: {
-    backgroundColor: '#334155',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 10,
-  },
-  refreshBtnText: {
-    color: '#f8fafc',
-    fontSize: 12,
-    fontWeight: '700',
-  },
-  statsStrip: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-    marginTop: 12,
-  },
-  statBadge: {
-    backgroundColor: '#0f172a',
-    color: '#94a3b8',
-    fontSize: 12,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 999,
-    borderWidth: 1,
-    borderColor: '#334155',
-  },
-  errorBox: {
-    backgroundColor: '#450a0a',
-    borderColor: '#f87171',
-    borderWidth: 1,
-    borderRadius: 12,
-    padding: 12,
-    marginBottom: 12,
-  },
-  errorText: {
-    color: '#fecaca',
-    fontSize: 13,
-    fontWeight: '600',
-  },
-  successBox: {
-    backgroundColor: '#052e16',
-    borderColor: '#4ade80',
-    borderWidth: 1,
-    borderRadius: 12,
-    padding: 12,
-    marginBottom: 12,
-  },
-  successText: {
-    color: '#bbf7d0',
-    fontSize: 13,
-    fontWeight: '600',
-  },
-  card: {
-    backgroundColor: '#1e293b',
-    borderColor: '#334155',
-    borderWidth: 1,
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 14,
-  },
-  subCard: {
-    backgroundColor: '#0f172a',
-    borderColor: '#334155',
-    borderWidth: 1,
-    borderRadius: 12,
-    padding: 12,
-    marginTop: 14,
-  },
-  subCardTitle: {
-    color: '#38bdf8',
-    fontSize: 14,
-    fontWeight: '700',
-    marginBottom: 8,
-  },
-  sectionTitle: {
-    color: '#f8fafc',
-    fontSize: 18,
-    fontWeight: '700',
-    marginBottom: 4,
-  },
-  muted: {
-    color: '#94a3b8',
-    fontSize: 13,
-    lineHeight: 18,
-  },
-  boldLight: {
-    color: '#f8fafc',
-    fontSize: 14,
-    fontWeight: '700',
-  },
-  fieldLabel: {
-    color: '#cbd5e1',
-    fontSize: 13,
-    fontWeight: '600',
-    marginTop: 12,
-    marginBottom: 5,
-  },
-  input: {
-    backgroundColor: '#0f172a',
-    borderColor: '#475569',
-    borderWidth: 1,
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    color: '#f8fafc',
-    fontSize: 15,
-  },
-  modeSwitchRow: {
-    flexDirection: 'row',
-    gap: 8,
-    marginTop: 12,
-  },
-  modeBtn: {
-    flex: 1,
-    backgroundColor: '#0f172a',
-    borderColor: '#475569',
-    borderWidth: 1,
-    borderRadius: 10,
-    paddingVertical: 10,
-    alignItems: 'center',
-  },
-  modeBtnActive: {
-    backgroundColor: '#0284c7',
-    borderColor: '#38bdf8',
-  },
-  modeBtnText: {
-    color: '#cbd5e1',
-    fontSize: 13,
-    fontWeight: '600',
-  },
-  modeBtnTextActive: {
-    color: '#ffffff',
-    fontWeight: '700',
-  },
-  inlineRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    marginTop: 10,
-  },
-  primaryBtn: {
-    backgroundColor: '#22c55e',
-    borderRadius: 10,
-    paddingVertical: 12,
-    paddingHorizontal: 14,
-    alignItems: 'center',
-    marginTop: 14,
-  },
-  primaryBtnText: {
-    color: '#052e16',
-    fontSize: 15,
-    fontWeight: '800',
-  },
-  secondaryBtn: {
-    backgroundColor: '#334155',
-    borderRadius: 10,
-    paddingVertical: 11,
-    paddingHorizontal: 14,
-    alignItems: 'center',
-    marginTop: 8,
-  },
-  secondaryBtnText: {
-    color: '#f8fafc',
-    fontSize: 13,
-    fontWeight: '700',
-  },
-  outlineBtn: {
-    backgroundColor: '#0f172a',
-    borderColor: '#38bdf8',
-    borderWidth: 1,
-    borderRadius: 10,
-    paddingVertical: 11,
-    paddingHorizontal: 12,
-    alignItems: 'center',
-  },
-  outlineBtnText: {
-    color: '#7dd3fc',
-    fontSize: 13,
-    fontWeight: '700',
-  },
-  smallBtn: {
-    backgroundColor: '#0284c7',
-    borderRadius: 8,
-    paddingHorizontal: 10,
-    paddingVertical: 7,
-  },
-  smallBtnText: {
-    color: '#ffffff',
-    fontSize: 12,
-    fontWeight: '700',
-  },
-  dangerBtn: {
-    backgroundColor: '#7f1d1d',
-    borderColor: '#f87171',
-    borderWidth: 1,
-    borderRadius: 10,
-    paddingVertical: 12,
-    alignItems: 'center',
-    marginTop: 14,
-  },
-  dangerBtnText: {
-    color: '#fecaca',
-    fontSize: 14,
-    fontWeight: '700',
-  },
-  disabledBtn: {
-    opacity: 0.55,
-  },
-  navBar: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 6,
-    marginBottom: 12,
-  },
-  navTab: {
-    flex: 1,
-    minWidth: 64,
-    backgroundColor: '#1e293b',
-    borderColor: '#334155',
-    borderWidth: 1,
-    borderRadius: 10,
-    paddingVertical: 9,
-    alignItems: 'center',
-  },
-  navTabActive: {
-    backgroundColor: '#22c55e',
-    borderColor: '#4ade80',
-  },
-  navTabText: {
-    color: '#cbd5e1',
-    fontSize: 12,
-    fontWeight: '700',
-  },
-  navTabTextActive: {
-    color: '#052e16',
-  },
-  userHeaderRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: 10,
-  },
-  gridWrap: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-    marginTop: 6,
-  },
-  serviceTile: {
-    width: '48%',
-    backgroundColor: '#0f172a',
-    borderColor: '#334155',
-    borderWidth: 1,
-    borderRadius: 12,
-    padding: 12,
-  },
-  serviceTileActive: {
-    borderColor: '#38bdf8',
-    backgroundColor: '#082f49',
-  },
-  serviceIcon: {
-    fontSize: 20,
-    marginBottom: 4,
-  },
-  serviceTitle: {
-    color: '#f8fafc',
-    fontSize: 14,
-    fontWeight: '700',
-  },
-  serviceBadge: {
-    color: '#fbbf24',
-    fontSize: 11,
-    fontWeight: '700',
-    marginTop: 4,
-  },
-  chipsRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-    marginTop: 4,
-  },
-  chip: {
-    backgroundColor: '#0f172a',
-    borderColor: '#475569',
-    borderWidth: 1,
-    borderRadius: 999,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-  },
-  chipActive: {
-    backgroundColor: '#0284c7',
-    borderColor: '#38bdf8',
-  },
-  chipText: {
-    color: '#cbd5e1',
-    fontSize: 13,
-  },
-  chipTextActive: {
-    color: '#ffffff',
-    fontWeight: '700',
-  },
-  tierRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: 6,
-    gap: 8,
-  },
-  totalDivider: {
-    borderTopColor: '#334155',
-    borderTopWidth: 1,
-    marginTop: 6,
-    paddingTop: 10,
-  },
-  totalHighlight: {
-    color: '#4ade80',
-    fontSize: 15,
-    fontWeight: '800',
-    marginTop: 4,
-  },
-  listRow: {
-    paddingVertical: 8,
-    borderBottomColor: '#1e293b',
-    borderBottomWidth: 1,
-  },
-  driverCard: {
-    backgroundColor: '#0f172a',
-    borderColor: '#334155',
-    borderWidth: 1,
-    borderRadius: 12,
-    padding: 12,
-    marginTop: 10,
-  },
-  driverCardSelected: {
-    borderColor: '#22c55e',
-  },
-  orderCard: {
-    backgroundColor: '#0f172a',
-    borderColor: '#334155',
-    borderWidth: 1,
-    borderRadius: 12,
-    padding: 12,
-    marginTop: 10,
-  },
-  statusPill: {
-    backgroundColor: '#065f46',
-    color: '#a7f3d0',
-    fontSize: 11,
-    fontWeight: '700',
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 999,
-  },
-  switchRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: 8,
-  },
-  faqItem: {
-    paddingVertical: 8,
-    borderBottomColor: '#1e293b',
-    borderBottomWidth: 1,
-  },
-  modalBackdrop: {
-    flex: 1,
-    backgroundColor: 'rgba(2, 6, 23, 0.78)',
-    justifyContent: 'center',
-    padding: 16,
-  },
-  modalBox: {
-    backgroundColor: '#1e293b',
-    borderColor: '#475569',
-    borderWidth: 1,
-    borderRadius: 16,
-    padding: 16,
-    maxHeight: '80%',
-  },
-  modalScroll: {
-    marginTop: 10,
-    maxHeight: 320,
-  },
+  safe: { flex: 1, backgroundColor: '#0f172a' },
+  scroll: { padding: 16, maxWidth: 720, width: '100%', alignSelf: 'center', paddingBottom: 32 },
+  flex1: { flex: 1 },
+  mt8: { marginTop: 8 },
+  mt10: { marginTop: 10 },
+  noMt: { marginTop: 0 },
+  rowBetween: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8, paddingVertical: 4 },
+  rowGap: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 10 },
+  header: { backgroundColor: '#1e293b', borderColor: '#334155', borderWidth: 1, borderRadius: 16, padding: 16, marginBottom: 12 },
+  appTitle: { color: '#f8fafc', fontSize: 21, fontWeight: '800' },
+  banner: { color: '#38bdf8', fontSize: 14, fontWeight: '700', marginTop: 4 },
+  subBanner: { color: '#cbd5e1', fontSize: 13, marginTop: 2 },
+  reloadBtn: { backgroundColor: '#334155', borderRadius: 10, paddingHorizontal: 12, paddingVertical: 8 },
+  reloadBtnText: { color: '#f8fafc', fontSize: 12, fontWeight: '700' },
+  metaRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 10 },
+  metaPill: { backgroundColor: '#0f172a', color: '#94a3b8', fontSize: 12, paddingHorizontal: 10, paddingVertical: 4, borderRadius: 999, borderWidth: 1, borderColor: '#334155' },
+  errBox: { backgroundColor: '#450a0a', borderColor: '#f87171', borderWidth: 1, borderRadius: 12, padding: 12, marginBottom: 12 },
+  errText: { color: '#fecaca', fontSize: 13, fontWeight: '600' },
+  okBox: { backgroundColor: '#052e16', borderColor: '#4ade80', borderWidth: 1, borderRadius: 12, padding: 12, marginBottom: 12 },
+  okText: { color: '#bbf7d0', fontSize: 13, fontWeight: '600' },
+  card: { backgroundColor: '#1e293b', borderColor: '#334155', borderWidth: 1, borderRadius: 16, padding: 16, marginBottom: 14 },
+  box: { backgroundColor: '#0f172a', borderColor: '#334155', borderWidth: 1, borderRadius: 12, padding: 12, marginTop: 12 },
+  h2: { color: '#f8fafc', fontSize: 18, fontWeight: '700', marginBottom: 4 },
+  muted: { color: '#94a3b8', fontSize: 13, lineHeight: 18 },
+  bold: { color: '#f8fafc', fontSize: 14, fontWeight: '700' },
+  money: { color: '#4ade80', fontSize: 15, fontWeight: '800', marginTop: 4 },
+  divider: { borderTopColor: '#334155', borderTopWidth: 1, marginTop: 6, paddingTop: 8 },
+  label: { color: '#cbd5e1', fontSize: 13, fontWeight: '600', marginTop: 12, marginBottom: 5 },
+  input: { backgroundColor: '#0f172a', borderColor: '#475569', borderWidth: 1, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, color: '#f8fafc', fontSize: 15 },
+  modeRow: { flexDirection: 'row', gap: 8, marginTop: 12 },
+  modeBtn: { flex: 1, backgroundColor: '#0f172a', borderColor: '#475569', borderWidth: 1, borderRadius: 10, paddingVertical: 10, alignItems: 'center' },
+  modeBtnOn: { backgroundColor: '#0284c7', borderColor: '#38bdf8' },
+  modeTxt: { color: '#cbd5e1', fontSize: 13, fontWeight: '600' },
+  modeTxtOn: { color: '#fff', fontWeight: '700' },
+  priBtn: { backgroundColor: '#22c55e', borderRadius: 10, paddingVertical: 12, paddingHorizontal: 14, alignItems: 'center', marginTop: 14 },
+  priBtnTxt: { color: '#052e16', fontSize: 15, fontWeight: '800' },
+  secBtn: { backgroundColor: '#334155', borderRadius: 10, paddingVertical: 11, paddingHorizontal: 14, alignItems: 'center', marginTop: 8 },
+  secBtnTxt: { color: '#f8fafc', fontSize: 13, fontWeight: '700' },
+  outBtn: { backgroundColor: '#0f172a', borderColor: '#38bdf8', borderWidth: 1, borderRadius: 10, paddingVertical: 11, paddingHorizontal: 12, alignItems: 'center' },
+  outBtnTxt: { color: '#7dd3fc', fontSize: 13, fontWeight: '700' },
+  miniBtn: { backgroundColor: '#0284c7', borderRadius: 8, paddingHorizontal: 10, paddingVertical: 7 },
+  miniBtnTxt: { color: '#fff', fontSize: 12, fontWeight: '700' },
+  disabled: { opacity: 0.55 },
+  tabs: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 12 },
+  tabBtn: { flex: 1, minWidth: 64, backgroundColor: '#1e293b', borderColor: '#334155', borderWidth: 1, borderRadius: 10, paddingVertical: 9, alignItems: 'center' },
+  tabBtnOn: { backgroundColor: '#22c55e', borderColor: '#4ade80' },
+  tabTxt: { color: '#cbd5e1', fontSize: 12, fontWeight: '700' },
+  tabTxtOn: { color: '#052e16' },
+  grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 6 },
+  tile: { width: '48%', backgroundColor: '#0f172a', borderColor: '#334155', borderWidth: 1, borderRadius: 12, padding: 12 },
+  tileOn: { borderColor: '#38bdf8', backgroundColor: '#082f49' },
+  tileIcon: { fontSize: 20, marginBottom: 4 },
+  tileTitle: { color: '#f8fafc', fontSize: 14, fontWeight: '700' },
+  tileBadge: { color: '#fbbf24', fontSize: 11, fontWeight: '700', marginTop: 4 },
+  pill: { backgroundColor: '#065f46', color: '#a7f3d0', fontSize: 11, fontWeight: '700', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 999 },
+  modalBg: { flex: 1, backgroundColor: 'rgba(2, 6, 23, 0.78)', justifyContent: 'center', padding: 16 },
+  modalCard: { backgroundColor: '#1e293b', borderColor: '#475569', borderWidth: 1, borderRadius: 16, padding: 16 },
 });
