@@ -25,7 +25,7 @@ const SERVICES_SMALL = [
   { id: 'gia-cuoc', title: 'Giá cước\nKm', icon: '💰' },
 ];
 
-// Danh sách xã/phường mẫu khu vực Ba Đồn - Quảng Trạch (Quảng Bình)
+// Danh sách xã/phường khu vực Ba Đồn - Quảng Trạch (Quảng Bình)
 const FALLBACK_COMMUNES = [
   { name: 'Phường Ba Đồn', lat: 17.7524, lng: 106.4182 },
   { name: 'Phường Quảng Long', lat: 17.7685, lng: 106.4251 },
@@ -49,7 +49,144 @@ const FALLBACK_COMMUNES = [
   { name: 'Xã Quảng Trạch (Cảnh Dương)', lat: 17.8540, lng: 106.4620 },
 ];
 
-// Công thức Haversine tính khoảng cách thực tế (nhân hệ số đường bộ 1.25)
+// Cấu hình biểu mẫu riêng biệt cho từng loại dịch vụ đặt đơn
+const SERVICE_CONFIGS = {
+  'Đặt đồ ăn': {
+    type: 'order',
+    icon: '🍜',
+    discountRate: 0.25,
+    discountLabel: 'Giảm 25% phí ship',
+    mainLabel: 'Tên món ăn & số lượng *',
+    mainPlaceholder: 'VD: 2 tô Bún bò + 1 Trà đào cam sả, ít cay',
+    pickupLabel: 'Quán ăn / Nhà hàng lấy món',
+    detailPlaceholder: 'VD: Quán Bún Bò O Hoa, gần chợ...',
+    showAdvance: true,
+    advanceLabel: 'Tiền món ăn tài xế ứng trả quán (đ)',
+    extraLabel: 'Ghi chú cho quán / tài xế',
+    extraPlaceholder: 'VD: Lấy thêm đũa muỗng, gọi khi tới cổng',
+    submitText: 'Đặt đồ ăn ngay',
+  },
+  'Mua hộ đồ': {
+    type: 'order',
+    icon: '🛍️',
+    discountRate: 0.20,
+    discountLabel: 'Giảm 20% phí ship',
+    mainLabel: 'Danh sách đồ cần mua hộ *',
+    mainPlaceholder: 'VD: 1 thùng sữa Vinamilk, 1 túi bột giặt OMO 3kg',
+    pickupLabel: 'Cửa hàng / Siêu thị / Tạp hóa mua đồ',
+    detailPlaceholder: 'VD: Siêu thị WinMart hoặc Tạp hóa Cô Lan...',
+    showAdvance: true,
+    advanceLabel: 'Tiền hàng ước tính cần ứng trước (đ)',
+    extraLabel: 'Yêu cầu chọn đồ / chụp hóa đơn',
+    extraPlaceholder: 'VD: Chụp ảnh bill gửi Zalo trước khi thanh toán',
+    submitText: 'Nhờ mua hộ ngay',
+  },
+  'Nhận hộ': {
+    type: 'order',
+    icon: '📦',
+    discountRate: 0.15,
+    discountLabel: 'Giảm 15% phí ship',
+    mainLabel: 'Thông tin bưu phẩm / Hàng cần nhận hộ *',
+    mainPlaceholder: 'VD: Nhận thùng hàng xe khách / Bưu phẩm Shopee',
+    pickupLabel: 'Điểm nhận hàng (Bến xe / Bưu cục / Người gửi)',
+    detailPlaceholder: 'VD: Nhà xe Hưng Long hoặc Bưu cục Viettel Post...',
+    showAdvance: true,
+    advanceLabel: 'Tiền COD / Phí nhà xe cần trả hộ (đ)',
+    extraLabel: 'Tên & SĐT người gửi / Mã vận đơn',
+    extraPlaceholder: 'VD: Anh Nam - 0912xxx, đọc mã 8842',
+    submitText: 'Đặt tài xế nhận hộ',
+  },
+  'Làm hộ': {
+    type: 'order',
+    icon: '⚡',
+    discountRate: 0,
+    discountLabel: 'Dịch vụ mới • Ưu tiên xử lý nhanh',
+    mainLabel: 'Nội dung công việc cần làm hộ *',
+    mainPlaceholder: 'VD: Xếp hàng nộp hồ sơ / Gửi giấy tờ / Trả đồ giúp',
+    pickupLabel: 'Địa điểm thực hiện công việc',
+    detailPlaceholder: 'VD: Bộ phận một cửa / Ngân hàng / Nhà người quen...',
+    showAdvance: true,
+    advanceLabel: 'Chi phí phát sinh cần ứng trước (đ)',
+    extraLabel: 'Thời gian hẹn & hướng dẫn chi tiết',
+    extraPlaceholder: 'VD: Có mặt trước 9h30 sáng, gặp chị Hương',
+    submitText: 'Thuê Ninja làm hộ',
+  },
+  'Đi chợ hộ': {
+    type: 'order',
+    icon: '🥬',
+    discountRate: 0,
+    discountLabel: 'Chọn đồ tươi ngon theo yêu cầu',
+    mainLabel: 'Danh sách thực phẩm đi chợ *',
+    mainPlaceholder: 'VD: 5 lạng thịt ba chỉ, 1 bó rau muống, 1 con cá thu',
+    pickupLabel: 'Khu vực chợ / Cửa hàng thực phẩm sạch',
+    detailPlaceholder: 'VD: Chợ Ba Đồn, hàng thịt cô Tâm cổng chính...',
+    showAdvance: true,
+    advanceLabel: 'Tiền đi chợ dự kiến tài xế ứng (đ)',
+    extraLabel: 'Cách sơ chế / chọn đồ tươi',
+    extraPlaceholder: 'VD: Nhờ người bán làm sạch cá, chọn thịt nhiều nạc',
+    submitText: 'Đặt đi chợ hộ ngay',
+  },
+  'Mua thuốc': {
+    type: 'order',
+    icon: '💊',
+    discountRate: 0,
+    discountLabel: 'Giao thuốc khẩn cấp 15 phút',
+    mainLabel: 'Tên thuốc / Triệu chứng cần dược sĩ tư vấn *',
+    mainPlaceholder: 'VD: 1 vỉ Panadol Extra, 1 chai nước muối sinh lý',
+    pickupLabel: 'Nhà thuốc / Quầy thuốc tây',
+    detailPlaceholder: 'VD: Nhà thuốc Long Châu hoặc Quầy thuốc gần nhất...',
+    showAdvance: true,
+    advanceLabel: 'Tiền thuốc ước tính cần ứng (đ)',
+    extraLabel: 'Đối tượng sử dụng / Lưu ý dị ứng',
+    extraPlaceholder: 'VD: Mua cho người lớn, không có tiền sử dị ứng',
+    submitText: 'Đặt mua thuốc gấp',
+  },
+  'Giao đồ Km': {
+    type: 'order',
+    icon: '🛵',
+    discountRate: 0,
+    discountLabel: 'Tính cước chuẩn 5.000đ/km',
+    mainLabel: 'Tên hàng hóa & kích thước gói hàng *',
+    mainPlaceholder: 'VD: 1 túi quần áo + 1 hộp bánh sinh nhật (dễ vỡ)',
+    pickupLabel: 'Điểm lấy hàng đi giao',
+    detailPlaceholder: 'VD: Số 24 đường Hùng Vương, shop thời trang...',
+    showAdvance: false,
+    advanceLabel: '',
+    extraLabel: 'SĐT người nhận / Lưu ý bảo quản',
+    extraPlaceholder: 'VD: Hàng dễ vỡ, treo cẩn thận giúp mình',
+    submitText: 'Gọi xe giao hàng ngay',
+  },
+  'Siêu tốc Ninja': {
+    type: 'order',
+    icon: '🚀',
+    discountRate: 0,
+    discountLabel: 'Hỏa tốc 15 phút • Nhận đơn ngay lập tức',
+    mainLabel: 'Hàng hóa / Giấy tờ cần giao hỏa tốc *',
+    mainPlaceholder: 'VD: Hồ sơ thầu / Chìa khóa nhà / Đồ ăn nóng',
+    pickupLabel: 'Điểm xuất phát lấy hàng hỏa tốc',
+    detailPlaceholder: 'VD: Số 10 đường Quang Trung...',
+    showAdvance: true,
+    advanceLabel: 'Tiền ứng trước (nếu có) (đ)',
+    extraLabel: 'Ghi chú ưu tiên khẩn cấp',
+    extraPlaceholder: 'VD: Cần giao gấp trong 15 phút, gọi ngay khi tới',
+    submitText: 'Đặt Siêu Tốc Ninja',
+  },
+};
+
+const NEARBY_DRIVERS = [
+  { id: 'TX-01', name: 'Trần Văn Hùng', bike: 'Honda Wave • 73K1-458.21', dist: '0.4 km', rating: '4.9 ★', status: 'Đang rảnh' },
+  { id: 'TX-02', name: 'Nguyễn Minh Tuấn', bike: 'Yamaha Sirius • 73K1-892.10', dist: '0.9 km', rating: '5.0 ★', status: 'Đang rảnh' },
+  { id: 'TX-03', name: 'Lê Hoàng Phúc', bike: 'Honda Vision • 73K1-319.66', dist: '1.4 km', rating: '4.8 ★', status: 'Đang rảnh' },
+  { id: 'TX-04', name: 'Phạm Quốc Bảo', bike: 'Honda Winner • 73K1-774.05', dist: '2.1 km', rating: '4.9 ★', status: 'Sắp xong đơn' },
+];
+
+const VOUCHERS_LIST = [
+  { code: 'NINJA25', title: 'Giảm 25% phí ship Đặt đồ ăn', desc: 'Áp dụng cho mọi quán ăn trong khu vực', tag: 'Đặt đồ ăn' },
+  { code: 'MUAHO20', title: 'Giảm 20% phí Mua hộ đồ', desc: 'Tối đa 15.000đ cho đơn siêu thị, tạp hóa', tag: 'Mua hộ đồ' },
+  { code: 'NHANHO15', title: 'Giảm 15% dịch vụ Nhận hộ', desc: 'Nhận bưu phẩm, hàng xe khách tận nơi', tag: 'Nhận hộ' },
+  { code: 'FREESHIP1KM', title: 'Miễn phí 1km đầu tiên', desc: 'Dành cho khách hàng đặt đơn lần đầu trong ngày', tag: 'Tất cả' },
+];
+
 function calculateRoadDistanceKm(lat1, lon1, lat2, lon2) {
   if (
     typeof lat1 !== 'number' ||
@@ -77,8 +214,12 @@ function calculateRoadDistanceKm(lat1, lon1, lat2, lon2) {
 export default function App() {
   const [activeTab, setActiveTab] = useState('home');
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedService, setSelectedService] = useState(null);
+  const [activeModal, setActiveModal] = useState(null); // Tên mục đang mở
+
+  // State chung cho các biểu mẫu đặt đơn
   const [itemNote, setItemNote] = useState('');
+  const [extraNote, setExtraNote] = useState('');
+  const [advanceMoney, setAdvanceMoney] = useState('0');
 
   // Vị trí & Tỉnh/Xã tự động
   const [detectedProvince, setDetectedProvince] = useState('Quảng Bình');
@@ -91,7 +232,10 @@ export default function App() {
   const [dropoffAddress, setDropoffAddress] = useState('Đang định vị chính xác...');
   const [isLocating, setIsLocating] = useState(false);
 
-  const [advanceMoney, setAdvanceMoney] = useState('0');
+  // State riêng cho mục "Mở bản đồ Km" & "Giá cước Km"
+  const [calcFromCommune, setCalcFromCommune] = useState(FALLBACK_COMMUNES[0]);
+  const [calcToCommune, setCalcToCommune] = useState(FALLBACK_COMMUNES[2]);
+
   const [orders, setOrders] = useState([
     {
       id: 'NS-8821',
@@ -103,14 +247,11 @@ export default function App() {
     },
   ]);
 
-  // Tự động thu thập GPS & Tỉnh/Xã khi mở app
   const detectUserLocationAndCommunes = () => {
     setIsLocating(true);
-
     const onSuccessCoords = async (lat, lng) => {
       setDropoffCoords({ lat, lng });
       try {
-        // 1. Reverse geocoding lấy địa chỉ chính xác & tỉnh đang sống
         const revRes = await fetch(
           `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}&accept-language=vi`
         );
@@ -133,7 +274,6 @@ export default function App() {
             : `${lat.toFixed(5)}, ${lng.toFixed(5)}`
         );
 
-        // 2. Truy vấn danh sách các xã/phường thuộc tỉnh/huyện hiện tại
         const queryArea = encodeURIComponent(prov);
         const listRes = await fetch(
           `https://nominatim.openstreetmap.org/search?format=json&q=xã+phường+${queryArea}&limit=25&accept-language=vi`
@@ -152,6 +292,8 @@ export default function App() {
             );
           if (parsedList.length > 0) {
             setCommunes(parsedList);
+            setCalcFromCommune(parsedList[0]);
+            if (parsedList[1]) setCalcToCommune(parsedList[1]);
           }
         }
       } catch (e) {
@@ -180,7 +322,17 @@ export default function App() {
     detectUserLocationAndCommunes();
   }, []);
 
-  // Tự động tính Km theo Xã điểm lấy hàng -> Vị trí chính xác của khách (không phụ thuộc số nhà chi tiết)
+  const openModalFor = (name, prefillText = '') => {
+    setActiveModal(name);
+    if (prefillText) setItemNote(prefillText);
+    if (!dropoffAddress || dropoffAddress.startsWith('Đang định vị')) {
+      detectUserLocationAndCommunes();
+    }
+  };
+
+  const currentServiceConfig = SERVICE_CONFIGS[activeModal] || null;
+
+  // Tính khoảng cách tự động từ xã lấy hàng -> vị trí chính xác của khách
   const autoDistanceKm = selectedPickupCommune
     ? calculateRoadDistanceKm(
         selectedPickupCommune.lat,
@@ -191,47 +343,63 @@ export default function App() {
     : 0;
 
   const RATE_PER_KM = 5000;
-  const parsedAdvance = parseInt(advanceMoney.replace(/\D/g, ''), 10) || 0;
-  const shippingFee = Math.round(autoDistanceKm * RATE_PER_KM);
-  const totalAmount = shippingFee + parsedAdvance;
-
-  const openOrderModal = (serviceName) => {
-    setSelectedService(serviceName);
-    if (!dropoffAddress || dropoffAddress.startsWith('Đang định vị')) {
-      detectUserLocationAndCommunes();
-    }
-  };
+  const rawShippingFee = Math.round(autoDistanceKm * RATE_PER_KM);
+  const discountRate = currentServiceConfig?.discountRate || 0;
+  const discountAmount = Math.round(rawShippingFee * discountRate);
+  const finalShippingFee = Math.max(0, rawShippingFee - discountAmount);
+  const parsedAdvance = currentServiceConfig?.showAdvance
+    ? parseInt(advanceMoney.replace(/\D/g, ''), 10) || 0
+    : 0;
+  const totalAmount = finalShippingFee + parsedAdvance;
 
   const handleCreateOrder = () => {
     if (!itemNote.trim()) {
-      Alert.alert('Thiếu thông tin', 'Vui lòng nhập món cần đặt hoặc nội dung nhờ mua hộ.');
+      Alert.alert('Thiếu thông tin', 'Vui lòng nhập đầy đủ nội dung yêu cầu.');
       return;
     }
     if (!selectedPickupCommune) {
-      Alert.alert('Chưa chọn xã/phường', 'Vui lòng chọn xã/phường nơi lấy hàng trước.');
+      Alert.alert('Chưa chọn xã/phường', 'Vui lòng chọn xã/phường điểm lấy hàng.');
       return;
     }
     const fullPickup = pickupDetailAddress.trim()
       ? `${pickupDetailAddress.trim()}, ${selectedPickupCommune.name}`
       : selectedPickupCommune.name;
 
+    const noteSummary = extraNote.trim()
+      ? `${itemNote.trim()} • Ghi chú: ${extraNote.trim()} (Từ: ${fullPickup} • ${autoDistanceKm} km)`
+      : `${itemNote.trim()} (Từ: ${fullPickup} • ${autoDistanceKm} km)`;
+
     const newOrder = {
       id: `NS-${Math.floor(1000 + Math.random() * 9000)}`,
-      service: selectedService || 'Đặt đồ ăn',
-      note: `${itemNote.trim()} (Lấy tại: ${fullPickup} • ${autoDistanceKm} km)`,
+      service: activeModal || 'Ninja Ship',
+      note: noteSummary,
       total: totalAmount,
       status: 'Đang tìm tài xế Ninja',
       time: 'Vừa xong',
     };
     setOrders([newOrder, ...orders]);
-    setSelectedService(null);
+    setActiveModal(null);
     setItemNote('');
+    setExtraNote('');
+    setAdvanceMoney('0');
     setActiveTab('orders');
     Alert.alert(
       'Đặt đơn thành công',
-      `Mã đơn ${newOrder.id} (${autoDistanceKm} km) đang được gửi tới tài xế gần nhất!`
+      `Mã đơn ${newOrder.id} (${autoDistanceKm} km) đã gửi tới tài xế gần nhất!`
     );
   };
+
+  // Tính khoảng cách cho công cụ tra cứu "Mở bản đồ Km" / "Giá cước Km"
+  const previewKm =
+    calcFromCommune && calcToCommune
+      ? calculateRoadDistanceKm(
+          calcFromCommune.lat,
+          calcFromCommune.lng,
+          calcToCommune.lat,
+          calcToCommune.lng
+        )
+      : 0;
+  const previewCost = Math.round(previewKm * RATE_PER_KM);
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -262,9 +430,7 @@ export default function App() {
 
             <TouchableOpacity
               style={styles.ratePill}
-              onPress={() =>
-                Alert.alert('Bảng giá Ninja Ship', 'Đồng giá siêu tiết kiệm: 5.000đ / 1 km.')
-              }
+              onPress={() => openModalFor('Giá cước Km')}
             >
               <Text style={styles.rateGear}>⚙️</Text>
               <Text style={styles.rateText}>5.000đ/km</Text>
@@ -280,7 +446,7 @@ export default function App() {
               placeholderTextColor="#6B7280"
               value={searchQuery}
               onChangeText={setSearchQuery}
-              onSubmitEditing={() => openOrderModal('Đặt đồ ăn / Mua hộ')}
+              onSubmitEditing={() => openModalFor('Mua hộ đồ', searchQuery)}
             />
           </View>
 
@@ -289,7 +455,7 @@ export default function App() {
             <TouchableOpacity
               style={styles.bigCard}
               activeOpacity={0.85}
-              onPress={() => openOrderModal('Đặt đồ ăn')}
+              onPress={() => openModalFor('Đặt đồ ăn')}
             >
               <Text style={styles.bigCardTitle}>Đặt đồ ăn</Text>
               <View style={styles.discountBadgePink}>
@@ -301,7 +467,7 @@ export default function App() {
             <TouchableOpacity
               style={styles.bigCard}
               activeOpacity={0.85}
-              onPress={() => openOrderModal('Mua hộ đồ')}
+              onPress={() => openModalFor('Mua hộ đồ')}
             >
               <Text style={styles.bigCardTitle}>Mua hộ đồ</Text>
               <View style={styles.discountBadgeYellow}>
@@ -314,7 +480,7 @@ export default function App() {
           {/* 4. TIÊU ĐỀ DỊCH VỤ KHÁC + MỞ BẢN ĐỒ KM */}
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Dịch vụ khác</Text>
-            <TouchableOpacity onPress={() => openOrderModal('Tính cước bản đồ Km')}>
+            <TouchableOpacity onPress={() => openModalFor('Mở bản đồ Km')}>
               <Text style={styles.mapLink}>Mở bản đồ Km →</Text>
             </TouchableOpacity>
           </View>
@@ -326,7 +492,7 @@ export default function App() {
                 key={item.id}
                 style={styles.gridItem}
                 activeOpacity={0.8}
-                onPress={() => openOrderModal(item.title.replace('\n', ' '))}
+                onPress={() => openModalFor(item.title.replace('\n', ' '))}
               >
                 {item.badge && (
                   <View style={[styles.gridBadge, { backgroundColor: item.badgeColor }]}>
@@ -345,7 +511,7 @@ export default function App() {
           <TouchableOpacity
             style={styles.promoBanner}
             activeOpacity={0.9}
-            onPress={() => openOrderModal('Siêu tốc Ninja')}
+            onPress={() => openModalFor('Siêu tốc Ninja')}
           >
             <View style={styles.promoTag}>
               <Text style={styles.promoTagText}>SIÊU TỐC NINJA</Text>
@@ -423,130 +589,297 @@ export default function App() {
 
         <TouchableOpacity
           style={styles.trophyButton}
-          onPress={() =>
-            Alert.alert('Điểm thưởng Ninja', 'Bạn đang có 350 điểm đổi voucher miễn phí ship!')
-          }
+          onPress={() => openModalFor('Ưu đãi')}
         >
           <Text style={styles.trophyIcon}>🏆</Text>
         </TouchableOpacity>
       </View>
 
-      {/* MODAL ĐẶT ĐƠN NHANH (TỰ ĐỘNG TÍNH KM THEO XÃ -> VỊ TRÍ CHÍNH XÁC) */}
-      <Modal visible={!!selectedService} animationType="slide" transparent>
+      {/* MODAL RIÊNG BIỆT CHO TỪNG MỤC */}
+      <Modal visible={!!activeModal} animationType="slide" transparent>
         <View style={styles.modalOverlay}>
           <View style={styles.modalSheet}>
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>{selectedService}</Text>
-              <TouchableOpacity onPress={() => setSelectedService(null)}>
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <Text style={{ fontSize: 22, marginRight: 8 }}>
+                  {currentServiceConfig?.icon ||
+                    (activeModal === 'Tài xế gần'
+                      ? '📍'
+                      : activeModal === 'Ưu đãi'
+                      ? '🎁'
+                      : '🗺️')}
+                </Text>
+                <View>
+                  <Text style={styles.modalTitle}>{activeModal}</Text>
+                  {currentServiceConfig?.discountLabel && (
+                    <Text style={styles.modalSubtitle}>{currentServiceConfig.discountLabel}</Text>
+                  )}
+                </View>
+              </View>
+              <TouchableOpacity onPress={() => setActiveModal(null)}>
                 <Text style={styles.modalClose}>✕</Text>
               </TouchableOpacity>
             </View>
 
-            <ScrollView showsVerticalScrollIndicator={false} style={{ maxHeight: 520 }}>
-              <Text style={styles.inputLabel}>Món cần đặt / Nội dung mua hộ *</Text>
-              <TextInput
-                style={styles.modalInput}
-                placeholder="VD: 2 tô Bún bò + 1 Trà đào cam sả"
-                value={itemNote}
-                onChangeText={setItemNote}
-              />
+            {/* NHÓM 1: BIỂU MẪU ĐẶT DỊCH VỤ (Đặt đồ ăn, Mua hộ, Nhận hộ, Làm hộ, Đi chợ, Mua thuốc, Giao đồ, Siêu tốc) */}
+            {currentServiceConfig && (
+              <ScrollView showsVerticalScrollIndicator={false} style={{ maxHeight: 540 }}>
+                <Text style={styles.inputLabel}>{currentServiceConfig.mainLabel}</Text>
+                <TextInput
+                  style={styles.modalInput}
+                  placeholder={currentServiceConfig.mainPlaceholder}
+                  value={itemNote}
+                  onChangeText={setItemNote}
+                />
 
-              {/* ĐIỂM LẤY HÀNG: TỰ NHẬN TỈNH & HIỂN THỊ DANH SÁCH XÃ/PHƯỜNG */}
-              <View style={styles.labelRowBetween}>
-                <Text style={styles.inputLabel}>
-                  Điểm lấy hàng ({detectedProvince}) *
+                {/* ĐIỂM LẤY HÀNG: TỰ NHẬN TỈNH & HIỂN THỊ XÃ/PHƯỜNG */}
+                <View style={styles.labelRowBetween}>
+                  <Text style={styles.inputLabel}>
+                    {currentServiceConfig.pickupLabel} ({detectedProvince}) *
+                  </Text>
+                  <Text style={styles.autoBadge}>Chọn xã/phường</Text>
+                </View>
+
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  style={styles.communeChipsRow}
+                >
+                  {communes.map((com, index) => {
+                    const isSelected = selectedPickupCommune?.name === com.name;
+                    return (
+                      <TouchableOpacity
+                        key={`${com.name}-${index}`}
+                        style={[
+                          styles.communeChip,
+                          isSelected && styles.communeChipActive,
+                        ]}
+                        onPress={() => setSelectedPickupCommune(com)}
+                      >
+                        <Text
+                          style={[
+                            styles.communeChipText,
+                            isSelected && styles.communeChipTextActive,
+                          ]}
+                        >
+                          {com.name}
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </ScrollView>
+
+                {selectedPickupCommune && (
+                  <View style={styles.detailAddrBox}>
+                    <Text style={styles.subInputLabel}>
+                      Địa chỉ cụ thể tại {selectedPickupCommune.name} (số nhà, tên quán):
+                    </Text>
+                    <TextInput
+                      style={styles.modalInput}
+                      placeholder={currentServiceConfig.detailPlaceholder}
+                      value={pickupDetailAddress}
+                      onChangeText={setPickupDetailAddress}
+                    />
+                  </View>
+                )}
+
+                {/* ĐIỂM GIAO CHO BẠN: TỰ THU THẬP VỊ TRÍ CHÍNH XÁC */}
+                <View style={styles.labelRowBetween}>
+                  <Text style={styles.inputLabel}>Điểm giao cho bạn (Vị trí chính xác) *</Text>
+                  <TouchableOpacity onPress={detectUserLocationAndCommunes}>
+                    <Text style={styles.gpsRefreshText}>
+                      {isLocating ? 'Đang định vị...' : '📍 Cập nhật GPS'}
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+                <View style={styles.gpsBox}>
+                  {isLocating && (
+                    <ActivityIndicator size="small" color="#D92D20" style={{ marginRight: 8 }} />
+                  )}
+                  <TextInput
+                    style={styles.gpsInput}
+                    value={dropoffAddress}
+                    onChangeText={setDropoffAddress}
+                    placeholder="Vị trí GPS chính xác của bạn"
+                  />
+                </View>
+
+                {/* Ô TIỀN HÀNG ỨNG (CHỈ HIỆN Ở DỊCH VỤ CẦN ỨNG TIỀN) */}
+                {currentServiceConfig.showAdvance && (
+                  <>
+                    <Text style={styles.inputLabel}>{currentServiceConfig.advanceLabel}</Text>
+                    <TextInput
+                      style={styles.modalInput}
+                      keyboardType="numeric"
+                      value={advanceMoney}
+                      onChangeText={setAdvanceMoney}
+                    />
+                  </>
+                )}
+
+                {/* Ô GHI CHÚ ĐẶC THÙ CỦA TỪNG DỊCH VỤ */}
+                <Text style={styles.inputLabel}>{currentServiceConfig.extraLabel}</Text>
+                <TextInput
+                  style={styles.modalInput}
+                  placeholder={currentServiceConfig.extraPlaceholder}
+                  value={extraNote}
+                  onChangeText={setExtraNote}
+                />
+
+                {/* TỰ ĐỘNG TÍNH KM & KHUYẾN MÃI RIÊNG */}
+                <View style={styles.priceSummary}>
+                  <Text style={styles.priceLine}>
+                    {selectedPickupCommune
+                      ? `Tự động tính: ${selectedPickupCommune.name} → Vị trí của bạn (${autoDistanceKm} km × 5.000đ = ${rawShippingFee.toLocaleString('vi-VN')}đ)`
+                      : 'Chọn xã/phường lấy hàng để tự động tính khoảng cách Km'}
+                  </Text>
+                  {discountAmount > 0 && selectedPickupCommune && (
+                    <Text style={styles.discountLine}>
+                      Ưu đãi {activeModal} (-{Math.round(discountRate * 100)}%): -{discountAmount.toLocaleString('vi-VN')}đ
+                    </Text>
+                  )}
+                  <Text style={styles.priceTotal}>
+                    Tổng thanh toán: {totalAmount.toLocaleString('vi-VN')}đ
+                  </Text>
+                </View>
+
+                <TouchableOpacity style={styles.submitOrderBtn} onPress={handleCreateOrder}>
+                  <Text style={styles.submitOrderText}>{currentServiceConfig.submitText}</Text>
+                </TouchableOpacity>
+              </ScrollView>
+            )}
+
+            {/* NHÓM 2: MỤC "TÀI XẾ GẦN" (HIỂN THỊ DANH SÁCH TÀI XẾ QUANH VỊ TRÍ GPS) */}
+            {activeModal === 'Tài xế gần' && (
+              <ScrollView showsVerticalScrollIndicator={false} style={{ maxHeight: 500 }}>
+                <Text style={styles.helperBanner}>
+                  📍 Khu vực hiện tại: {dropoffAddress}
                 </Text>
-                <Text style={styles.autoBadge}>Chọn xã/phường</Text>
-              </View>
+                {NEARBY_DRIVERS.map((drv) => (
+                  <View key={drv.id} style={styles.infoCard}>
+                    <View style={styles.labelRowBetween}>
+                      <Text style={styles.infoCardTitle}>🛵 {drv.name}</Text>
+                      <Text style={styles.driverDistBadge}>Cách {drv.dist}</Text>
+                    </View>
+                    <Text style={styles.infoCardSub}>{drv.bike} • Đánh giá {drv.rating}</Text>
+                    <View style={[styles.labelRowBetween, { marginTop: 8 }]}>
+                      <Text style={styles.driverStatusText}>● {drv.status}</Text>
+                      <TouchableOpacity
+                        style={styles.miniActionBtn}
+                        onPress={() => openModalFor('Giao đồ Km')}
+                      >
+                        <Text style={styles.miniActionText}>Đặt tài xế này</Text>
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+                ))}
+              </ScrollView>
+            )}
 
-              <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                style={styles.communeChipsRow}
-              >
-                {communes.map((com, index) => {
-                  const isSelected = selectedPickupCommune?.name === com.name;
-                  return (
+            {/* NHÓM 3: MỤC "ƯU ĐÃI" (DANH SÁCH MÃ GIẢM GIÁ & ÁP DỤNG NGAY) */}
+            {activeModal === 'Ưu đãi' && (
+              <ScrollView showsVerticalScrollIndicator={false} style={{ maxHeight: 500 }}>
+                <Text style={styles.helperBanner}>
+                  🏆 Điểm thưởng hiện có: 350 điểm Ninja
+                </Text>
+                {VOUCHERS_LIST.map((v) => (
+                  <View key={v.code} style={styles.infoCard}>
+                    <View style={styles.labelRowBetween}>
+                      <Text style={styles.voucherCode}>{v.code}</Text>
+                      <Text style={styles.autoBadge}>{v.tag}</Text>
+                    </View>
+                    <Text style={styles.infoCardTitle}>{v.title}</Text>
+                    <Text style={styles.infoCardSub}>{v.desc}</Text>
                     <TouchableOpacity
-                      key={`${com.name}-${index}`}
+                      style={[styles.miniActionBtn, { alignSelf: 'flex-end', marginTop: 8 }]}
+                      onPress={() =>
+                        openModalFor(v.tag === 'Tất cả' ? 'Đặt đồ ăn' : v.tag)
+                      }
+                    >
+                      <Text style={styles.miniActionText}>Dùng ngay →</Text>
+                    </TouchableOpacity>
+                  </View>
+                ))}
+              </ScrollView>
+            )}
+
+            {/* NHÓM 4: MỤC "MỞ BẢN ĐỒ KM" & "GIÁ CƯỚC KM" (BẢNG TRA CỨU CƯỚC THEO XÃ) */}
+            {(activeModal === 'Mở bản đồ Km' || activeModal === 'Giá cước Km') && (
+              <ScrollView showsVerticalScrollIndicator={false} style={{ maxHeight: 520 }}>
+                <View style={styles.rateHighlightBox}>
+                  <Text style={styles.rateHighlightTitle}>Bảng giá Ninja Ship ({detectedProvince})</Text>
+                  <Text style={styles.rateHighlightSub}>
+                    • Đồng giá chuẩn: 5.000đ / 1 km (tính tự động từ tâm xã đến tâm xã){'\n'}
+                    • Không phụ thu giờ cao điểm • Tài xế ứng trước tiền hàng miễn phí
+                  </Text>
+                </View>
+
+                <Text style={styles.inputLabel}>Chọn xã/phường xuất phát:</Text>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.communeChipsRow}>
+                  {communes.map((com, idx) => (
+                    <TouchableOpacity
+                      key={`from-${idx}`}
                       style={[
                         styles.communeChip,
-                        isSelected && styles.communeChipActive,
+                        calcFromCommune?.name === com.name && styles.communeChipActive,
                       ]}
-                      onPress={() => setSelectedPickupCommune(com)}
+                      onPress={() => setCalcFromCommune(com)}
                     >
                       <Text
                         style={[
                           styles.communeChipText,
-                          isSelected && styles.communeChipTextActive,
+                          calcFromCommune?.name === com.name && styles.communeChipTextActive,
                         ]}
                       >
                         {com.name}
                       </Text>
                     </TouchableOpacity>
-                  );
-                })}
-              </ScrollView>
+                  ))}
+                </ScrollView>
 
-              {/* HIỆN Ô NHẬP ĐỊA CHỈ CỤ THỂ SAU KHI CHỌN XÃ (KHÔNG LÀM THAY ĐỔI SỐ KM) */}
-              {selectedPickupCommune && (
-                <View style={styles.detailAddrBox}>
-                  <Text style={styles.subInputLabel}>
-                    Địa chỉ cụ thể tại {selectedPickupCommune.name} (số nhà, tên quán):
+                <Text style={styles.inputLabel}>Chọn xã/phường điểm đến:</Text>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.communeChipsRow}>
+                  {communes.map((com, idx) => (
+                    <TouchableOpacity
+                      key={`to-${idx}`}
+                      style={[
+                        styles.communeChip,
+                        calcToCommune?.name === com.name && styles.communeChipActive,
+                      ]}
+                      onPress={() => setCalcToCommune(com)}
+                    >
+                      <Text
+                        style={[
+                          styles.communeChipText,
+                          calcToCommune?.name === com.name && styles.communeChipTextActive,
+                        ]}
+                      >
+                        {com.name}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </ScrollView>
+
+                <View style={styles.priceSummary}>
+                  <Text style={styles.priceLine}>
+                    Tuyến: {calcFromCommune?.name} ↔ {calcToCommune?.name}
                   </Text>
-                  <TextInput
-                    style={styles.modalInput}
-                    placeholder={`VD: Số 15 đường chính, ${selectedPickupCommune.name}`}
-                    value={pickupDetailAddress}
-                    onChangeText={setPickupDetailAddress}
-                  />
+                  <Text style={styles.priceTotal}>
+                    Quãng đường: {previewKm} km • Cước ước tính: {previewCost.toLocaleString('vi-VN')}đ
+                  </Text>
                 </View>
-              )}
 
-              {/* ĐIỂM GIAO CHO BẠN: TỰ THU THẬP VỊ TRÍ CHÍNH XÁC */}
-              <View style={styles.labelRowBetween}>
-                <Text style={styles.inputLabel}>Điểm giao cho bạn (Vị trí chính xác) *</Text>
-                <TouchableOpacity onPress={detectUserLocationAndCommunes}>
-                  <Text style={styles.gpsRefreshText}>
-                    {isLocating ? 'Đang định vị...' : '📍 Cập nhật GPS'}
-                  </Text>
+                <TouchableOpacity
+                  style={styles.submitOrderBtn}
+                  onPress={() => {
+                    setSelectedPickupCommune(calcFromCommune);
+                    openModalFor('Giao đồ Km');
+                  }}
+                >
+                  <Text style={styles.submitOrderText}>Đặt đơn theo tuyến này</Text>
                 </TouchableOpacity>
-              </View>
-              <View style={styles.gpsBox}>
-                {isLocating && <ActivityIndicator size="small" color="#D92D20" style={{ marginRight: 8 }} />}
-                <TextInput
-                  style={styles.gpsInput}
-                  value={dropoffAddress}
-                  onChangeText={setDropoffAddress}
-                  placeholder="Vị trí GPS chính xác của bạn"
-                />
-              </View>
-
-              {/* TIỀN HÀNG ỨNG TRƯỚC */}
-              <Text style={styles.inputLabel}>Tiền hàng ứng trước ước tính (đ)</Text>
-              <TextInput
-                style={styles.modalInput}
-                keyboardType="numeric"
-                value={advanceMoney}
-                onChangeText={setAdvanceMoney}
-              />
-
-              {/* TỰ ĐỘNG TÍNH KM & CƯỚC PHÍ */}
-              <View style={styles.priceSummary}>
-                <Text style={styles.priceLine}>
-                  {selectedPickupCommune
-                    ? `Tuyến tự động: ${selectedPickupCommune.name} → Vị trí của bạn (${autoDistanceKm} km × 5.000đ)`
-                    : 'Vui lòng chọn xã/phường lấy hàng để hệ thống tự tính Km'}
-                </Text>
-                <Text style={styles.priceTotal}>
-                  Tổng thanh toán: {totalAmount.toLocaleString('vi-VN')}đ
-                </Text>
-              </View>
-
-              <TouchableOpacity style={styles.submitOrderBtn} onPress={handleCreateOrder}>
-                <Text style={styles.submitOrderText}>Đặt Ninja Ship ngay</Text>
-              </TouchableOpacity>
-            </ScrollView>
+              </ScrollView>
+            )}
           </View>
         </View>
       </Modal>
@@ -961,6 +1294,12 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     color: '#111827',
   },
+  modalSubtitle: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#059669',
+    marginTop: 2,
+  },
   modalClose: {
     fontSize: 20,
     color: '#6B7280',
@@ -1068,6 +1407,12 @@ const styles = StyleSheet.create({
     marginBottom: 4,
     lineHeight: 18,
   },
+  discountLine: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#059669',
+    marginBottom: 4,
+  },
   priceTotal: {
     fontSize: 16,
     fontWeight: '800',
@@ -1085,5 +1430,79 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 16,
     fontWeight: '800',
+  },
+  helperBanner: {
+    backgroundColor: '#F3F4F6',
+    padding: 10,
+    borderRadius: 12,
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#1F2937',
+    marginBottom: 10,
+  },
+  infoCard: {
+    backgroundColor: '#F9FAFB',
+    borderRadius: 14,
+    padding: 12,
+    marginBottom: 10,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+  },
+  infoCardTitle: {
+    fontSize: 15,
+    fontWeight: '800',
+    color: '#111827',
+    marginBottom: 2,
+  },
+  infoCardSub: {
+    fontSize: 13,
+    color: '#4B5563',
+  },
+  driverDistBadge: {
+    fontSize: 12,
+    fontWeight: '800',
+    color: '#D92D20',
+    backgroundColor: '#FEE2E2',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 8,
+  },
+  driverStatusText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#059669',
+  },
+  miniActionBtn: {
+    backgroundColor: '#111827',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 10,
+  },
+  miniActionText: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  voucherCode: {
+    fontSize: 14,
+    fontWeight: '900',
+    color: '#D92D20',
+  },
+  rateHighlightBox: {
+    backgroundColor: '#18181B',
+    borderRadius: 14,
+    padding: 14,
+    marginBottom: 12,
+  },
+  rateHighlightTitle: {
+    color: '#FACC15',
+    fontSize: 15,
+    fontWeight: '800',
+    marginBottom: 4,
+  },
+  rateHighlightSub: {
+    color: '#E5E7EB',
+    fontSize: 12,
+    lineHeight: 18,
   },
 });
