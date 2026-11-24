@@ -1824,7 +1824,12 @@ export default function App() {
       {/* TAB ĐƠN HÀNG */}
       {activeTab === 'orders' && (
         <ScrollView style={styles.container} contentContainerStyle={styles.scrollContent}>
-          <Text style={styles.pageHeading}>Đơn hàng của bạn</Text>
+          <View style={styles.subPageHeaderRow}>
+            <TouchableOpacity style={styles.backArrowBtn} onPress={() => setActiveTab('home')}>
+              <Text style={styles.backArrowIcon}>←</Text>
+            </TouchableOpacity>
+            <Text style={styles.pageHeadingNoMargin}>Đơn hàng của bạn</Text>
+          </View>
           {orders.length === 0 ? (
             <View style={styles.orderCard}>
               <Text style={styles.orderNote}>Bạn chưa có đơn hàng nào. Hãy chọn dịch vụ ở Trang chủ để đặt ngay!</Text>
@@ -1852,7 +1857,12 @@ export default function App() {
       {/* TAB THÔNG BÁO */}
       {activeTab === 'notifications' && (
         <ScrollView style={styles.container} contentContainerStyle={styles.scrollContent}>
-          <Text style={styles.pageHeading}>Thông báo & Bảo mật</Text>
+          <View style={styles.subPageHeaderRow}>
+            <TouchableOpacity style={styles.backArrowBtn} onPress={() => setActiveTab('home')}>
+              <Text style={styles.backArrowIcon}>←</Text>
+            </TouchableOpacity>
+            <Text style={styles.pageHeadingNoMargin}>Thông báo & Bảo mật</Text>
+          </View>
           <View style={styles.orderCard}>
             <Text style={styles.orderId}>✅ Xác thực OTP thành công</Text>
             <Text style={styles.orderNote}>
@@ -1869,7 +1879,12 @@ export default function App() {
       {/* TAB TÀI KHOẢN & ĐĂNG XUẤT */}
       {activeTab === 'profile' && (
         <ScrollView style={styles.container} contentContainerStyle={styles.scrollContent}>
-          <Text style={styles.pageHeading}>Tài khoản khách hàng</Text>
+          <View style={styles.subPageHeaderRow}>
+            <TouchableOpacity style={styles.backArrowBtn} onPress={() => setActiveTab('home')}>
+              <Text style={styles.backArrowIcon}>←</Text>
+            </TouchableOpacity>
+            <Text style={styles.pageHeadingNoMargin}>Tài khoản khách hàng</Text>
+          </View>
           <View style={styles.orderCard}>
             <Text style={styles.orderId}>🥷 {currentUser.name}</Text>
             <Text style={styles.orderNote}>Số điện thoại đã nhớ: {currentUser.phone}</Text>
@@ -1984,7 +1999,14 @@ export default function App() {
         <View style={styles.modalOverlay}>
           <View style={styles.modalSheet}>
             <View style={styles.modalHeader}>
-              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
+                <TouchableOpacity
+                  style={styles.backArrowBtn}
+                  onPress={() => setActiveModal(null)}
+                  accessibilityLabel="Quay lại"
+                >
+                  <Text style={styles.backArrowIcon}>←</Text>
+                </TouchableOpacity>
                 <Text style={{ fontSize: 22, marginRight: 8 }}>
                   {currentServiceConfig?.icon ||
                     (activeModal === 'Tài xế gần'
@@ -1993,7 +2015,7 @@ export default function App() {
                       ? '🎁'
                       : '🗺️')}
                 </Text>
-                <View>
+                <View style={{ flex: 1 }}>
                   <Text style={styles.modalTitle}>{activeModal}</Text>
                   {currentServiceConfig?.discountLabel && (
                     <Text
@@ -2009,7 +2031,10 @@ export default function App() {
                   )}
                 </View>
               </View>
-              <TouchableOpacity onPress={() => setActiveModal(null)}>
+              <TouchableOpacity
+                style={styles.modalCloseBtn}
+                onPress={() => setActiveModal(null)}
+              >
                 <Text style={styles.modalClose}>✕</Text>
               </TouchableOpacity>
             </View>
@@ -3230,10 +3255,44 @@ const styles = StyleSheet.create({
     color: '#059669',
     marginTop: 2,
   },
-  modalClose: {
+  backArrowBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#F3F4F6',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 10,
+  },
+  backArrowIcon: {
     fontSize: 20,
-    color: '#6B7280',
-    padding: 4,
+    fontWeight: '900',
+    color: '#111827',
+    lineHeight: 22,
+  },
+  subPageHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 14,
+  },
+  pageHeadingNoMargin: {
+    fontSize: 20,
+    fontWeight: '800',
+    color: '#111827',
+  },
+  modalCloseBtn: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    backgroundColor: '#F3F4F6',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginLeft: 8,
+  },
+  modalClose: {
+    fontSize: 16,
+    fontWeight: '800',
+    color: '#374151',
   },
   labelRowBetween: {
     flexDirection: 'row',
