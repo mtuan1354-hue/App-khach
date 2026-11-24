@@ -357,16 +357,8 @@ export default function App() {
   const [authStatusMsg, setAuthStatusMsg] = useState('');
 
   const showOtpNotification = (cleanPhone, code) => {
-    const msg = `Mã OTP gửi tới ${cleanPhone}: ${code} (hiệu lực 60s)`;
+    const msg = `Mã OTP gửi tới ${cleanPhone}: ${code}\n(hiệu lực 60s)`;
     setAuthStatusMsg(msg);
-    try {
-      Alert.alert('Đã gửi mã xác thực OTP', `Mã OTP cho số ${cleanPhone} là: ${code}\n(Có hiệu lực trong 60 giây)`);
-    } catch (e) {}
-    if (Platform.OS === 'web' && typeof window !== 'undefined' && typeof window.alert === 'function') {
-      try {
-        window.alert(`Mã OTP Ninja Ship cho số ${cleanPhone}: ${code}`);
-      } catch (e) {}
-    }
   };
 
   const triggerOtpDispatch = async (cleanPhone, mode, name) => {
