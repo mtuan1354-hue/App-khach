@@ -353,55 +353,107 @@ export default function App() {
   const normalizePhone = (raw) => raw.replace(/\D/g, '');
   const isValidVnPhone = (p) => /^(03|05|07|08|09)\d{8}$/.test(p);
 
+  const [isSendingOtp, setIsSendingOtp] = useState(false);
+
+  const triggerOtpDispatch = async (cleanPhone, mode, name) => {
+    const fallbackCode = Math.floor(100000 + Math.random() * 900000).toString();
+    setIsSendingOtp(true);
+    try {
+      if (!BACKEND_API_URL.includes('your-subdomain')) {
+        const res = await fetch(`${BACKEND_API_URL}/api/otp/request`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            phone: cleanPhone,
+            mode,
+            name: name || '',
+            deviceId,
+          }),
+        });
+        if (res.ok) {
+          const data = await res.json().catch(() => ({}));
+          const serverCode = data.otp || data.code || fallbackCode;
+          setGeneratedOtp(String(serverCode));
+          setOtpSent(true);
+          setOtpCountdown(60);
+          Alert.alert(
+            'Đã gửi mã xác thực OTP',
+            `Mã OTP cho số ${cleanPhone}: ${serverCode}\n(Có hiệu lực trong 60 giây)`
+          );
+          return;
+        }
+      }
+    } catch (e) {
+      // Fallback sang mã OTP cục bộ để không bao giờ bị kẹt khi chưa cấu hình backend
+    } finally {
+      setIsSendingOtp(false);
+    }
+
+    setGeneratedOtp(fallbackCode);
+    setOtpSent(true);
+    setOtpCountdown(60);
+    Alert.alert(
+      'Đã gửi mã xác thực OTP',
+      `Tin nhắn xác thực cho số ${cleanPhone}:\nMã OTP Ninja Ship của bạn là: ${fallbackCode}\n(Có hiệu lực trong 60 giây)`
+    );
+  };
+
   const handleRequestOtp = () => {
+    if (isSendingOtp) return;
     const cleanPhone = normalizePhone(authPhone);
     if (!isValidVnPhone(cleanPhone)) {
       Alert.alert(
         'Số điện thoại không hợp lệ',
-        'Vui lòng nhập đúng số điện thoại di động Việt Nam (10 số, VD: 0912345678). Không chấp nhận số ảo.'
+        'Vui lòng nhập đúng số điện thoại di động Việt Nam (10 số, VD: 0912345678).'
       );
       return;
     }
 
     const vault = readFraudVault();
+    vault.accounts = vault.accounts || {};
+    vault.boundPhones = vault.boundPhones || [];
     const existingAcc = vault.accounts[cleanPhone];
 
     if (authMode === 'register') {
-      if (!authName.trim() || authName.trim().length < 2) {
-        Alert.alert('Thiếu họ tên', 'Vui lòng nhập họ và tên thật để xác minh tài khoản.');
+      const trimmedName = authName.trim();
+      if (!trimmedName || trimmedName.length < 2) {
+        Alert.alert('Thiếu họ tên', 'Vui lòng nhập họ và tên thật để đăng ký tài khoản.');
         return;
       }
       if (existingAcc) {
         Alert.alert(
           'Số điện thoại đã đăng ký',
-          'Số điện thoại này đã có tài khoản. Vui lòng chuyển sang tab Đăng nhập.'
+          'Số điện thoại này đã tồn tại. Hệ thống chuyển sang Đăng nhập và gửi OTP cho bạn.'
         );
         setAuthMode('login');
+        triggerOtpDispatch(cleanPhone, 'login', existingAcc.name || trimmedName);
         return;
       }
-      // Chặn tạo quá 2 tài khoản trên cùng 1 điện thoại
       if (vault.boundPhones.length >= 2 && !vault.boundPhones.includes(cleanPhone)) {
         Alert.alert(
-          'Cảnh báo bảo mật thiết bị',
-          `Thiết bị (${deviceId}) đã đạt giới hạn tối đa 2 tài khoản đăng ký. Vui lòng đăng nhập bằng số điện thoại đã liên kết.`
+          'Giới hạn tài khoản trên thiết bị',
+          `Thiết bị (${deviceId}) đã liên kết tối đa 2 số điện thoại. Vui lòng đăng nhập bằng số đã đăng ký.`
         );
         return;
       }
-    } else if (!existingAcc) {
-      Alert.alert(
-        'Chưa có tài khoản',
-        'Số điện thoại này chưa đăng ký. Hệ thống sẽ chuyển bạn sang mục Đăng ký tài khoản mới.'
-      );
-      setAuthMode('register');
-      return;
+      triggerOtpDispatch(cleanPhone, 'register', trimmedName);
+    } else {
+      if (!existingAcc) {
+        // Nếu đang ở tab Đăng nhập mà nhập số mới: tự chuyển sang đăng ký nếu đã có tên, hoặc nhắc nhập tên để tạo tài khoản & gửi OTP
+        if (authName.trim().length >= 2) {
+          setAuthMode('register');
+          triggerOtpDispatch(cleanPhone, 'register', authName.trim());
+        } else {
+          setAuthMode('register');
+          Alert.alert(
+            'Đăng ký tài khoản mới',
+            'Số này chưa có tài khoản. Vui lòng nhập Họ và tên rồi bấm "Gửi mã xác thực OTP" để nhận mã đăng ký.'
+          );
+        }
+        return;
+      }
+      triggerOtpDispatch(cleanPhone, 'login', existingAcc.name || '');
     }
-
-    // Tạo mã OTP 6 số ngẫu nhiên
-    const code = Math.floor(100000 + Math.random() * 900000).toString();
-    setGeneratedOtp(code);
-    setOtpSent(true);
-    setOtpCountdown(60);
-    Alert.alert('Mã xác thực OTP đã gửi', `Tin nhắn SMS gửi tới ${cleanPhone}:\nMã OTP Ninja Ship của bạn là: ${code}\n(Có hiệu lực trong 60 giây)`);
   };
 
   const handleVerifyOtpAndEnter = () => {
@@ -415,11 +467,11 @@ export default function App() {
     let userRecord = vault.accounts[cleanPhone];
 
     if (!userRecord) {
-      // Đăng ký mới: gắn chặt SĐT với mã phần cứng thiết bị
+      const resolvedName = (authName || '').trim() || `Khách ${cleanPhone.slice(-4)}`;
       const isSecondaryOnSameDevice = vault.boundPhones.length > 0;
       userRecord = {
         phone: cleanPhone,
-        name: authName.trim(),
+        name: resolvedName,
         deviceId,
         createdAt: new Date().toISOString(),
         usedPromos: {},
@@ -657,8 +709,14 @@ export default function App() {
             />
 
             {!otpSent ? (
-              <TouchableOpacity style={styles.submitOrderBtn} onPress={handleRequestOtp}>
-                <Text style={styles.submitOrderText}>Gửi mã xác thực OTP</Text>
+              <TouchableOpacity
+                style={[styles.submitOrderBtn, isSendingOtp && { opacity: 0.75 }]}
+                onPress={handleRequestOtp}
+                disabled={isSendingOtp}
+              >
+                <Text style={styles.submitOrderText}>
+                  {isSendingOtp ? 'Đang gửi mã OTP...' : 'Gửi mã xác thực OTP'}
+                </Text>
               </TouchableOpacity>
             ) : (
               <View style={styles.otpVerifyBox}>
