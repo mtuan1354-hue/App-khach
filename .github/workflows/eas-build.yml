@@ -1,0 +1,30 @@
+name: Auto Build Ninja Ship Khach (APK & IPA)
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  build_android_and_ios:
+    name: Build Android APK & iOS IPA via Expo EAS
+    runs-on: ubuntu-latest
+    steps:
+      - name: Tai ma nguon tu GitHub
+        uses: actions/checkout@v4
+      - name: Cai dat Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Ket noi Expo EAS
+        uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+      - name: Cai dat thu vien
+        run: npm install
+      - name: Build Android APK
+        run: eas build --platform android --profile preview --non-interactive --no-wait
+      - name: Build iOS IPA
+        run: eas build --platform ios --profile preview --non-interactive --no-wait
