@@ -2031,12 +2031,7 @@ export default function App() {
                   )}
                 </View>
               </View>
-              <TouchableOpacity
-                style={styles.modalCloseBtn}
-                onPress={() => setActiveModal(null)}
-              >
-                <Text style={styles.modalClose}>✕</Text>
-              </TouchableOpacity>
+
             </View>
 
             {/* NHÓM 1: BIỂU MẪU ĐẶT DỊCH VỤ */}
