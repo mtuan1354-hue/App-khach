@@ -3167,7 +3167,7 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     color: '#065F46',
   },
-}  advanceUnitInputWrap: {
+  advanceUnitInputWrap: {
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 10,
