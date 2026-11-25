@@ -11,6 +11,7 @@ import {
   Alert,
   Platform,
   ActivityIndicator,
+  Vibration,
 } from 'react-native';
 
 // Dùng chung endpoint Cloudflare Worker với hệ thống Ninja Ship
@@ -55,7 +56,7 @@ async function getDriverApi(path) {
   }
 }
 
-const DRIVER_VAULT_KEY = 'NINJA_SHIP_DRIVER_VAULT_V1';
+const DRIVER_VAULT_KEY = 'NINJA_SHIP_DRIVER_VAULT_V2';
 const driverMemoryFallback = {};
 
 function readDriverVault() {
@@ -109,6 +110,58 @@ function getDriverDeviceFingerprint() {
   return `DRV-${Platform.OS.toUpperCase()}-73K1`;
 }
 
+function playNewOrderAlert(order) {
+  try {
+    if (Platform.OS !== 'web') {
+      Vibration.vibrate([0, 350, 150, 350]);
+    } else if (typeof window !== 'undefined') {
+      if (window.navigator && window.navigator.vibrate) {
+        window.navigator.vibrate([300, 150, 300]);
+      }
+      const AudioCtx = window.AudioContext || window.webkitAudioContext;
+      if (AudioCtx) {
+        const ctx = new AudioCtx();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(880, ctx.currentTime);
+        gain.gain.setValueAtTime(0.15, ctx.currentTime);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start();
+        osc.stop(ctx.currentTime + 0.25);
+      }
+      if ('Notification' in window && Notification.permission === 'granted') {
+        new Notification(`Đơn mới ${order.id || ''} • ${order.service || 'Giao hàng'}`, {
+          body: `Giao tới: ${order.dropoff || ''} • Thu nhập: ${(Number(order.driverPayout) || 0).toLocaleString('vi-VN')}đ`,
+        });
+      }
+    }
+  } catch (e) {}
+}
+
+function mapRawOrder(o) {
+  const payout =
+    Number(o.driverPayout) ||
+    Number(o.pricingBreakdown?.shippingFee || 0) +
+      Number(o.pricingBreakdown?.serviceFee || 0) +
+      Number(o.pricingBreakdown?.surchargeTotal || 0) ||
+    Number(o.total) ||
+    20000;
+  return {
+    id: o.id || `NS-${Math.floor(1000 + Math.random() * 9000)}`,
+    service: o.service || 'Giao đồ Km',
+    pickup: o.pickupAddress || o.pickup || 'Điểm lấy hàng trên đơn',
+    dropoff: o.dropoffAddress || o.dropoff || 'Điểm giao khách hàng',
+    distanceKm: Number(o.distanceKm) || 2.5,
+    advanceAmount: Number(o.pricingBreakdown?.goodsValue ?? o.advanceAmount) || 0,
+    driverPayout: payout,
+    totalCustomerPay: Number(o.total || o.totalCustomerPay) || payout,
+    note: o.note || 'Giao đúng giờ, giữ gìn hàng hóa',
+    createdAt: o.time || 'Vừa xong',
+  };
+}
+
 const SAMPLE_AVAILABLE_ORDERS = [
   {
     id: 'NS-8421',
@@ -122,30 +175,6 @@ const SAMPLE_AVAILABLE_ORDERS = [
     note: '2 tô Bún bò ít cay + 1 Trà đào, gọi trước khi tới',
     createdAt: 'Vừa xong',
   },
-  {
-    id: 'NS-8422',
-    service: 'Giao đồ Km',
-    pickup: 'Shop Thời Trang Lan Anh, Phường Ba Đồn, Quảng Trị',
-    dropoff: 'Xã Nam Gianh, Quảng Trị',
-    distanceKm: 4.2,
-    advanceAmount: 0,
-    driverPayout: 25000,
-    totalCustomerPay: 25000,
-    note: '1 túi quần áo, treo cẩn thận không để nhăn',
-    createdAt: '2 phút trước',
-  },
-  {
-    id: 'NS-8423',
-    service: 'Mua thuốc',
-    pickup: 'Nhà Thuốc Trung Tâm, Xã Hoàn Lão, Quảng Trị',
-    dropoff: 'Xã Bố Trạch, Quảng Trị',
-    distanceKm: 5.5,
-    advanceAmount: 120000,
-    driverPayout: 40000,
-    totalCustomerPay: 160000,
-    note: '1 vỉ hạ sốt + 1 chai nước muối sinh lý, chụp bill gửi khách',
-    createdAt: '5 phút trước',
-  },
 ];
 
 const VEHICLE_TYPES = [
@@ -158,22 +187,30 @@ export default function App() {
   const initialVault = readDriverVault();
   const deviceId = getDriverDeviceFingerprint();
 
-  // TRẠNG THÁI HỒ SƠ & XÁC THỰC NGHIÊM NGẶT (CHUẨN XANH SM / HÀNH NGHỀ TÀI XẾ)
+  // Hồ sơ tài xế đã đăng ký 1 lần
   const [driverProfile, setDriverProfile] = useState(null);
+  // Chế độ màn hình auth: 'login' (chỉ SĐT + OTP) hoặc 'register' (đăng ký hồ sơ 1 lần)
+  const [authMode, setAuthMode] = useState(
+    initialVault.lastDriverPhone && initialVault.drivers[initialVault.lastDriverPhone]
+      ? 'login'
+      : 'register'
+  );
+
+  // Trường nhập cho đăng nhập nhanh (SĐT + OTP) & đăng ký 1 lần
   const [driverPhone, setDriverPhone] = useState(initialVault.lastDriverPhone || '');
   const [driverName, setDriverName] = useState('');
-  const [idCardNumber, setIdCardNumber] = useState(''); // CCCD 12 số
-  const [licenseNumber, setLicenseNumber] = useState(''); // GPLX / Chứng chỉ hành nghề
-  const [licenseExpiry, setLicenseExpiry] = useState(''); // Hạn GPLX (VD: 12/2030)
+  const [idCardNumber, setIdCardNumber] = useState('');
+  const [licenseNumber, setLicenseNumber] = useState('');
+  const [licenseExpiry, setLicenseExpiry] = useState('');
   const [vehicleType, setVehicleType] = useState('bike');
-  const [licensePlate, setLicensePlate] = useState(''); // Biển số xe (VD: 73K1-123.45)
-  const [vehicleBrandModel, setVehicleBrandModel] = useState(''); // Hãng & dòng xe
+  const [licensePlate, setLicensePlate] = useState('');
+  const [vehicleBrandModel, setVehicleBrandModel] = useState('');
   const [emergencyContactName, setEmergencyContactName] = useState('');
   const [emergencyContactPhone, setEmergencyContactPhone] = useState('');
-  const [declaredNoCriminal, setDeclaredNoCriminal] = useState(false); // Cam kết lý lịch & nồng độ cồn/ma túy
-  const [declaredTrafficRules, setDeclaredTrafficRules] = useState(false); // Cam kết tuân thủ ATGT & đồng phục
+  const [declaredNoCriminal, setDeclaredNoCriminal] = useState(false);
+  const [declaredTrafficRules, setDeclaredTrafficRules] = useState(false);
 
-  // OTP xác thực SĐT tài xế
+  // OTP xác thực
   const [otpSent, setOtpSent] = useState(false);
   const [generatedOtp, setGeneratedOtp] = useState('');
   const [inputOtp, setInputOtp] = useState('');
@@ -181,9 +218,9 @@ export default function App() {
   const [authBanner, setAuthBanner] = useState('');
   const [authError, setAuthError] = useState('');
 
-  // TRẠNG THÁI VẬN HÀNH TRÊN ĐƯỜNG (ONLINE / OFFLINE + GPS + ĐƠN HÀNG)
-  const [activeTab, setActiveTab] = useState('duty'); // 'duty' | 'history' | 'compliance'
-  const [isOnline, setIsOnline] = useState(false); // Chỉ bật Online khi hồ sơ đạt chuẩn (verified/active)
+  // Tác nghiệp trên đường
+  const [activeTab, setActiveTab] = useState('duty');
+  const [isOnline, setIsOnline] = useState(false);
   const [gpsCoords, setGpsCoords] = useState({ lat: 17.4689, lng: 106.6223 });
   const [gpsAddress, setGpsAddress] = useState('Đang cập nhật GPS tài xế...');
   const [isUpdatingGps, setIsUpdatingGps] = useState(false);
@@ -193,7 +230,9 @@ export default function App() {
   const [acceptedOrders, setAcceptedOrders] = useState(initialVault.acceptedOrders || []);
   const [completedOrders, setCompletedOrders] = useState(initialVault.completedOrders || []);
   const [syncMessage, setSyncMessage] = useState('Sẵn sàng kết nối hệ thống điều phối Ninja Ship.');
+  const [newOrderAlert, setNewOrderAlert] = useState(null);
 
+  const seenOrderIdsRef = useRef(new Set(SAMPLE_AVAILABLE_ORDERS.map((o) => o.id)));
   const scrollRef = useRef(null);
 
   const normalizePhone = (v) => String(v || '').replace(/\D/g, '');
@@ -202,26 +241,13 @@ export default function App() {
   const normalizePlate = (pl) => String(pl || '').trim().toUpperCase();
   const isValidPlate = (pl) => /^[0-9]{2}[A-Z0-9]{1,2}-[0-9]{3,5}(\.[0-9]{2})?$/.test(normalizePlate(pl));
 
-  // Tự điền hồ sơ đã lưu nếu nhập lại SĐT cũ
   useEffect(() => {
-    const cleanPhone = normalizePhone(driverPhone);
-    if (!isValidPhone(cleanPhone)) return;
-    const vault = readDriverVault();
-    const existing = vault.drivers && vault.drivers[cleanPhone];
-    if (existing) {
-      setDriverName(existing.name || '');
-      setIdCardNumber(existing.idCardNumber || '');
-      setLicenseNumber(existing.licenseNumber || '');
-      setLicenseExpiry(existing.licenseExpiry || '');
-      setVehicleType(existing.vehicleType || 'bike');
-      setLicensePlate(existing.licensePlate || '');
-      setVehicleBrandModel(existing.vehicleBrandModel || '');
-      setEmergencyContactName(existing.emergencyContactName || '');
-      setEmergencyContactPhone(existing.emergencyContactPhone || '');
-      setDeclaredNoCriminal(!!existing.declaredNoCriminal);
-      setDeclaredTrafficRules(!!existing.declaredTrafficRules);
+    if (Platform.OS === 'web' && typeof window !== 'undefined' && 'Notification' in window) {
+      if (Notification.permission === 'default') {
+        Notification.requestPermission().catch(() => {});
+      }
     }
-  }, [driverPhone]);
+  }, []);
 
   useEffect(() => {
     if (otpCountdown <= 0) return;
@@ -269,19 +295,37 @@ export default function App() {
     return '';
   };
 
-  const handleSendDriverOtp = async () => {
+  // Gửi OTP: ở chế độ 'login' chỉ kiểm tra SĐT; ở chế độ 'register' kiểm tra đủ hồ sơ 1 lần
+  const handleSendOtp = async () => {
     setAuthError('');
     setAuthBanner('');
-    const err = validateStrictDriverApplication();
-    if (err) {
-      setAuthError(err);
-      if (scrollRef.current && scrollRef.current.scrollTo) {
-        scrollRef.current.scrollTo({ y: 0, animated: true });
-      }
+    const cleanPhone = normalizePhone(driverPhone);
+
+    if (!isValidPhone(cleanPhone)) {
+      setAuthError('Số điện thoại tài xế không hợp lệ (VD: 0912345678).');
       return;
     }
 
-    const cleanPhone = normalizePhone(driverPhone);
+    if (authMode === 'login') {
+      const vault = readDriverVault();
+      const existing = vault.drivers && vault.drivers[cleanPhone];
+      if (!existing) {
+        setAuthError(
+          `SĐT ${cleanPhone} chưa có hồ sơ đăng ký trên máy này. Hãy chuyển sang "Đăng ký 1 lần" để khai báo hồ sơ.`
+        );
+        return;
+      }
+    } else {
+      const err = validateStrictDriverApplication();
+      if (err) {
+        setAuthError(err);
+        if (scrollRef.current && scrollRef.current.scrollTo) {
+          scrollRef.current.scrollTo({ y: 0, animated: true });
+        }
+        return;
+      }
+    }
+
     const fallbackOtp = Math.floor(100000 + Math.random() * 900000).toString();
     let codeToUse = fallbackOtp;
 
@@ -289,7 +333,6 @@ export default function App() {
       const res = await postDriverApi('/api/otp/request', {
         phone: cleanPhone,
         role: 'driver',
-        name: driverName.trim(),
         deviceId,
       });
       if (res.ok && res.data && (res.data.otp || res.data.code)) {
@@ -300,14 +343,19 @@ export default function App() {
     setGeneratedOtp(codeToUse);
     setOtpSent(true);
     setOtpCountdown(60);
-    setAuthBanner(`Đã gửi mã OTP xác thực hồ sơ tài xế tới ${cleanPhone}: ${codeToUse}`);
+    setAuthBanner(
+      authMode === 'login'
+        ? `Mã OTP đăng nhập nhanh cho SĐT ${cleanPhone}: ${codeToUse}`
+        : `Mã OTP kích hoạt hồ sơ tài xế cho SĐT ${cleanPhone}: ${codeToUse}`
+    );
   };
 
-  const handleConfirmDriverRegistration = async () => {
+  const handleConfirmOtp = async () => {
     setAuthError('');
-    const err = validateStrictDriverApplication();
-    if (err) {
-      setAuthError(err);
+    const cleanPhone = normalizePhone(driverPhone);
+
+    if (!isValidPhone(cleanPhone)) {
+      setAuthError('Số điện thoại không hợp lệ.');
       return;
     }
     if (inputOtp.trim() !== generatedOtp) {
@@ -315,15 +363,35 @@ export default function App() {
       return;
     }
 
-    const cleanPhone = normalizePhone(driverPhone);
+    const vault = readDriverVault();
+    vault.drivers = vault.drivers || {};
+
+    if (authMode === 'login') {
+      const existing = vault.drivers[cleanPhone];
+      if (!existing) {
+        setAuthError('Không tìm thấy hồ sơ tài xế. Vui lòng đăng ký 1 lần trước.');
+        return;
+      }
+      vault.lastDriverPhone = cleanPhone;
+      writeDriverVault(vault);
+      setDriverProfile(existing);
+      setOtpSent(false);
+      setInputOtp('');
+      setSyncMessage(`Đăng nhập nhanh thành công (${existing.name} • ${existing.licensePlate}).`);
+      return;
+    }
+
+    // Đăng ký 1 lần đầy đủ hồ sơ
+    const err = validateStrictDriverApplication();
+    if (err) {
+      setAuthError(err);
+      return;
+    }
+
     const cleanCccd = String(idCardNumber).replace(/\D/g, '');
     const cleanPlate = normalizePlate(licensePlate);
     const cleanEmPhone = normalizePhone(emergencyContactPhone);
 
-    const vault = readDriverVault();
-    vault.drivers = vault.drivers || {};
-
-    // Kiểm tra trùng CCCD hoặc biển số xe ở tài khoản SĐT khác trên thiết bị
     const duplicateConflict = Object.values(vault.drivers).find(
       (d) =>
         d.phone !== cleanPhone &&
@@ -331,7 +399,7 @@ export default function App() {
     );
     if (duplicateConflict) {
       setAuthError(
-        `CCCD (${cleanCccd}) hoặc Biển số (${cleanPlate}) đã được đăng ký bởi SĐT ${duplicateConflict.phone}. Mỗi phương tiện/CCCD chỉ gắn với 1 tài xế.`
+        `CCCD (${cleanCccd}) hoặc Biển số (${cleanPlate}) đã được đăng ký bởi SĐT ${duplicateConflict.phone}.`
       );
       return;
     }
@@ -350,8 +418,7 @@ export default function App() {
       declaredNoCriminal: true,
       declaredTrafficRules: true,
       deviceId,
-      // Chuẩn kiểm duyệt nghiêm ngặt: hồ sơ hợp lệ mới được bật trạng thái sẵn sàng nhận cuốc
-      verificationStatus: 'ĐÃ XÁC MINH HỒ SƠ (CHUẨN XANH SM)',
+      verificationStatus: 'ĐÃ XÁC MINH HỒ SƠ (ĐĂNG KÝ 1 LẦN)',
       safetyScore: 100,
       registeredAt: new Date().toISOString(),
     };
@@ -361,10 +428,11 @@ export default function App() {
     writeDriverVault(vault);
 
     setDriverProfile(profile);
+    setAuthMode('login');
     setOtpSent(false);
     setInputOtp('');
 
-    const apiRes = await postDriverApi('/api/register', {
+    await postDriverApi('/api/register', {
       phone: profile.phone,
       name: profile.name,
       role: 'driver',
@@ -383,14 +451,31 @@ export default function App() {
       },
     });
 
-    if (apiRes.ok) {
-      setSyncMessage(`Đã gửi hồ sơ kiểm duyệt tài xế ${profile.name} (${profile.licensePlate}) về hệ thống.`);
-    } else {
-      setSyncMessage(`Hồ sơ tài xế ${profile.name} đã lưu trên thiết bị (chờ kết nối máy chủ điều phối).`);
+    setSyncMessage(
+      `Đã lưu hồ sơ 1 lần cho ${profile.name}. Lần sau chỉ cần SĐT + OTP để đăng nhập.`
+    );
+  };
+
+  // Kiểm tra đơn mới từ server và phát thông báo + âm thanh + rung
+  const pollOrdersAndNotify = async (forceAlertForLatest = false) => {
+    const r = await getDriverApi('/api/orders');
+    if (r.ok && Array.isArray(r.data.orders) && r.data.orders.length > 0) {
+      const mapped = r.data.orders.map(mapRawOrder);
+      const trulyNew = mapped.filter((item) => !seenOrderIdsRef.current.has(item.id));
+      mapped.forEach((item) => seenOrderIdsRef.current.add(item.id));
+      setAvailableOrders(mapped);
+
+      const alertTarget = trulyNew[0] || (forceAlertForLatest ? mapped[0] : null);
+      if (alertTarget) {
+        setNewOrderAlert(alertTarget);
+        playNewOrderAlert(alertTarget);
+        setSyncMessage(
+          `🔔 CÓ ĐƠN MỚI ${alertTarget.id} (${alertTarget.service}) • Thu nhập ${(alertTarget.driverPayout || 0).toLocaleString('vi-VN')}đ`
+        );
+      }
     }
   };
 
-  // Cập nhật vị trí GPS thực tế của tài xế khi đang bật nhận cuốc
   const syncDriverGps = async () => {
     if (!driverProfile) return;
     setIsUpdatingGps(true);
@@ -446,37 +531,23 @@ export default function App() {
   useEffect(() => {
     if (!driverProfile) return;
     syncDriverGps();
+    pollOrdersAndNotify(false);
+  }, [driverProfile]);
+
+  // Luôn lắng nghe đơn mới mỗi 5 giây khi tài xế đã đăng nhập (kể cả khi chưa gạt Trực tuyến)
+  useEffect(() => {
+    if (!driverProfile) return;
+    const orderPoll = setInterval(() => {
+      pollOrdersAndNotify(false);
+    }, 5000);
+    return () => clearInterval(orderPoll);
   }, [driverProfile]);
 
   useEffect(() => {
     if (!driverProfile || !isOnline) return;
     syncDriverGps();
     const gpsTimer = setInterval(syncDriverGps, 15000);
-    const ordersTimer = setInterval(async () => {
-      const r = await getDriverApi('/api/orders');
-      if (r.ok && Array.isArray(r.data.orders) && r.data.orders.length > 0) {
-        const mapped = r.data.orders.map((o) => ({
-          id: o.id || `NS-${Math.floor(1000 + Math.random() * 9000)}`,
-          service: o.service || 'Giao đồ Km',
-          pickup: o.pickupAddress || 'Điểm lấy hàng trên đơn',
-          dropoff: o.dropoffAddress || 'Điểm giao khách hàng',
-          distanceKm: Number(o.distanceKm) || 2.5,
-          advanceAmount: Number(o.pricingBreakdown?.goodsValue) || 0,
-          driverPayout:
-            Number(o.pricingBreakdown?.shippingFee || 0) +
-            Number(o.pricingBreakdown?.serviceFee || 0) +
-            Number(o.pricingBreakdown?.surchargeTotal || 0),
-          totalCustomerPay: Number(o.total) || 20000,
-          note: o.note || 'Giao đúng giờ, giữ gìn hàng hóa',
-          createdAt: o.time || 'Mới lên đơn',
-        }));
-        setAvailableOrders(mapped);
-      }
-    }, 10000);
-    return () => {
-      clearInterval(gpsTimer);
-      clearInterval(ordersTimer);
-    };
+    return () => clearInterval(gpsTimer);
   }, [driverProfile, isOnline]);
 
   const handleToggleOnlineStatus = () => {
@@ -492,9 +563,10 @@ export default function App() {
     setIsOnline(nextState);
     if (nextState) {
       syncDriverGps();
-      setSyncMessage('Tài xế đang TRỰC TUYẾN — Đã mở radar nhận cuốc chuẩn xác thực.');
+      pollOrdersAndNotify(false);
+      setSyncMessage('Tài xế đang TRỰC TUYẾN — Đang lắng nghe đơn mới & cập nhật GPS.');
     } else {
-      setSyncMessage('Tài xế đã TẠM NGHỈ (Offline) — Không nhận cuốc mới.');
+      setSyncMessage('Tài xế đã TẠM NGHỈ (Offline) — Vẫn hiển thị thông báo đơn mới.');
     }
   };
 
@@ -515,6 +587,7 @@ export default function App() {
       stage: 'Đang tới điểm lấy hàng',
     };
     setActiveOrder(acceptedItem);
+    setNewOrderAlert(null);
     setAvailableOrders((prev) => prev.filter((item) => item.id !== ord.id));
 
     const v = readDriverVault();
@@ -546,6 +619,10 @@ export default function App() {
     v.completedOrders = [finished, ...(v.completedOrders || [])].slice(0, 100);
     writeDriverVault(v);
     setCompletedOrders(v.completedOrders);
+    postDriverApi('/api/orders/complete', {
+      orderId: finished.id,
+      driverPhone: driverProfile.phone,
+    });
     Alert.alert(
       'Hoàn tất cuốc xe',
       `Đã hoàn thành đơn ${finished.id}. Thu nhập cuốc: ${(finished.driverPayout || 0).toLocaleString('vi-VN')}đ.`
@@ -555,8 +632,8 @@ export default function App() {
   const handleCancelActiveOrderStrict = () => {
     if (!activeOrder) return;
     Alert.alert(
-      'Cảnh báo hủy cuốc (Chuẩn nghiêm ngặt)',
-      'Hủy cuốc sau khi đã nhận sẽ trừ 10 điểm uy tín tài xế và ghi nhận lên hệ thống điều phối. Bạn vẫn muốn hủy?',
+      'Cảnh báo hủy cuốc',
+      'Hủy cuốc sau khi đã nhận sẽ trừ 10 điểm uy tín tài xế. Bạn vẫn muốn hủy?',
       [
         { text: 'Giữ cuốc', style: 'cancel' },
         {
@@ -583,7 +660,7 @@ export default function App() {
   };
 
   // =========================================================================
-  // MÀN HÌNH ĐĂNG KÝ / XÁC THỰC TÀI XẾ NGHIÊM NGẶT (CHUẨN XANH SM)
+  // MÀN HÌNH ĐĂNG NHẬP NHANH (SĐT + OTP) HOẶC ĐĂNG KÝ 1 LẦN
   // =========================================================================
   if (!driverProfile) {
     return (
@@ -600,8 +677,39 @@ export default function App() {
               <Text style={styles.brandTitle}>NINJA SHIP TÀI XẾ</Text>
             </View>
             <Text style={styles.brandSubtitle}>
-              Khai báo định danh CCCD • GPLX • Phương tiện • Cam kết an toàn giao thông nghiêm ngặt
+              Đăng ký hồ sơ 1 lần • Từ lần sau chỉ cần nhập SĐT + OTP để đăng nhập
             </Text>
+          </View>
+
+          <View style={styles.modeSwitchRow}>
+            <TouchableOpacity
+              style={[styles.modePill, authMode === 'login' && styles.modePillActive]}
+              onPress={() => {
+                setAuthMode('login');
+                setOtpSent(false);
+                setInputOtp('');
+                setAuthError('');
+                setAuthBanner('');
+              }}
+            >
+              <Text style={[styles.modePillText, authMode === 'login' && styles.modePillTextActive]}>
+                Đăng nhập (SĐT + OTP)
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.modePill, authMode === 'register' && styles.modePillActive]}
+              onPress={() => {
+                setAuthMode('register');
+                setOtpSent(false);
+                setInputOtp('');
+                setAuthError('');
+                setAuthBanner('');
+              }}
+            >
+              <Text style={[styles.modePillText, authMode === 'register' && styles.modePillTextActive]}>
+                Đăng ký 1 lần
+              </Text>
+            </TouchableOpacity>
           </View>
 
           {!!authError && (
@@ -616,16 +724,6 @@ export default function App() {
           )}
 
           <View style={styles.formCard}>
-            <Text style={styles.sectionTitle}>1. Thông tin cá nhân & CCCD</Text>
-            <Text style={styles.label}>Họ và tên (khớp CCCD) *</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="VD: Trần Văn Hùng"
-              value={driverName}
-              onChangeText={setDriverName}
-              editable={!otpSent}
-            />
-
             <Text style={styles.label}>Số điện thoại tài xế *</Text>
             <TextInput
               style={styles.input}
@@ -637,126 +735,142 @@ export default function App() {
               editable={!otpSent}
             />
 
-            <Text style={styles.label}>Số CCCD / CMND (12 số) *</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="VD: 044095001234"
-              keyboardType="numeric"
-              maxLength={12}
-              value={idCardNumber}
-              onChangeText={setIdCardNumber}
-              editable={!otpSent}
-            />
+            {authMode === 'register' && (
+              <>
+                <Text style={styles.sectionTitle}>1. Thông tin cá nhân & CCCD</Text>
+                <Text style={styles.label}>Họ và tên (khớp CCCD) *</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="VD: Trần Văn Hùng"
+                  value={driverName}
+                  onChangeText={setDriverName}
+                  editable={!otpSent}
+                />
 
-            <Text style={[styles.sectionTitle, { marginTop: 10 }]}>2. Giấy phép lái xe (GPLX)</Text>
-            <Text style={styles.label}>Số GPLX *</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="VD: 440123456789"
-              value={licenseNumber}
-              onChangeText={setLicenseNumber}
-              editable={!otpSent}
-            />
+                <Text style={styles.label}>Số CCCD / CMND (12 số) *</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="VD: 044095001234"
+                  keyboardType="numeric"
+                  maxLength={12}
+                  value={idCardNumber}
+                  onChangeText={setIdCardNumber}
+                  editable={!otpSent}
+                />
 
-            <Text style={styles.label}>Hạn GPLX (MM/YYYY) *</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="VD: 12/2030"
-              maxLength={7}
-              value={licenseExpiry}
-              onChangeText={setLicenseExpiry}
-              editable={!otpSent}
-            />
+                <Text style={[styles.sectionTitle, { marginTop: 8 }]}>2. Giấy phép lái xe (GPLX)</Text>
+                <Text style={styles.label}>Số GPLX *</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="VD: 440123456789"
+                  value={licenseNumber}
+                  onChangeText={setLicenseNumber}
+                  editable={!otpSent}
+                />
 
-            <Text style={[styles.sectionTitle, { marginTop: 10 }]}>3. Phương tiện hoạt động</Text>
-            <View style={styles.vehicleRow}>
-              {VEHICLE_TYPES.map((vt) => {
-                const active = vehicleType === vt.id;
-                return (
-                  <TouchableOpacity
-                    key={vt.id}
-                    style={[styles.vehicleChip, active && styles.vehicleChipActive]}
-                    onPress={() => !otpSent && setVehicleType(vt.id)}
-                  >
-                    <Text style={{ fontSize: 18 }}>{vt.icon}</Text>
-                    <Text style={[styles.vehicleChipText, active && styles.vehicleChipTextActive]}>
-                      {vt.label}
-                    </Text>
-                  </TouchableOpacity>
-                );
-              })}
-            </View>
+                <Text style={styles.label}>Hạn GPLX (MM/YYYY) *</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="VD: 12/2030"
+                  maxLength={7}
+                  value={licenseExpiry}
+                  onChangeText={setLicenseExpiry}
+                  editable={!otpSent}
+                />
 
-            <Text style={styles.label}>Biển số xe *</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="VD: 73K1-458.21"
-              autoCapitalize="characters"
-              value={licensePlate}
-              onChangeText={setLicensePlate}
-              editable={!otpSent}
-            />
+                <Text style={[styles.sectionTitle, { marginTop: 8 }]}>3. Phương tiện hoạt động</Text>
+                <View style={styles.vehicleRow}>
+                  {VEHICLE_TYPES.map((vt) => {
+                    const active = vehicleType === vt.id;
+                    return (
+                      <TouchableOpacity
+                        key={vt.id}
+                        style={[styles.vehicleChip, active && styles.vehicleChipActive]}
+                        onPress={() => !otpSent && setVehicleType(vt.id)}
+                      >
+                        <Text style={{ fontSize: 18 }}>{vt.icon}</Text>
+                        <Text style={[styles.vehicleChipText, active && styles.vehicleChipTextActive]}>
+                          {vt.label}
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
 
-            <Text style={styles.label}>Hãng & dòng xe *</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="VD: Honda Wave RSX / VinFast Evo200"
-              value={vehicleBrandModel}
-              onChangeText={setVehicleBrandModel}
-              editable={!otpSent}
-            />
+                <Text style={styles.label}>Biển số xe *</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="VD: 73K1-458.21"
+                  autoCapitalize="characters"
+                  value={licensePlate}
+                  onChangeText={setLicensePlate}
+                  editable={!otpSent}
+                />
 
-            <Text style={[styles.sectionTitle, { marginTop: 10 }]}>4. Liên hệ khẩn cấp (SOS)</Text>
-            <Text style={styles.label}>Họ tên người thân *</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="VD: Trần Thị Mai (Vợ/Mẹ)"
-              value={emergencyContactName}
-              onChangeText={setEmergencyContactName}
-              editable={!otpSent}
-            />
+                <Text style={styles.label}>Hãng & dòng xe *</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="VD: Honda Wave RSX / VinFast Evo200"
+                  value={vehicleBrandModel}
+                  onChangeText={setVehicleBrandModel}
+                  editable={!otpSent}
+                />
 
-            <Text style={styles.label}>SĐT người thân *</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="VD: 0987654321"
-              keyboardType="phone-pad"
-              maxLength={10}
-              value={emergencyContactPhone}
-              onChangeText={setEmergencyContactPhone}
-              editable={!otpSent}
-            />
+                <Text style={[styles.sectionTitle, { marginTop: 8 }]}>4. Liên hệ khẩn cấp (SOS)</Text>
+                <Text style={styles.label}>Họ tên người thân *</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="VD: Trần Thị Mai"
+                  value={emergencyContactName}
+                  onChangeText={setEmergencyContactName}
+                  editable={!otpSent}
+                />
 
-            <Text style={[styles.sectionTitle, { marginTop: 10 }]}>5. Cam kết chuẩn mực bắt buộc</Text>
-            <TouchableOpacity
-              style={styles.checkRow}
-              onPress={() => !otpSent && setDeclaredNoCriminal(!declaredNoCriminal)}
-            >
-              <Text style={styles.checkboxBox}>{declaredNoCriminal ? '☑️' : '⬜'}</Text>
-              <Text style={styles.checkText}>
-                Tôi cam kết lý lịch rõ ràng, không tiền án/tiền sự và tuyệt đối không điều khiển phương tiện khi có nồng độ cồn hoặc chất kích thích.
-              </Text>
-            </TouchableOpacity>
+                <Text style={styles.label}>SĐT người thân *</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="VD: 0987654321"
+                  keyboardType="phone-pad"
+                  maxLength={10}
+                  value={emergencyContactPhone}
+                  onChangeText={setEmergencyContactPhone}
+                  editable={!otpSent}
+                />
 
-            <TouchableOpacity
-              style={styles.checkRow}
-              onPress={() => !otpSent && setDeclaredTrafficRules(!declaredTrafficRules)}
-            >
-              <Text style={styles.checkboxBox}>{declaredTrafficRules ? '☑️' : '⬜'}</Text>
-              <Text style={styles.checkText}>
-                Tôi cam kết chấp hành nghiêm luật giao thông, bảo quản nguyên vẹn hàng hóa & tiền ứng trước của khách hàng.
-              </Text>
-            </TouchableOpacity>
+                <Text style={[styles.sectionTitle, { marginTop: 8 }]}>5. Cam kết chuẩn mực</Text>
+                <TouchableOpacity
+                  style={styles.checkRow}
+                  onPress={() => !otpSent && setDeclaredNoCriminal(!declaredNoCriminal)}
+                >
+                  <Text style={styles.checkboxBox}>{declaredNoCriminal ? '☑️' : '⬜'}</Text>
+                  <Text style={styles.checkText}>
+                    Cam kết lý lịch rõ ràng, không tiền án/tiền sự và không nồng độ cồn/ma túy.
+                  </Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={styles.checkRow}
+                  onPress={() => !otpSent && setDeclaredTrafficRules(!declaredTrafficRules)}
+                >
+                  <Text style={styles.checkboxBox}>{declaredTrafficRules ? '☑️' : '⬜'}</Text>
+                  <Text style={styles.checkText}>
+                    Cam kết chấp hành luật giao thông, bảo quản hàng hóa & tiền ứng của khách.
+                  </Text>
+                </TouchableOpacity>
+              </>
+            )}
 
             {!otpSent ? (
-              <TouchableOpacity style={styles.primaryBtn} onPress={handleSendDriverOtp}>
-                <Text style={styles.primaryBtnText}>Gửi mã OTP xác thực hồ sơ tài xế</Text>
+              <TouchableOpacity style={styles.primaryBtn} onPress={handleSendOtp}>
+                <Text style={styles.primaryBtnText}>
+                  {authMode === 'login' ? 'Gửi mã OTP đăng nhập' : 'Gửi mã OTP đăng ký 1 lần'}
+                </Text>
               </TouchableOpacity>
             ) : (
               <View style={styles.otpBox}>
                 <View style={styles.rowBetween}>
                   <Text style={styles.label}>Nhập mã OTP 6 số *</Text>
-                  <TouchableOpacity disabled={otpCountdown > 0} onPress={handleSendDriverOtp}>
+                  <TouchableOpacity disabled={otpCountdown > 0} onPress={handleSendOtp}>
                     <Text style={styles.resendText}>
                       {otpCountdown > 0 ? `Gửi lại (${otpCountdown}s)` : 'Gửi lại mã'}
                     </Text>
@@ -771,8 +885,10 @@ export default function App() {
                   onChangeText={setInputOtp}
                 />
                 <Text style={styles.otpPreviewNote}>Mã OTP hiện tại: {generatedOtp}</Text>
-                <TouchableOpacity style={styles.primaryBtn} onPress={handleConfirmDriverRegistration}>
-                  <Text style={styles.primaryBtnText}>Xác nhận OTP & Kích hoạt tài xế</Text>
+                <TouchableOpacity style={styles.primaryBtn} onPress={handleConfirmOtp}>
+                  <Text style={styles.primaryBtnText}>
+                    {authMode === 'login' ? 'Xác nhận OTP & Vào app' : 'Xác nhận OTP & Lưu hồ sơ'}
+                  </Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={styles.linkBtn}
@@ -781,7 +897,7 @@ export default function App() {
                     setInputOtp('');
                   }}
                 >
-                  <Text style={styles.linkBtnText}>← Quay lại sửa thông tin hồ sơ</Text>
+                  <Text style={styles.linkBtnText}>← Quay lại nhập lại SĐT</Text>
                 </TouchableOpacity>
               </View>
             )}
@@ -792,7 +908,7 @@ export default function App() {
   }
 
   // =========================================================================
-  // MÀN HÌNH TÁC NGHIỆP TÀI XẾ (TRỰC TUYẾN / NHẬN CUỐC / LỊCH SỬ / HỒ SƠ)
+  // MÀN HÌNH TÁC NGHIỆP TÀI XẾ + THÔNG BÁO ĐƠN MỚI
   // =========================================================================
   const totalEarned = completedOrders.reduce(
     (sum, item) => sum + (Number(item.driverPayout) || 0),
@@ -803,14 +919,42 @@ export default function App() {
     <SafeAreaView style={styles.safeArea}>
       <StatusBar barStyle="dark-content" backgroundColor="#EAF7F2" />
       <ScrollView contentContainerStyle={styles.dutyScroll} showsVerticalScrollIndicator={false}>
-        {/* Thanh trạng thái tài xế + nút bật/tắt trực tuyến */}
+        {/* Banner thông báo nổi bật khi có đơn mới */}
+        {newOrderAlert && (
+          <View style={styles.alertBannerCard}>
+            <View style={styles.rowBetween}>
+              <Text style={styles.alertBannerTitle}>
+                🔔 ĐƠN MỚI {newOrderAlert.id} • {newOrderAlert.service}
+              </Text>
+              <TouchableOpacity onPress={() => setNewOrderAlert(null)}>
+                <Text style={styles.alertDismissText}>Đóng</Text>
+              </TouchableOpacity>
+            </View>
+            <Text style={styles.alertBannerBody}>
+              Giao tới: {newOrderAlert.dropoff} • Thu nhập:{' '}
+              {(newOrderAlert.driverPayout || 0).toLocaleString('vi-VN')}đ
+            </Text>
+            <TouchableOpacity
+              style={styles.alertAcceptBtn}
+              onPress={() => {
+                if (!isOnline) {
+                  setIsOnline(true);
+                }
+                handleAcceptOrder(newOrderAlert);
+              }}
+            >
+              <Text style={styles.alertAcceptText}>Bật trực tuyến & Nhận đơn này</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+
         <View style={styles.topStatusCard}>
           <View style={{ flex: 1, paddingRight: 10 }}>
             <Text style={styles.driverTitleLine}>
               {driverProfile.name} • {driverProfile.licensePlate}
             </Text>
             <Text style={styles.driverMetaLine}>
-              Điểm uy tín: {driverProfile.safetyScore ?? 100}/100 • Đã xong: {completedOrders.length} cuốc ({totalEarned.toLocaleString('vi-VN')}đ)
+              SĐT: {driverProfile.phone} • Xong: {completedOrders.length} cuốc ({totalEarned.toLocaleString('vi-VN')}đ)
             </Text>
             <Text style={styles.gpsLine} numberOfLines={2}>
               📍 {gpsAddress}
@@ -831,16 +975,18 @@ export default function App() {
           <Text style={styles.syncStripText} numberOfLines={2}>
             {syncMessage}
           </Text>
+          <TouchableOpacity onPress={() => pollOrdersAndNotify(true)}>
+            <Text style={styles.checkNowText}>Kiểm tra đơn</Text>
+          </TouchableOpacity>
         </View>
 
-        {/* Chuyển tab tác nghiệp */}
         <View style={styles.tabBarRow}>
           <TouchableOpacity
             style={[styles.tabPill, activeTab === 'duty' && styles.tabPillActive]}
             onPress={() => setActiveTab('duty')}
           >
             <Text style={[styles.tabPillText, activeTab === 'duty' && styles.tabPillTextActive]}>
-              Nhận cuốc
+              Nhận cuốc ({availableOrders.length})
             </Text>
           </TouchableOpacity>
           <TouchableOpacity
@@ -856,7 +1002,7 @@ export default function App() {
             onPress={() => setActiveTab('compliance')}
           >
             <Text style={[styles.tabPillText, activeTab === 'compliance' && styles.tabPillTextActive]}>
-              Hồ sơ chuẩn
+              Hồ sơ
             </Text>
           </TouchableOpacity>
         </View>
@@ -898,54 +1044,42 @@ export default function App() {
               </View>
             )}
 
-            {!isOnline ? (
-              <View style={styles.emptyBox}>
-                <Text style={styles.emptyTitle}>Bạn đang ở chế độ NGOẠI TUYẾN</Text>
-                <Text style={styles.emptyDesc}>
-                  Bật nút TRỰC TUYẾN ở góc trên để hệ thống định vị GPS và đẩy cuốc mới gần bạn.
-                </Text>
-              </View>
-            ) : (
-              <>
+            <View style={styles.rowBetween}>
+              <Text style={styles.listHeading}>Đơn chờ nhận ({availableOrders.length})</Text>
+              <TouchableOpacity onPress={syncDriverGps}>
+                <Text style={styles.refreshLink}>Làm mới GPS</Text>
+              </TouchableOpacity>
+            </View>
+
+            {availableOrders.map((ord) => (
+              <View key={ord.id} style={styles.orderCard}>
                 <View style={styles.rowBetween}>
-                  <Text style={styles.listHeading}>Đơn khả dụng quanh bạn ({availableOrders.length})</Text>
-                  <TouchableOpacity onPress={syncDriverGps}>
-                    <Text style={styles.refreshLink}>Làm mới GPS</Text>
-                  </TouchableOpacity>
+                  <Text style={styles.orderIdTitle}>
+                    {ord.id} • {ord.service}
+                  </Text>
+                  <Text style={styles.orderPayout}>
+                    Thu nhập: {(ord.driverPayout || 0).toLocaleString('vi-VN')}đ
+                  </Text>
                 </View>
+                <Text style={styles.orderMeta}>
+                  Quãng đường: {ord.distanceKm} km • {ord.createdAt}
+                </Text>
+                <Text style={styles.orderAddr}>• Lấy: {ord.pickup}</Text>
+                <Text style={styles.orderAddr}>• Giao: {ord.dropoff}</Text>
+                {ord.advanceAmount > 0 && (
+                  <Text style={styles.advanceWarnText}>
+                    • Ứng trước cho khách: {ord.advanceAmount.toLocaleString('vi-VN')}đ
+                  </Text>
+                )}
+                <Text style={styles.orderNote}>Ghi chú: {ord.note}</Text>
 
-                {availableOrders.map((ord) => (
-                  <View key={ord.id} style={styles.orderCard}>
-                    <View style={styles.rowBetween}>
-                      <Text style={styles.orderIdTitle}>
-                        {ord.id} • {ord.service}
-                      </Text>
-                      <Text style={styles.orderPayout}>
-                        Thu nhập: {(ord.driverPayout || 0).toLocaleString('vi-VN')}đ
-                      </Text>
-                    </View>
-                    <Text style={styles.orderMeta}>
-                      Quãng đường: {ord.distanceKm} km • {ord.createdAt}
-                    </Text>
-                    <Text style={styles.orderAddr}>• Lấy: {ord.pickup}</Text>
-                    <Text style={styles.orderAddr}>• Giao: {ord.dropoff}</Text>
-                    {ord.advanceAmount > 0 && (
-                      <Text style={styles.advanceWarnText}>
-                        • Ứng trước cho khách: {ord.advanceAmount.toLocaleString('vi-VN')}đ
-                      </Text>
-                    )}
-                    <Text style={styles.orderNote}>Ghi chú: {ord.note}</Text>
-
-                    <TouchableOpacity
-                      style={styles.acceptBtn}
-                      onPress={() => handleAcceptOrder(ord)}
-                    >
-                      <Text style={styles.acceptBtnText}>Nhận cuốc ngay</Text>
-                    </TouchableOpacity>
-                  </View>
-                ))}
-              </>
-            )}
+                <TouchableOpacity style={styles.acceptBtn} onPress={() => handleAcceptOrder(ord)}>
+                  <Text style={styles.acceptBtnText}>
+                    {isOnline ? 'Nhận cuốc ngay' : 'Bật trực tuyến & Nhận cuốc'}
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            ))}
           </>
         )}
 
@@ -977,8 +1111,7 @@ export default function App() {
 
         {activeTab === 'compliance' && (
           <View style={styles.orderCard}>
-            <Text style={styles.orderIdTitle}>Hồ sơ định danh & chuẩn mực tài xế</Text>
-            <Text style={styles.complianceRow}>• Trạng thái: {driverProfile.verificationStatus}</Text>
+            <Text style={styles.orderIdTitle}>Hồ sơ tài xế (Đã đăng ký 1 lần)</Text>
             <Text style={styles.complianceRow}>• Họ tên: {driverProfile.name}</Text>
             <Text style={styles.complianceRow}>• SĐT: {driverProfile.phone}</Text>
             <Text style={styles.complianceRow}>• CCCD: {driverProfile.idCardNumber}</Text>
@@ -986,22 +1119,22 @@ export default function App() {
               • GPLX: {driverProfile.licenseNumber} (Hạn: {driverProfile.licenseExpiry})
             </Text>
             <Text style={styles.complianceRow}>
-              • Phương tiện: {driverProfile.vehicleBrandModel} — Biển số {driverProfile.licensePlate}
+              • Xe: {driverProfile.vehicleBrandModel} — Biển số {driverProfile.licensePlate}
             </Text>
             <Text style={styles.complianceRow}>
               • Liên hệ khẩn cấp: {driverProfile.emergencyContactName} ({driverProfile.emergencyContactPhone})
             </Text>
-            <Text style={styles.complianceRow}>• Mã thiết bị: {driverProfile.deviceId}</Text>
 
             <TouchableOpacity
               style={[styles.cancelJobBtn, { marginTop: 14, width: '100%' }]}
               onPress={() => {
                 setIsOnline(false);
                 setActiveOrder(null);
+                setAuthMode('login');
                 setDriverProfile(null);
               }}
             >
-              <Text style={styles.cancelJobText}>Đăng xuất ca làm việc</Text>
+              <Text style={styles.cancelJobText}>Đăng xuất (lần sau chỉ cần SĐT + OTP)</Text>
             </TouchableOpacity>
           </View>
         )}
@@ -1027,7 +1160,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#064E3B',
     borderRadius: 20,
     padding: 18,
-    marginBottom: 14,
+    marginBottom: 12,
   },
   brandBadgeRow: {
     flexDirection: 'row',
@@ -1047,6 +1180,66 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: '#D1FAE5',
     lineHeight: 18,
+  },
+  modeSwitchRow: {
+    flexDirection: 'row',
+    backgroundColor: '#E5E7EB',
+    borderRadius: 14,
+    padding: 3,
+    marginBottom: 12,
+  },
+  modePill: {
+    flex: 1,
+    paddingVertical: 9,
+    alignItems: 'center',
+    borderRadius: 11,
+  },
+  modePillActive: {
+    backgroundColor: '#059669',
+  },
+  modePillText: {
+    fontSize: 13,
+    fontWeight: '800',
+    color: '#374151',
+  },
+  modePillTextActive: {
+    color: '#FFFFFF',
+  },
+  alertBannerCard: {
+    backgroundColor: '#FEF3C7',
+    borderWidth: 1.5,
+    borderColor: '#D97706',
+    borderRadius: 16,
+    padding: 12,
+    marginBottom: 10,
+  },
+  alertBannerTitle: {
+    fontSize: 14,
+    fontWeight: '900',
+    color: '#92400E',
+  },
+  alertDismissText: {
+    fontSize: 12,
+    fontWeight: '800',
+    color: '#92400E',
+  },
+  alertBannerBody: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#78350F',
+    marginTop: 4,
+  },
+  alertAcceptBtn: {
+    backgroundColor: '#D97706',
+    borderRadius: 10,
+    paddingVertical: 8,
+    alignItems: 'center',
+    marginTop: 8,
+  },
+  alertAcceptText: {
+    color: '#FFFFFF',
+    fontSize: 13,
+    fontWeight: '800',
   },
   errorBox: {
     backgroundColor: '#FEF2F2',
@@ -1262,6 +1455,7 @@ const styles = StyleSheet.create({
   syncStrip: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
     backgroundColor: '#ECFDF5',
     borderRadius: 12,
     paddingHorizontal: 12,
@@ -1273,6 +1467,12 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#065F46',
     fontWeight: '600',
+    marginRight: 8,
+  },
+  checkNowText: {
+    fontSize: 12,
+    fontWeight: '800',
+    color: '#047857',
   },
   tabBarRow: {
     flexDirection: 'row',
@@ -1375,12 +1575,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderWidth: 1,
     borderColor: '#E5E7EB',
-  },
-  emptyTitle: {
-    fontSize: 15,
-    fontWeight: '800',
-    color: '#111827',
-    marginBottom: 4,
   },
   emptyDesc: {
     fontSize: 13,
